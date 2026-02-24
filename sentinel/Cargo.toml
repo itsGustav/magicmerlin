@@ -1,0 +1,10 @@
+[package]
+name = "magicmerlin-sentinel"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+magicmerlin-compat = { path = "../compat" }
+magicmerlin-tools = { path = "../tools" }

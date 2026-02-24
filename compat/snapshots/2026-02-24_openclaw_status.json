@@ -1,0 +1,1310 @@
+{
+  "heartbeat": {
+    "defaultAgentId": "main",
+    "agents": [
+      {
+        "agentId": "main",
+        "enabled": true,
+        "every": "30m",
+        "everyMs": 1800000
+      },
+      {
+        "agentId": "henry",
+        "enabled": false,
+        "every": "disabled",
+        "everyMs": null
+      },
+      {
+        "agentId": "lobsterprime",
+        "enabled": false,
+        "every": "disabled",
+        "everyMs": null
+      },
+      {
+        "agentId": "paylobster",
+        "enabled": false,
+        "every": "disabled",
+        "everyMs": null
+      }
+    ]
+  },
+  "channelSummary": [
+    "Telegram: configured",
+    "  - butler (disabled, token:config)",
+    "  - default (token:config)",
+    "  - doctor (disabled, token:config)",
+    "  - henry (token:config)",
+    "  - lobsterprime (token:config)",
+    "  - paylobster (token:config)"
+  ],
+  "queuedSystemEvents": [],
+  "sessions": {
+    "paths": [
+      "/Users/gustav/.openclaw/agents/main/sessions/sessions.json",
+      "/Users/gustav/.openclaw/agents/henry/sessions/sessions.json",
+      "/Users/gustav/.openclaw/agents/lobsterprime/sessions/sessions.json",
+      "/Users/gustav/.openclaw/agents/paylobster/sessions/sessions.json"
+    ],
+    "count": 70,
+    "defaults": {
+      "model": "gpt-5.2",
+      "contextTokens": 272000
+    },
+    "recent": [
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:29224a6d-4fc9-4d07-96b2-6b83002a6bcc",
+        "kind": "direct",
+        "sessionId": "a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+        "updatedAt": 1771923639069,
+        "age": 150483,
+        "systemSent": true,
+        "totalTokens": null,
+        "totalTokensFresh": false,
+        "remainingTokens": null,
+        "percentUsed": null,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:29224a6d-4fc9-4d07-96b2-6b83002a6bcc:run:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+        "kind": "direct",
+        "sessionId": "a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+        "updatedAt": 1771923639052,
+        "age": 150500,
+        "systemSent": true,
+        "totalTokens": null,
+        "totalTokensFresh": false,
+        "remainingTokens": null,
+        "percentUsed": null,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:808dc0ff-b2e5-4812-9b90-c0ebfbe58166",
+        "kind": "direct",
+        "sessionId": "c5e2057d-c515-4366-9471-11da4251ffd8",
+        "updatedAt": 1771923630916,
+        "age": 158636,
+        "systemSent": true,
+        "inputTokens": 939,
+        "outputTokens": 218,
+        "cacheRead": 15104,
+        "cacheWrite": 0,
+        "totalTokens": 8318,
+        "totalTokensFresh": true,
+        "remainingTokens": 263682,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:c5e2057d-c515-4366-9471-11da4251ffd8"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:808dc0ff-b2e5-4812-9b90-c0ebfbe58166:run:c5e2057d-c515-4366-9471-11da4251ffd8",
+        "kind": "direct",
+        "sessionId": "c5e2057d-c515-4366-9471-11da4251ffd8",
+        "updatedAt": 1771923630916,
+        "age": 158636,
+        "systemSent": true,
+        "inputTokens": 939,
+        "outputTokens": 218,
+        "cacheRead": 15104,
+        "cacheWrite": 0,
+        "totalTokens": 8318,
+        "totalTokensFresh": true,
+        "remainingTokens": 263682,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:c5e2057d-c515-4366-9471-11da4251ffd8"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:c7ea5846-77c3-403d-a458-c1993a3852fb",
+        "kind": "direct",
+        "sessionId": "237239be-06b2-49c5-9a43-57cb88550f20",
+        "updatedAt": 1771923611633,
+        "age": 177919,
+        "systemSent": true,
+        "inputTokens": 10590,
+        "outputTokens": 625,
+        "cacheRead": 15360,
+        "cacheWrite": 0,
+        "totalTokens": 9358,
+        "totalTokensFresh": true,
+        "remainingTokens": 262642,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:237239be-06b2-49c5-9a43-57cb88550f20"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:c7ea5846-77c3-403d-a458-c1993a3852fb:run:237239be-06b2-49c5-9a43-57cb88550f20",
+        "kind": "direct",
+        "sessionId": "237239be-06b2-49c5-9a43-57cb88550f20",
+        "updatedAt": 1771923611633,
+        "age": 177919,
+        "systemSent": true,
+        "inputTokens": 10590,
+        "outputTokens": 625,
+        "cacheRead": 15360,
+        "cacheWrite": 0,
+        "totalTokens": 9358,
+        "totalTokensFresh": true,
+        "remainingTokens": 262642,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:237239be-06b2-49c5-9a43-57cb88550f20"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:5a4327a9-1264-4f5c-9700-910c38d42f21",
+        "kind": "direct",
+        "sessionId": "8a60437b-0993-40dc-ada7-90deeb02f536",
+        "updatedAt": 1771923600053,
+        "age": 189499,
+        "systemSent": true,
+        "inputTokens": 9411,
+        "outputTokens": 200,
+        "cacheRead": 22272,
+        "cacheWrite": 0,
+        "totalTokens": 8057,
+        "totalTokensFresh": true,
+        "remainingTokens": 263943,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:8a60437b-0993-40dc-ada7-90deeb02f536"
+        ]
+      },
+      {
+        "agentId": "main",
+        "key": "agent:main:cron:5a4327a9-1264-4f5c-9700-910c38d42f21:run:8a60437b-0993-40dc-ada7-90deeb02f536",
+        "kind": "direct",
+        "sessionId": "8a60437b-0993-40dc-ada7-90deeb02f536",
+        "updatedAt": 1771923600053,
+        "age": 189499,
+        "systemSent": true,
+        "inputTokens": 9411,
+        "outputTokens": 200,
+        "cacheRead": 22272,
+        "cacheWrite": 0,
+        "totalTokens": 8057,
+        "totalTokensFresh": true,
+        "remainingTokens": 263943,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:8a60437b-0993-40dc-ada7-90deeb02f536"
+        ]
+      },
+      {
+        "agentId": "henry",
+        "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3",
+        "kind": "direct",
+        "sessionId": "b35f28c4-c6a4-4829-b516-ba33454b7e89",
+        "updatedAt": 1771922170351,
+        "age": 1619201,
+        "systemSent": true,
+        "inputTokens": 4708,
+        "outputTokens": 314,
+        "cacheRead": 18176,
+        "cacheWrite": 0,
+        "totalTokens": 7873,
+        "totalTokensFresh": true,
+        "remainingTokens": 264127,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:b35f28c4-c6a4-4829-b516-ba33454b7e89"
+        ]
+      },
+      {
+        "agentId": "henry",
+        "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:b35f28c4-c6a4-4829-b516-ba33454b7e89",
+        "kind": "direct",
+        "sessionId": "b35f28c4-c6a4-4829-b516-ba33454b7e89",
+        "updatedAt": 1771922170351,
+        "age": 1619201,
+        "systemSent": true,
+        "inputTokens": 4708,
+        "outputTokens": 314,
+        "cacheRead": 18176,
+        "cacheWrite": 0,
+        "totalTokens": 7873,
+        "totalTokensFresh": true,
+        "remainingTokens": 264127,
+        "percentUsed": 3,
+        "model": "gpt-5.2",
+        "contextTokens": 272000,
+        "flags": [
+          "system",
+          "id:b35f28c4-c6a4-4829-b516-ba33454b7e89"
+        ]
+      }
+    ],
+    "byAgent": [
+      {
+        "agentId": "main",
+        "path": "/Users/gustav/.openclaw/agents/main/sessions/sessions.json",
+        "count": 31,
+        "recent": [
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:29224a6d-4fc9-4d07-96b2-6b83002a6bcc",
+            "kind": "direct",
+            "sessionId": "a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+            "updatedAt": 1771923639069,
+            "age": 150483,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:29224a6d-4fc9-4d07-96b2-6b83002a6bcc:run:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+            "kind": "direct",
+            "sessionId": "a4eb4d8b-7d4d-4d84-8aac-f74356bfba54",
+            "updatedAt": 1771923639052,
+            "age": 150500,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:a4eb4d8b-7d4d-4d84-8aac-f74356bfba54"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:808dc0ff-b2e5-4812-9b90-c0ebfbe58166",
+            "kind": "direct",
+            "sessionId": "c5e2057d-c515-4366-9471-11da4251ffd8",
+            "updatedAt": 1771923630916,
+            "age": 158636,
+            "systemSent": true,
+            "inputTokens": 939,
+            "outputTokens": 218,
+            "cacheRead": 15104,
+            "cacheWrite": 0,
+            "totalTokens": 8318,
+            "totalTokensFresh": true,
+            "remainingTokens": 263682,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:c5e2057d-c515-4366-9471-11da4251ffd8"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:808dc0ff-b2e5-4812-9b90-c0ebfbe58166:run:c5e2057d-c515-4366-9471-11da4251ffd8",
+            "kind": "direct",
+            "sessionId": "c5e2057d-c515-4366-9471-11da4251ffd8",
+            "updatedAt": 1771923630916,
+            "age": 158636,
+            "systemSent": true,
+            "inputTokens": 939,
+            "outputTokens": 218,
+            "cacheRead": 15104,
+            "cacheWrite": 0,
+            "totalTokens": 8318,
+            "totalTokensFresh": true,
+            "remainingTokens": 263682,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:c5e2057d-c515-4366-9471-11da4251ffd8"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:c7ea5846-77c3-403d-a458-c1993a3852fb",
+            "kind": "direct",
+            "sessionId": "237239be-06b2-49c5-9a43-57cb88550f20",
+            "updatedAt": 1771923611633,
+            "age": 177919,
+            "systemSent": true,
+            "inputTokens": 10590,
+            "outputTokens": 625,
+            "cacheRead": 15360,
+            "cacheWrite": 0,
+            "totalTokens": 9358,
+            "totalTokensFresh": true,
+            "remainingTokens": 262642,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:237239be-06b2-49c5-9a43-57cb88550f20"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:c7ea5846-77c3-403d-a458-c1993a3852fb:run:237239be-06b2-49c5-9a43-57cb88550f20",
+            "kind": "direct",
+            "sessionId": "237239be-06b2-49c5-9a43-57cb88550f20",
+            "updatedAt": 1771923611633,
+            "age": 177919,
+            "systemSent": true,
+            "inputTokens": 10590,
+            "outputTokens": 625,
+            "cacheRead": 15360,
+            "cacheWrite": 0,
+            "totalTokens": 9358,
+            "totalTokensFresh": true,
+            "remainingTokens": 262642,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:237239be-06b2-49c5-9a43-57cb88550f20"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:5a4327a9-1264-4f5c-9700-910c38d42f21",
+            "kind": "direct",
+            "sessionId": "8a60437b-0993-40dc-ada7-90deeb02f536",
+            "updatedAt": 1771923600053,
+            "age": 189499,
+            "systemSent": true,
+            "inputTokens": 9411,
+            "outputTokens": 200,
+            "cacheRead": 22272,
+            "cacheWrite": 0,
+            "totalTokens": 8057,
+            "totalTokensFresh": true,
+            "remainingTokens": 263943,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:8a60437b-0993-40dc-ada7-90deeb02f536"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:5a4327a9-1264-4f5c-9700-910c38d42f21:run:8a60437b-0993-40dc-ada7-90deeb02f536",
+            "kind": "direct",
+            "sessionId": "8a60437b-0993-40dc-ada7-90deeb02f536",
+            "updatedAt": 1771923600053,
+            "age": 189499,
+            "systemSent": true,
+            "inputTokens": 9411,
+            "outputTokens": 200,
+            "cacheRead": 22272,
+            "cacheWrite": 0,
+            "totalTokens": 8057,
+            "totalTokensFresh": true,
+            "remainingTokens": 263943,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:8a60437b-0993-40dc-ada7-90deeb02f536"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:main",
+            "kind": "direct",
+            "sessionId": "96f528b2-2d51-45ec-a7f4-9a603d3796aa",
+            "updatedAt": 1771909402967,
+            "age": 14386585,
+            "systemSent": true,
+            "abortedLastRun": false,
+            "inputTokens": 168991,
+            "outputTokens": 310,
+            "cacheRead": 1564,
+            "cacheWrite": 0,
+            "totalTokens": 170555,
+            "totalTokensFresh": true,
+            "remainingTokens": 29445,
+            "percentUsed": 85,
+            "model": "grok-4",
+            "contextTokens": 200000,
+            "flags": [
+              "system",
+              "id:96f528b2-2d51-45ec-a7f4-9a603d3796aa"
+            ]
+          },
+          {
+            "agentId": "main",
+            "key": "agent:main:cron:4a545b95-db2b-4471-aa73-113cb1523212",
+            "kind": "direct",
+            "sessionId": "5836b801-7bdc-4542-91bb-5f81141c223b",
+            "updatedAt": 1771902000069,
+            "age": 21789483,
+            "systemSent": true,
+            "inputTokens": 18598,
+            "outputTokens": 1228,
+            "cacheRead": 23680,
+            "cacheWrite": 0,
+            "totalTokens": 17693,
+            "totalTokensFresh": true,
+            "remainingTokens": 254307,
+            "percentUsed": 7,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:5836b801-7bdc-4542-91bb-5f81141c223b"
+            ]
+          }
+        ]
+      },
+      {
+        "agentId": "henry",
+        "path": "/Users/gustav/.openclaw/agents/henry/sessions/sessions.json",
+        "count": 21,
+        "recent": [
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3",
+            "kind": "direct",
+            "sessionId": "b35f28c4-c6a4-4829-b516-ba33454b7e89",
+            "updatedAt": 1771922170351,
+            "age": 1619201,
+            "systemSent": true,
+            "inputTokens": 4708,
+            "outputTokens": 314,
+            "cacheRead": 18176,
+            "cacheWrite": 0,
+            "totalTokens": 7873,
+            "totalTokensFresh": true,
+            "remainingTokens": 264127,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:b35f28c4-c6a4-4829-b516-ba33454b7e89"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:b35f28c4-c6a4-4829-b516-ba33454b7e89",
+            "kind": "direct",
+            "sessionId": "b35f28c4-c6a4-4829-b516-ba33454b7e89",
+            "updatedAt": 1771922170351,
+            "age": 1619201,
+            "systemSent": true,
+            "inputTokens": 4708,
+            "outputTokens": 314,
+            "cacheRead": 18176,
+            "cacheWrite": 0,
+            "totalTokens": 7873,
+            "totalTokensFresh": true,
+            "remainingTokens": 264127,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:b35f28c4-c6a4-4829-b516-ba33454b7e89"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:762617c2-47f8-4672-8403-340af2df86a2",
+            "kind": "direct",
+            "sessionId": "762617c2-47f8-4672-8403-340af2df86a2",
+            "updatedAt": 1771920370337,
+            "age": 3419215,
+            "systemSent": true,
+            "inputTokens": 8248,
+            "outputTokens": 201,
+            "cacheRead": 14464,
+            "cacheWrite": 0,
+            "totalTokens": 7736,
+            "totalTokensFresh": true,
+            "remainingTokens": 264264,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:762617c2-47f8-4672-8403-340af2df86a2"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:3c3e217e-d10f-479c-a236-bd45b5acd3e2",
+            "kind": "direct",
+            "sessionId": "3c3e217e-d10f-479c-a236-bd45b5acd3e2",
+            "updatedAt": 1771918570320,
+            "age": 5219232,
+            "systemSent": true,
+            "inputTokens": 4191,
+            "outputTokens": 194,
+            "cacheRead": 10624,
+            "cacheWrite": 0,
+            "totalTokens": 7509,
+            "totalTokensFresh": true,
+            "remainingTokens": 264491,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:3c3e217e-d10f-479c-a236-bd45b5acd3e2"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:8c7d47d2-8858-479d-ae7d-07c4b9fa8b97",
+            "kind": "direct",
+            "sessionId": "8c7d47d2-8858-479d-ae7d-07c4b9fa8b97",
+            "updatedAt": 1771916770310,
+            "age": 7019242,
+            "systemSent": true,
+            "inputTokens": 4474,
+            "outputTokens": 263,
+            "cacheRead": 10880,
+            "cacheWrite": 0,
+            "totalTokens": 8048,
+            "totalTokensFresh": true,
+            "remainingTokens": 263952,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:8c7d47d2-8858-479d-ae7d-07c4b9fa8b97"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:167a11c1-b924-4def-8148-218886ea1fce",
+            "kind": "direct",
+            "sessionId": "167a11c1-b924-4def-8148-218886ea1fce",
+            "updatedAt": 1771914970293,
+            "age": 8819259,
+            "systemSent": true,
+            "inputTokens": 7906,
+            "outputTokens": 162,
+            "cacheRead": 6912,
+            "cacheWrite": 0,
+            "totalTokens": 7512,
+            "totalTokensFresh": true,
+            "remainingTokens": 264488,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:167a11c1-b924-4def-8148-218886ea1fce"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:2162fd5a-971d-4384-acfc-c845e7de1eeb",
+            "kind": "direct",
+            "sessionId": "2162fd5a-971d-4384-acfc-c845e7de1eeb",
+            "updatedAt": 1771913170276,
+            "age": 10619276,
+            "systemSent": true,
+            "inputTokens": 318,
+            "outputTokens": 126,
+            "cacheRead": 14464,
+            "cacheWrite": 0,
+            "totalTokens": 7476,
+            "totalTokensFresh": true,
+            "remainingTokens": 264524,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:2162fd5a-971d-4384-acfc-c845e7de1eeb"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:main",
+            "kind": "direct",
+            "sessionId": "7fa19a1b-32b6-4db6-adfa-7df0113d1018",
+            "updatedAt": 1771912408978,
+            "age": 11380574,
+            "systemSent": true,
+            "abortedLastRun": false,
+            "inputTokens": 186743,
+            "outputTokens": 1556,
+            "cacheRead": 1564,
+            "cacheWrite": 0,
+            "totalTokens": 188307,
+            "totalTokensFresh": true,
+            "remainingTokens": 11693,
+            "percentUsed": 94,
+            "model": "grok-4",
+            "contextTokens": 200000,
+            "flags": [
+              "system",
+              "id:7fa19a1b-32b6-4db6-adfa-7df0113d1018"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:1a19a9a5-dd32-40c5-93fe-c2043dcbe79d",
+            "kind": "direct",
+            "sessionId": "1a19a9a5-dd32-40c5-93fe-c2043dcbe79d",
+            "updatedAt": 1771911370259,
+            "age": 12419293,
+            "systemSent": true,
+            "inputTokens": 4227,
+            "outputTokens": 156,
+            "cacheRead": 10752,
+            "cacheWrite": 0,
+            "totalTokens": 7673,
+            "totalTokensFresh": true,
+            "remainingTokens": 264327,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:1a19a9a5-dd32-40c5-93fe-c2043dcbe79d"
+            ]
+          },
+          {
+            "agentId": "henry",
+            "key": "agent:henry:cron:ccf1efd4-1f62-4d53-a849-8e34e6b4a4e3:run:c4b172c8-297c-4eaf-9641-c6b7fa33774e",
+            "kind": "direct",
+            "sessionId": "c4b172c8-297c-4eaf-9641-c6b7fa33774e",
+            "updatedAt": 1771909570245,
+            "age": 14219307,
+            "systemSent": true,
+            "inputTokens": 4507,
+            "outputTokens": 397,
+            "cacheRead": 10624,
+            "cacheWrite": 0,
+            "totalTokens": 7825,
+            "totalTokensFresh": true,
+            "remainingTokens": 264175,
+            "percentUsed": 3,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:c4b172c8-297c-4eaf-9641-c6b7fa33774e"
+            ]
+          }
+        ]
+      },
+      {
+        "agentId": "lobsterprime",
+        "path": "/Users/gustav/.openclaw/agents/lobsterprime/sessions/sessions.json",
+        "count": 7,
+        "recent": [
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:main",
+            "kind": "direct",
+            "sessionId": "102b1fdd-5037-43bf-bf9e-fa3fd4c86c33",
+            "updatedAt": 1771886563525,
+            "age": 37226027,
+            "systemSent": true,
+            "abortedLastRun": false,
+            "inputTokens": 338,
+            "outputTokens": 1260,
+            "cacheRead": 102582,
+            "cacheWrite": 0,
+            "totalTokens": 102920,
+            "totalTokensFresh": true,
+            "remainingTokens": 97080,
+            "percentUsed": 51,
+            "model": "grok-4",
+            "contextTokens": 200000,
+            "flags": [
+              "system",
+              "id:102b1fdd-5037-43bf-bf9e-fa3fd4c86c33"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:5b84e81a-1b99-45aa-8795-490248d84b4d",
+            "kind": "direct",
+            "sessionId": "15815075-a1f5-4be7-a6fd-03cd9c21239f",
+            "updatedAt": 1771363443134,
+            "age": 560346418,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:15815075-a1f5-4be7-a6fd-03cd9c21239f"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:c6dab783-85ef-4b5b-b5a6-e3aad47e05f3",
+            "kind": "direct",
+            "sessionId": "35f5df06-d7b8-43d2-8314-6f3a752e8294",
+            "updatedAt": 1771362698950,
+            "age": 561090602,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:35f5df06-d7b8-43d2-8314-6f3a752e8294"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:44160f3a-2d55-426a-8bf4-7f35efd11fcc",
+            "kind": "direct",
+            "sessionId": "b08e8ee2-b6c3-49da-8c95-ca2cb7be619c",
+            "updatedAt": 1771362600059,
+            "age": 561189493,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:b08e8ee2-b6c3-49da-8c95-ca2cb7be619c"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:145bc8ad-513c-408e-b32d-49b189be03d7",
+            "kind": "direct",
+            "sessionId": "56800446-f43e-4677-83f3-088741c86dc0",
+            "updatedAt": 1771362000059,
+            "age": 561789493,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:56800446-f43e-4677-83f3-088741c86dc0"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:04912737-9fe5-4f03-ac74-73c40e6468b3",
+            "kind": "direct",
+            "sessionId": "c6dd6dd1-14ab-4aaf-a949-9e368a90c6c8",
+            "updatedAt": 1771361400061,
+            "age": 562389491,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:c6dd6dd1-14ab-4aaf-a949-9e368a90c6c8"
+            ]
+          },
+          {
+            "agentId": "lobsterprime",
+            "key": "agent:lobsterprime:cron:ebd71459-6e46-47d8-8a20-1bec338fe68c",
+            "kind": "direct",
+            "sessionId": "d6e16e47-85a6-44ac-8ae3-5b66b9e7422f",
+            "updatedAt": 1771360800069,
+            "age": 562989483,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:d6e16e47-85a6-44ac-8ae3-5b66b9e7422f"
+            ]
+          }
+        ]
+      },
+      {
+        "agentId": "paylobster",
+        "path": "/Users/gustav/.openclaw/agents/paylobster/sessions/sessions.json",
+        "count": 11,
+        "recent": [
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:949e66e0-d7df-4622-a299-b7555e510768",
+            "kind": "direct",
+            "sessionId": "66a4ef29-f3ec-4e85-a196-eb6159cf68ae",
+            "updatedAt": 1771905600047,
+            "age": 18189505,
+            "systemSent": true,
+            "inputTokens": 62856,
+            "outputTokens": 2051,
+            "cacheRead": 71936,
+            "cacheWrite": 0,
+            "totalTokens": 61151,
+            "totalTokensFresh": true,
+            "remainingTokens": 210849,
+            "percentUsed": 22,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:66a4ef29-f3ec-4e85-a196-eb6159cf68ae"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:949e66e0-d7df-4622-a299-b7555e510768:run:66a4ef29-f3ec-4e85-a196-eb6159cf68ae",
+            "kind": "direct",
+            "sessionId": "66a4ef29-f3ec-4e85-a196-eb6159cf68ae",
+            "updatedAt": 1771905600047,
+            "age": 18189505,
+            "systemSent": true,
+            "inputTokens": 62856,
+            "outputTokens": 2051,
+            "cacheRead": 71936,
+            "cacheWrite": 0,
+            "totalTokens": 61151,
+            "totalTokensFresh": true,
+            "remainingTokens": 210849,
+            "percentUsed": 22,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:66a4ef29-f3ec-4e85-a196-eb6159cf68ae"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:main",
+            "kind": "direct",
+            "sessionId": "af32e145-5d38-4cb2-b304-88b2892e407b",
+            "updatedAt": 1771886584473,
+            "age": 37205079,
+            "systemSent": true,
+            "abortedLastRun": false,
+            "inputTokens": 151,
+            "outputTokens": 1927,
+            "cacheRead": 106323,
+            "cacheWrite": 0,
+            "totalTokens": 106474,
+            "totalTokensFresh": true,
+            "remainingTokens": 93526,
+            "percentUsed": 53,
+            "model": "grok-4",
+            "contextTokens": 200000,
+            "flags": [
+              "system",
+              "id:af32e145-5d38-4cb2-b304-88b2892e407b"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:5a9558c7-e519-495c-ba6c-c614652169ff",
+            "kind": "direct",
+            "sessionId": "6f93fa2b-fedf-4a38-a750-565d59a0606e",
+            "updatedAt": 1771884900029,
+            "age": 38889523,
+            "systemSent": true,
+            "inputTokens": 166913,
+            "outputTokens": 1948,
+            "cacheRead": 321408,
+            "cacheWrite": 0,
+            "totalTokens": 106562,
+            "totalTokensFresh": true,
+            "remainingTokens": 165438,
+            "percentUsed": 39,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:6f93fa2b-fedf-4a38-a750-565d59a0606e"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:5a9558c7-e519-495c-ba6c-c614652169ff:run:6f93fa2b-fedf-4a38-a750-565d59a0606e",
+            "kind": "direct",
+            "sessionId": "6f93fa2b-fedf-4a38-a750-565d59a0606e",
+            "updatedAt": 1771884900029,
+            "age": 38889523,
+            "systemSent": true,
+            "inputTokens": 166913,
+            "outputTokens": 1948,
+            "cacheRead": 321408,
+            "cacheWrite": 0,
+            "totalTokens": 106562,
+            "totalTokensFresh": true,
+            "remainingTokens": 165438,
+            "percentUsed": 39,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:6f93fa2b-fedf-4a38-a750-565d59a0606e"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:f33b68ec-410b-4019-81a3-de3ad90e3d34",
+            "kind": "direct",
+            "sessionId": "79982828-2328-4369-808b-3503f75adccc",
+            "updatedAt": 1771844424298,
+            "age": 79365254,
+            "systemSent": true,
+            "inputTokens": 23434,
+            "outputTokens": 1900,
+            "cacheRead": 35968,
+            "cacheWrite": 0,
+            "totalTokens": 23809,
+            "totalTokensFresh": true,
+            "remainingTokens": 248191,
+            "percentUsed": 9,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:79982828-2328-4369-808b-3503f75adccc"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:f33b68ec-410b-4019-81a3-de3ad90e3d34:run:79982828-2328-4369-808b-3503f75adccc",
+            "kind": "direct",
+            "sessionId": "79982828-2328-4369-808b-3503f75adccc",
+            "updatedAt": 1771844424298,
+            "age": 79365254,
+            "systemSent": true,
+            "inputTokens": 23434,
+            "outputTokens": 1900,
+            "cacheRead": 35968,
+            "cacheWrite": 0,
+            "totalTokens": 23809,
+            "totalTokensFresh": true,
+            "remainingTokens": 248191,
+            "percentUsed": 9,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:79982828-2328-4369-808b-3503f75adccc"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:36b945c7-eb4e-4c5b-8d65-132c1616a5e7",
+            "kind": "direct",
+            "sessionId": "40666abc-a838-4e1a-8822-304b89e0dcf9",
+            "updatedAt": 1771844400036,
+            "age": 79389516,
+            "systemSent": true,
+            "inputTokens": 59063,
+            "outputTokens": 1029,
+            "cacheRead": 64256,
+            "cacheWrite": 0,
+            "totalTokens": 59609,
+            "totalTokensFresh": true,
+            "remainingTokens": 212391,
+            "percentUsed": 22,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:40666abc-a838-4e1a-8822-304b89e0dcf9"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:36b945c7-eb4e-4c5b-8d65-132c1616a5e7:run:40666abc-a838-4e1a-8822-304b89e0dcf9",
+            "kind": "direct",
+            "sessionId": "40666abc-a838-4e1a-8822-304b89e0dcf9",
+            "updatedAt": 1771844400036,
+            "age": 79389516,
+            "systemSent": true,
+            "inputTokens": 59063,
+            "outputTokens": 1029,
+            "cacheRead": 64256,
+            "cacheWrite": 0,
+            "totalTokens": 59609,
+            "totalTokensFresh": true,
+            "remainingTokens": 212391,
+            "percentUsed": 22,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:40666abc-a838-4e1a-8822-304b89e0dcf9"
+            ]
+          },
+          {
+            "agentId": "paylobster",
+            "key": "agent:paylobster:cron:2418d558-a4b0-4fa4-9947-5e9e5a6babc5",
+            "kind": "direct",
+            "sessionId": "8b064bcb-1053-4bef-8f84-8771007fa6b6",
+            "updatedAt": 1771358345067,
+            "age": 565444485,
+            "systemSent": true,
+            "totalTokens": null,
+            "totalTokensFresh": false,
+            "remainingTokens": null,
+            "percentUsed": null,
+            "model": "gpt-5.2",
+            "contextTokens": 272000,
+            "flags": [
+              "system",
+              "id:8b064bcb-1053-4bef-8f84-8771007fa6b6"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "os": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "release": "25.3.0",
+    "label": "macos 26.3 (arm64)"
+  },
+  "update": {
+    "root": "/opt/homebrew/lib/node_modules/openclaw",
+    "installKind": "package",
+    "packageManager": "pnpm",
+    "deps": {
+      "manager": "pnpm",
+      "status": "unknown",
+      "lockfilePath": "/opt/homebrew/lib/node_modules/openclaw/pnpm-lock.yaml",
+      "markerPath": "/opt/homebrew/lib/node_modules/openclaw/node_modules/.modules.yaml",
+      "reason": "lockfile missing"
+    },
+    "registry": {
+      "latestVersion": "2026.2.23"
+    }
+  },
+  "updateChannel": "stable",
+  "updateChannelSource": "default",
+  "memory": {
+    "agentId": "main",
+    "backend": "builtin",
+    "files": 26,
+    "chunks": 170,
+    "dirty": false,
+    "workspaceDir": "/Users/gustav/.openclaw/workspace-main",
+    "dbPath": "/Users/gustav/.openclaw/memory/main.sqlite",
+    "provider": "local",
+    "model": "hf:ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/embeddinggemma-300m-qat-Q8_0.gguf",
+    "requestedProvider": "local",
+    "sources": [
+      "memory"
+    ],
+    "extraPaths": [],
+    "sourceCounts": [
+      {
+        "source": "memory",
+        "files": 26,
+        "chunks": 170
+      }
+    ],
+    "cache": {
+      "enabled": true,
+      "entries": 626
+    },
+    "fts": {
+      "enabled": true,
+      "available": true
+    },
+    "vector": {
+      "enabled": true,
+      "available": true,
+      "extensionPath": "/opt/homebrew/lib/node_modules/openclaw/node_modules/sqlite-vec-darwin-arm64/vec0.dylib",
+      "dims": 768
+    },
+    "batch": {
+      "enabled": false,
+      "failures": 0,
+      "limit": 2,
+      "wait": true,
+      "concurrency": 2,
+      "pollIntervalMs": 2000,
+      "timeoutMs": 3600000
+    },
+    "custom": {
+      "searchMode": "hybrid"
+    }
+  },
+  "memoryPlugin": {
+    "enabled": true,
+    "slot": "memory-core"
+  },
+  "gateway": {
+    "mode": "local",
+    "url": "ws://127.0.0.1:18789",
+    "urlSource": "local loopback",
+    "misconfigured": false,
+    "reachable": true,
+    "connectLatencyMs": 12,
+    "self": {
+      "host": "Gustavs-Mac-mini.local",
+      "ip": "10.147.1.117",
+      "version": "2026.2.22-2",
+      "platform": "macos 26.3"
+    },
+    "error": null
+  },
+  "gatewayService": {
+    "label": "LaunchAgent",
+    "installed": true,
+    "loadedText": "loaded",
+    "runtimeShort": "running (pid 91781, state active)"
+  },
+  "nodeService": {
+    "label": "LaunchAgent",
+    "installed": false,
+    "loadedText": "not loaded",
+    "runtimeShort": "unknown"
+  },
+  "agents": {
+    "defaultId": "main",
+    "agents": [
+      {
+        "id": "main",
+        "workspaceDir": "/Users/gustav/.openclaw/workspace-main",
+        "bootstrapPending": true,
+        "sessionsPath": "/Users/gustav/.openclaw/agents/main/sessions/sessions.json",
+        "sessionsCount": 31,
+        "lastUpdatedAt": 1771923639069,
+        "lastActiveAgeMs": 150177
+      },
+      {
+        "id": "henry",
+        "workspaceDir": "/Users/gustav/.openclaw/workspace-henry",
+        "bootstrapPending": false,
+        "sessionsPath": "/Users/gustav/.openclaw/agents/henry/sessions/sessions.json",
+        "sessionsCount": 21,
+        "lastUpdatedAt": 1771922170351,
+        "lastActiveAgeMs": 1618895
+      },
+      {
+        "id": "lobsterprime",
+        "workspaceDir": "/Users/gustav/.openclaw/workspace-lobsterprime",
+        "bootstrapPending": false,
+        "sessionsPath": "/Users/gustav/.openclaw/agents/lobsterprime/sessions/sessions.json",
+        "sessionsCount": 7,
+        "lastUpdatedAt": 1771886563525,
+        "lastActiveAgeMs": 37225721
+      },
+      {
+        "id": "paylobster",
+        "workspaceDir": "/Users/gustav/.openclaw/workspace-paylobster",
+        "bootstrapPending": false,
+        "sessionsPath": "/Users/gustav/.openclaw/agents/paylobster/sessions/sessions.json",
+        "sessionsCount": 11,
+        "lastUpdatedAt": 1771905600047,
+        "lastActiveAgeMs": 18189199
+      }
+    ],
+    "totalSessions": 70,
+    "bootstrapPendingCount": 1
+  },
+  "securityAudit": {
+    "ts": 1771923789564,
+    "summary": {
+      "critical": 1,
+      "warn": 2,
+      "info": 1
+    },
+    "findings": [
+      {
+        "checkId": "summary.attack_surface",
+        "severity": "info",
+        "title": "Attack surface summary",
+        "detail": "groups: open=0, allowlist=1\ntools.elevated: enabled\nhooks.webhooks: disabled\nhooks.internal: disabled\nbrowser control: enabled"
+      },
+      {
+        "checkId": "gateway.trusted_proxies_missing",
+        "severity": "warn",
+        "title": "Reverse proxy headers are not trusted",
+        "detail": "gateway.bind is loopback and gateway.trustedProxies is empty. If you expose the Control UI through a reverse proxy, configure trusted proxies so local-client checks cannot be spoofed.",
+        "remediation": "Set gateway.trustedProxies to your proxy IPs or keep the Control UI local-only."
+      },
+      {
+        "checkId": "models.weak_tier",
+        "severity": "warn",
+        "title": "Some configured models are below recommended tiers",
+        "detail": "Smaller/older models are generally more susceptible to prompt injection and tool misuse.\n- openai/gpt-4o (Below GPT-5 family) @ agents.defaults.model.fallbacks\n- openai/gpt-4o (Below GPT-5 family) @ agents.list.main.model.fallbacks\n- openai/gpt-4o (Below GPT-5 family) @ agents.list.paylobster.model.fallbacks\n- openai/gpt-4o (Below GPT-5 family) @ agents.list.lobsterprime.model.fallbacks\n- openai/gpt-4o (Below GPT-5 family) @ agents.list.henry.model.fallbacks",
+        "remediation": "Use the latest, top-tier model for any bot with tools or untrusted inboxes. Avoid Haiku tiers; prefer GPT-5+ and Claude 4.5+."
+      },
+      {
+        "checkId": "models.small_params",
+        "severity": "critical",
+        "title": "Small models require sandboxing and web tools disabled",
+        "detail": "Small models (<=300B params) detected:\n- local/llama3.1:8b (8B) @ agents.defaults.model.fallbacks (unsafe; sandbox=off; web=[web_search, web_fetch, browser])\n- local/llama3.1:8b (8B) @ agents.list.main.model.fallbacks (unsafe; sandbox=off; web=[web_search, web_fetch, browser])\n- local/llama3.1:8b (8B) @ agents.list.paylobster.model.fallbacks (unsafe; sandbox=off; web=[web_search, web_fetch, browser])\n- local/llama3.1:8b (8B) @ agents.list.lobsterprime.model.fallbacks (unsafe; sandbox=off; web=[web_search, web_fetch, browser])\n- local/llama3.1:8b (8B) @ agents.list.henry.model.fallbacks (unsafe; sandbox=off; web=[web_search, web_fetch, browser])\nUncontrolled input tools allowed: web_search, web_fetch, browser.\nSmall models are not recommended for untrusted inputs.",
+        "remediation": "If you must use small models, enable sandboxing for all sessions (agents.defaults.sandbox.mode=\"all\") and disable web_search/web_fetch/browser (tools.deny=[\"group:web\",\"browser\"])."
+      }
+    ]
+  }
+}

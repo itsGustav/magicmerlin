@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+  "gateway",
+  "compat",
+  "tools",
+  "sentinel",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.76"
+license = "Apache-2.0"
+authors = ["MagicMerlin contributors"]
+repository = "(private)"
+
+[workspace.dependencies]
+# Intentionally minimal for scaffolding; add deps only when a milestone requires it.
