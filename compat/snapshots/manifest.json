@@ -1,0 +1,12 @@
+{
+  "capturedAt": "2026-02-24T04:00:00-05:00",
+  "openclawVersion": "(see 2026-02-24_openclaw_version.txt)",
+  "files": {
+    "openclawHelp": "2026-02-24_openclaw_help.txt",
+    "openclawCronHelp": "2026-02-24_openclaw_cron_help.txt",
+    "openclawStatusJson": "2026-02-24_openclaw_status.json",
+    "openclawStatusHeader": "2026-02-24_openclaw_status.header.txt",
+    "openclawVersionTxt": "2026-02-24_openclaw_version.txt",
+    "runtimeToolSurfaceMd": "2026-02-24_runtime_tools_surface.md"
+  }
+}

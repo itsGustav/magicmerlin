@@ -6,4 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-# Add serde/serde_json once we start parsing OpenClaw status/snapshots.
+anyhow = "1"
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
