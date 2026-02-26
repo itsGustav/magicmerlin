@@ -10,4 +10,3 @@ pub mod snapshots;
 ///
 /// Bump only when the compatibility contract changes materially.
 pub const COMPAT_VERSION: &str = "v0.4";
-

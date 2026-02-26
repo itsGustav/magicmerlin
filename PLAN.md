@@ -99,6 +99,53 @@ Acceptance:
 
 ---
 
+## v0.5 — First “real” wedge: scheduler + cron + Discord webhook
+
+Goal: move from snapshot-only to *operational utility* without breaking compat.
+
+Deliverables:
+- SQLite-backed cron job store (`magicmerlin.db` by default; override `MAGICMERLIN_DB_PATH`).
+- CLI commands: `status`, `cron list/add/remove/run`.
+- Daemon mode: `--serve <port> --daemon` runs HTTP API + scheduler loop.
+- HTTP endpoints: `GET /cron`, `POST /cron/run/:id`.
+- Discord outbound: `discord_webhook` job kind posts to a Discord webhook URL.
+
+### Runbook (copy/paste)
+
+Build + run compat fingerprint:
+```bash
+cargo run -p magicmerlin-gateway -- --print-compat --json
+```
+
+List jobs:
+```bash
+cargo run -p magicmerlin-gateway -- cron list --json
+```
+
+Add a Discord webhook job (every 5 seconds):
+```bash
+cargo run -p magicmerlin-gateway -- cron add \
+  --name "hello-discord" \
+  --schedule "*/5 * * * * *" \
+  --kind discord_webhook \
+  --payload '{"webhook_url":"https://discord.com/api/webhooks/XXX/YYY","content":"hello from MagicMerlin"}'
+```
+
+Run a job immediately:
+```bash
+cargo run -p magicmerlin-gateway -- cron run 1
+```
+
+Start daemon (HTTP + scheduler):
+```bash
+cargo run -p magicmerlin-gateway -- --serve 8099 --daemon
+# then:
+curl -s http://127.0.0.1:8099/cron | jq
+curl -s -X POST http://127.0.0.1:8099/cron/run/1 | jq
+```
+
+---
+
 ## v1 — Parity substrate complete
 
 Goal: MagicMerlin has a stable "OpenClaw-shaped" surface to build on.
