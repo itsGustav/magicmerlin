@@ -92,6 +92,10 @@ impl Scheduler {
         remove_job(&self.db_path, id).await
     }
 
+    pub async fn clear_jobs(&self) -> Result<usize> {
+        clear_jobs(&self.db_path).await
+    }
+
     pub async fn pause_job(&self, id: i64) -> Result<()> {
         set_job_enabled(&self.db_path, id, false).await
     }
@@ -144,6 +148,7 @@ impl Scheduler {
         // Execute.
         let run_res = match job.kind.as_str() {
             "discord_webhook" => self.run_discord_webhook(job).await,
+            "discord_bot" => self.run_discord_bot(job).await,
             "http_get" => self.run_http_get(job).await,
             other => Err(anyhow!("unsupported job kind: {other}")),
         };
@@ -249,6 +254,48 @@ impl Scheduler {
             let status = res.status();
             let body = res.text().await.unwrap_or_default();
             return Err(anyhow!("discord webhook failed: {status} {body}"));
+        }
+
+        Ok(())
+    }
+
+    async fn run_discord_bot(&self, job: &Job) -> Result<()> {
+        let mut payload = job.payload.clone();
+        let obj = payload
+            .as_object_mut()
+            .ok_or_else(|| anyhow!("discord_bot payload must be a JSON object"))?;
+
+        let channel_id = obj
+            .remove("channel_id")
+            .and_then(|v| v.as_str().map(|s| s.to_string()))
+            .ok_or_else(|| anyhow!("discord_bot payload.channel_id is required"))?;
+
+        let bot_token = obj
+            .remove("bot_token")
+            .and_then(|v| v.as_str().map(|s| s.to_string()))
+            .or_else(|| std::env::var("MAGICMERLIN_DISCORD_BOT_TOKEN").ok())
+            .ok_or_else(|| anyhow!("discord bot token required (payload.bot_token or MAGICMERLIN_DISCORD_BOT_TOKEN)"))?;
+
+        if obj.is_empty() {
+            return Err(anyhow!(
+                "discord_bot payload must include message fields (e.g. content)"
+            ));
+        }
+
+        let url = format!("https://discord.com/api/v10/channels/{channel_id}/messages");
+        let res = self
+            .http
+            .post(url)
+            .header("Authorization", format!("Bot {bot_token}"))
+            .json(&payload)
+            .send()
+            .await
+            .context("POST discord bot message")?;
+
+        if !res.status().is_success() {
+            let status = res.status();
+            let body = res.text().await.unwrap_or_default();
+            return Err(anyhow!("discord bot send failed: {status} {body}"));
         }
 
         Ok(())
@@ -560,6 +607,16 @@ async fn remove_job(db_path: &Path, id: i64) -> Result<()> {
         let conn = rusqlite::Connection::open(path)?;
         conn.execute("DELETE FROM jobs WHERE id = ?1", [id])?;
         Ok(())
+    })
+    .await?
+}
+
+async fn clear_jobs(db_path: &Path) -> Result<usize> {
+    let path = db_path.to_owned();
+    tokio::task::spawn_blocking(move || -> Result<usize> {
+        let conn = rusqlite::Connection::open(path)?;
+        let n = conn.execute("DELETE FROM jobs", [])?;
+        Ok(n)
     })
     .await?
 }

@@ -1,10 +1,11 @@
 use std::{
+    fs,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -91,7 +92,7 @@ enum CronCommand {
         #[arg(long)]
         schedule: String,
 
-        /// Kind: http_get | discord_webhook
+        /// Kind: http_get | discord_webhook | discord_bot
         #[arg(long)]
         kind: String,
 
@@ -128,6 +129,22 @@ enum CronCommand {
         #[arg(long)]
         json: bool,
     },
+
+    /// Export jobs to a JSON file
+    Export {
+        #[arg(long)]
+        file: PathBuf,
+    },
+
+    /// Import jobs from a JSON file
+    Import {
+        #[arg(long)]
+        file: PathBuf,
+
+        /// Remove existing jobs before importing
+        #[arg(long)]
+        replace: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -136,6 +153,25 @@ struct CompatInfo {
     compat_version: &'static str,
     fingerprint: String,
     snapshot_hashes: std::collections::BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PortableJob {
+    name: String,
+    schedule: String,
+    kind: String,
+    payload: serde_json::Value,
+    enabled: Option<bool>,
+    max_attempts: Option<i64>,
+    backoff_seconds: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PortableJobsFile {
+    version: String,
+    jobs: Vec<PortableJob>,
 }
 
 #[tokio::main]
@@ -272,6 +308,70 @@ async fn main() -> Result<()> {
                                 );
                             }
                         }
+                    }
+                    CronCommand::Export { file } => {
+                        let jobs = scheduler.list_jobs().await?;
+                        let portable = PortableJobsFile {
+                            version: "v1".to_string(),
+                            jobs: jobs
+                                .into_iter()
+                                .map(|j| PortableJob {
+                                    name: j.name,
+                                    schedule: j.schedule,
+                                    kind: j.kind,
+                                    payload: j.payload,
+                                    enabled: Some(j.enabled),
+                                    max_attempts: Some(j.max_attempts),
+                                    backoff_seconds: Some(j.backoff_seconds),
+                                })
+                                .collect(),
+                        };
+
+                        let body = serde_json::to_string_pretty(&portable)?;
+                        fs::write(&file, body)
+                            .with_context(|| format!("write export file: {}", file.display()))?;
+                        println!("ok");
+                    }
+                    CronCommand::Import { file, replace } => {
+                        let raw = fs::read_to_string(&file)
+                            .with_context(|| format!("read import file: {}", file.display()))?;
+
+                        let parsed: PortableJobsFile = match serde_json::from_str(&raw) {
+                            Ok(v) => v,
+                            Err(_) => {
+                                // Back-compat: allow plain array of jobs.
+                                let jobs: Vec<PortableJob> = serde_json::from_str(&raw)
+                                    .with_context(|| "invalid import JSON format")?;
+                                PortableJobsFile {
+                                    version: "v1".to_string(),
+                                    jobs,
+                                }
+                            }
+                        };
+
+                        if replace {
+                            let _ = scheduler.clear_jobs().await?;
+                        }
+
+                        let mut imported = 0usize;
+                        for j in parsed.jobs {
+                            let id = scheduler
+                                .add_job(
+                                    j.name,
+                                    j.schedule,
+                                    j.kind,
+                                    j.payload,
+                                    j.max_attempts,
+                                    j.backoff_seconds,
+                                )
+                                .await?;
+                            if matches!(j.enabled, Some(false)) {
+                                scheduler.pause_job(id).await?;
+                            }
+                            imported += 1;
+                        }
+
+                        println!("{imported}");
                     }
                 }
                 return Ok(());

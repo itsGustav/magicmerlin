@@ -180,6 +180,33 @@ curl -H "x-magicmerlin-api-key: <random>" http://127.0.0.1:8099/cron/dead-letter
 
 ---
 
+## v0.7 — Operability + portability
+
+Goal: make scheduler workflows easier to move between environments and support richer Discord delivery.
+
+Deliverables:
+- `cron export --file <path>` and `cron import --file <path> [--replace]`.
+- New job kind: `discord_bot` (Discord Bot API send-message mode).
+- CLI and daemon options for deployment flexibility: `--bind`, `--db-path`.
+
+### Import / export
+```bash
+cargo run -p magicmerlin-gateway -- cron export --file ./jobs.json
+cargo run -p magicmerlin-gateway -- cron import --file ./jobs.json --replace
+```
+
+### Discord bot job
+Payload requires `channel_id` and either `bot_token` or env var `MAGICMERLIN_DISCORD_BOT_TOKEN`.
+```bash
+cargo run -p magicmerlin-gateway -- cron add \
+  --name "bot-msg" \
+  --schedule "0 */5 * * * *" \
+  --kind discord_bot \
+  --payload '{"channel_id":"1234567890","content":"hello from MagicMerlin"}'
+```
+
+---
+
 ## v1 — Parity substrate complete
 
 Goal: MagicMerlin has a stable "OpenClaw-shaped" surface to build on.
