@@ -3,6 +3,8 @@ use std::{net::SocketAddr, sync::Arc};
 use anyhow::Result;
 use axum::{
     extract::{Path, State},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
@@ -14,7 +16,7 @@ use magicmerlin_compat::{
 use serde::Serialize;
 
 mod scheduler;
-use scheduler::{default_db_path, Scheduler};
+use scheduler::{default_db_path, DeadLetter, Scheduler};
 
 #[derive(Parser, Debug)]
 #[command(name = "magicmerlin-gateway")]
@@ -82,6 +84,14 @@ enum CronCommand {
         /// JSON payload string
         #[arg(long)]
         payload: String,
+
+        /// Maximum retry attempts before dead-lettering the job
+        #[arg(long)]
+        max_attempts: Option<i64>,
+
+        /// Base backoff seconds (exponential)
+        #[arg(long)]
+        backoff_seconds: Option<i64>,
     },
 
     /// Remove a job by id
@@ -89,6 +99,21 @@ enum CronCommand {
 
     /// Trigger a job once, immediately
     Run { id: i64 },
+
+    /// Pause a job (disable)
+    Pause { id: i64 },
+
+    /// Resume a job (enable)
+    Resume { id: i64 },
+
+    /// List dead-lettered job failures
+    DeadLetters {
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -164,8 +189,15 @@ async fn main() -> Result<()> {
                         } else {
                             for j in jobs {
                                 println!(
-                                    "{}\t{}\t{}\t{}\t{}\t{:?}",
-                                    j.id, j.name, j.kind, j.enabled, j.schedule, j.next_run_at
+                                    "{}\t{}\t{}\t{}\t{}\t{:?}\t{}\t{}",
+                                    j.id,
+                                    j.name,
+                                    j.kind,
+                                    j.enabled,
+                                    j.schedule,
+                                    j.next_run_at,
+                                    j.attempts,
+                                    j.last_status.clone().unwrap_or_default()
                                 );
                             }
                         }
@@ -175,10 +207,19 @@ async fn main() -> Result<()> {
                         schedule,
                         kind,
                         payload,
+                        max_attempts,
+                        backoff_seconds,
                     } => {
                         let payload_json: serde_json::Value = serde_json::from_str(&payload)?;
                         let id = scheduler
-                            .add_job(name, schedule, kind, payload_json)
+                            .add_job(
+                                name,
+                                schedule,
+                                kind,
+                                payload_json,
+                                max_attempts,
+                                backoff_seconds,
+                            )
                             .await?;
                         println!("{id}");
                     }
@@ -189,6 +230,32 @@ async fn main() -> Result<()> {
                     CronCommand::Run { id } => {
                         scheduler.run_job_now(id).await?;
                         println!("ok");
+                    }
+                    CronCommand::Pause { id } => {
+                        scheduler.pause_job(id).await?;
+                        println!("ok");
+                    }
+                    CronCommand::Resume { id } => {
+                        scheduler.resume_job(id).await?;
+                        println!("ok");
+                    }
+                    CronCommand::DeadLetters { limit, json } => {
+                        let rows = scheduler.list_dead_letters(limit).await?;
+                        if json {
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(
+                                    &serde_json::json!({"deadLetters": rows})
+                                )?
+                            );
+                        } else {
+                            for r in rows {
+                                println!(
+                                    "{}\tjob={}\tfailed_at={}\t{}",
+                                    r.id, r.job_id, r.failed_at, r.error
+                                );
+                            }
+                        }
                     }
                 }
                 return Ok(());
@@ -315,28 +382,126 @@ fn build_router(state: AppState) -> Router {
                 move || async move { Json(state.info.clone()) }
             }),
         )
-        .route(
-            "/cron",
-            get({
-                let state = state.clone();
-                move || async move {
-                    match state.scheduler.list_jobs().await {
-                        Ok(jobs) => Json(serde_json::json!({ "jobs": jobs })),
-                        Err(e) => Json(serde_json::json!({ "error": format!("{e:#}") })),
-                    }
-                }
-            }),
-        )
-        .route("/cron/run/:id", post(run_cron_job))
+        // Cron API (optionally protected by MAGICMERLIN_API_KEY)
+        .route("/cron", get(http_cron_list))
+        .route("/cron/run/:id", post(http_cron_run))
+        .route("/cron/pause/:id", post(http_cron_pause))
+        .route("/cron/resume/:id", post(http_cron_resume))
+        .route("/cron/dead-letters", get(http_dead_letters))
         .with_state(state)
 }
 
-async fn run_cron_job(
+fn is_authorized(headers: &HeaderMap) -> bool {
+    let required = std::env::var("MAGICMERLIN_API_KEY").ok();
+    let Some(required) = required.filter(|s| !s.trim().is_empty()) else {
+        return true;
+    };
+
+    let provided = headers
+        .get("x-magicmerlin-api-key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    provided == required
+}
+
+async fn http_cron_list(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match state.scheduler.list_jobs().await {
+        Ok(jobs) => (StatusCode::OK, Json(serde_json::json!({ "jobs": jobs }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_cron_run(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> Json<serde_json::Value> {
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"ok": false, "error":"unauthorized"})),
+        );
+    }
+
     match state.scheduler.run_job_now(id).await {
-        Ok(()) => Json(serde_json::json!({ "ok": true })),
-        Err(e) => Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+        Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_cron_pause(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"ok": false, "error":"unauthorized"})),
+        );
+    }
+
+    match state.scheduler.pause_job(id).await {
+        Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_cron_resume(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"ok": false, "error":"unauthorized"})),
+        );
+    }
+
+    match state.scheduler.resume_job(id).await {
+        Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_dead_letters(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let rows: Result<Vec<DeadLetter>, _> = state.scheduler.list_dead_letters(100).await;
+    match rows {
+        Ok(dead_letters) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "deadLetters": dead_letters })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
     }
 }

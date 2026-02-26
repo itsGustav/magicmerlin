@@ -146,6 +146,35 @@ curl -s -X POST http://127.0.0.1:8099/cron/run/1 | jq
 
 ---
 
+## v0.6 — Production-grade scheduler wedge
+
+Goal: make the scheduler/cron subsystem *reliable* and safe to expose remotely.
+
+Deliverables:
+- Retry policy with exponential backoff and max attempts (dead-letter on exhaustion).
+- Pause/resume jobs.
+- Optional API key protection for cron HTTP endpoints.
+
+### API protection
+Set an API key to protect `/cron*` routes:
+```bash
+export MAGICMERLIN_API_KEY="<random>"
+```
+Then call with:
+```bash
+curl -H "x-magicmerlin-api-key: <random>" http://127.0.0.1:8099/cron
+```
+
+### Dead letters
+List recent dead-letter failures:
+```bash
+cargo run -p magicmerlin-gateway -- cron dead-letters --json
+# or over HTTP:
+curl -H "x-magicmerlin-api-key: <random>" http://127.0.0.1:8099/cron/dead-letters | jq
+```
+
+---
+
 ## v1 — Parity substrate complete
 
 Goal: MagicMerlin has a stable "OpenClaw-shaped" surface to build on.
