@@ -138,7 +138,12 @@ cargo run -p magicmerlin-gateway -- cron run 1
 
 Start daemon (HTTP + scheduler):
 ```bash
+# localhost only:
 cargo run -p magicmerlin-gateway -- --serve 8099 --daemon
+
+# or LAN-accessible:
+cargo run -p magicmerlin-gateway -- --serve 8099 --bind 0.0.0.0 --daemon
+
 # then:
 curl -s http://127.0.0.1:8099/cron | jq
 curl -s -X POST http://127.0.0.1:8099/cron/run/1 | jq

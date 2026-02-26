@@ -1,4 +1,8 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+    sync::Arc,
+};
 
 use anyhow::Result;
 use axum::{
@@ -31,6 +35,16 @@ struct Args {
     /// Example: --serve 8080
     #[arg(long)]
     serve: Option<u16>,
+
+    /// Address to bind the HTTP server to.
+    ///
+    /// Use 0.0.0.0 for LAN access.
+    #[arg(long, default_value = "127.0.0.1")]
+    bind: IpAddr,
+
+    /// SQLite DB path (defaults to ./magicmerlin.db, or MAGICMERLIN_DB_PATH env)
+    #[arg(long)]
+    db_path: Option<PathBuf>,
 
     /// Start the scheduler loop alongside the HTTP server (requires --serve).
     #[arg(long)]
@@ -150,9 +164,11 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    let db_path = args.db_path.clone().unwrap_or_else(default_db_path);
+
     // CLI subcommands.
     if let Some(cmd) = args.command {
-        let scheduler = Arc::new(Scheduler::new(default_db_path()).await?);
+        let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
 
         match cmd {
             Command::Status { json } => {
@@ -266,9 +282,9 @@ async fn main() -> Result<()> {
     // Back-compat: --serve
     if let Some(port) = args.serve {
         if args.daemon {
-            serve_http_with_daemon(port, providers, info).await?;
+            serve_http_with_daemon(args.bind, port, providers, info, db_path).await?;
         } else {
-            serve_http(port, providers, info).await?;
+            serve_http(args.bind, port, providers, info, db_path).await?;
         }
         return Ok(());
     }
@@ -287,8 +303,14 @@ struct AppState {
     scheduler: Arc<Scheduler>,
 }
 
-async fn serve_http(port: u16, providers: SnapshotBackedProviders, info: CompatInfo) -> Result<()> {
-    let scheduler = Arc::new(Scheduler::new(default_db_path()).await?);
+async fn serve_http(
+    bind: IpAddr,
+    port: u16,
+    providers: SnapshotBackedProviders,
+    info: CompatInfo,
+    db_path: PathBuf,
+) -> Result<()> {
+    let scheduler = Arc::new(Scheduler::new(db_path).await?);
     let state = AppState {
         providers,
         info,
@@ -297,7 +319,7 @@ async fn serve_http(port: u16, providers: SnapshotBackedProviders, info: CompatI
 
     let app = build_router(state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway listening on http://{addr}");
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -305,11 +327,13 @@ async fn serve_http(port: u16, providers: SnapshotBackedProviders, info: CompatI
 }
 
 async fn serve_http_with_daemon(
+    bind: IpAddr,
     port: u16,
     providers: SnapshotBackedProviders,
     info: CompatInfo,
+    db_path: PathBuf,
 ) -> Result<()> {
-    let scheduler = Arc::new(Scheduler::new(default_db_path()).await?);
+    let scheduler = Arc::new(Scheduler::new(db_path).await?);
     let daemon_handle = scheduler.clone().spawn_daemon();
 
     let state = AppState {
@@ -320,7 +344,7 @@ async fn serve_http_with_daemon(
 
     let app = build_router(state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway (daemon) listening on http://{addr}");
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
