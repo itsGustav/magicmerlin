@@ -14,7 +14,9 @@ fn can_load_snapshot_bundle_and_hash() {
 
     // Snapshot headers should be present (capture metadata).
     assert!(providers.openclaw_help_text().starts_with("# Snapshot:"));
-    assert!(providers.openclaw_cron_help_text().starts_with("# Snapshot:"));
+    assert!(providers
+        .openclaw_cron_help_text()
+        .starts_with("# Snapshot:"));
 
     // If the manifest provides expected hashes/fingerprint, enforce them.
     let manifest = &providers.snapshots().manifest;
@@ -30,4 +32,3 @@ fn can_load_snapshot_bundle_and_hash() {
         }
     }
 }
-

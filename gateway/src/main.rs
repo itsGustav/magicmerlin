@@ -1,5 +1,6 @@
 use std::{
     fs,
+    io::Read as _,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
@@ -88,11 +89,11 @@ enum CronCommand {
         #[arg(long)]
         name: String,
 
-        /// Cron expression (UTC). Example: "*/5 * * * * *" (every 5 seconds)
+        /// Cron expression (UTC), interval (every:<s>@<anchor>), or tz-aware (cron:<expr>@<tz>)
         #[arg(long)]
         schedule: String,
 
-        /// Kind: http_get | discord_webhook | discord_bot
+        /// Kind: http_get | discord_webhook | discord_bot | agent_turn
         #[arg(long)]
         kind: String,
 
@@ -109,8 +110,34 @@ enum CronCommand {
         backoff_seconds: Option<i64>,
     },
 
+    /// Edit a job (update fields by id)
+    Edit {
+        id: i64,
+
+        #[arg(long)]
+        name: Option<String>,
+
+        #[arg(long)]
+        schedule: Option<String>,
+
+        #[arg(long)]
+        kind: Option<String>,
+
+        #[arg(long)]
+        payload: Option<String>,
+
+        #[arg(long)]
+        max_attempts: Option<i64>,
+
+        #[arg(long)]
+        backoff_seconds: Option<i64>,
+    },
+
     /// Remove a job by id
     Remove { id: i64 },
+
+    /// Remove a job by id (alias for remove)
+    Rm { id: i64 },
 
     /// Trigger a job once, immediately
     Run { id: i64 },
@@ -118,8 +145,33 @@ enum CronCommand {
     /// Pause a job (disable)
     Pause { id: i64 },
 
+    /// Disable a job (alias for pause)
+    Disable { id: i64 },
+
     /// Resume a job (enable)
     Resume { id: i64 },
+
+    /// Enable a job (alias for resume)
+    Enable { id: i64 },
+
+    /// Show recent run history
+    Runs {
+        /// Filter by job ID
+        #[arg(long)]
+        job_id: Option<i64>,
+
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Print scheduler state (job count, next run)
+    Status {
+        #[arg(long)]
+        json: bool,
+    },
 
     /// List dead-lettered job failures
     DeadLetters {
@@ -144,6 +196,18 @@ enum CronCommand {
         /// Remove existing jobs before importing
         #[arg(long)]
         replace: bool,
+    },
+
+    /// Import OpenClaw cron jobs (from `openclaw cron list --json`)
+    #[command(name = "import-openclaw")]
+    ImportOpenclaw {
+        /// Path to JSON file
+        #[arg(long)]
+        file: Option<PathBuf>,
+
+        /// Read from stdin
+        #[arg(long)]
+        stdin: bool,
     },
 }
 
@@ -172,6 +236,136 @@ struct PortableJob {
 struct PortableJobsFile {
     version: String,
     jobs: Vec<PortableJob>,
+}
+
+// ---------------------------------------------------------------------------
+// OpenClaw import types
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenClawCronList {
+    jobs: Vec<OpenClawJob>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenClawJob {
+    name: Option<String>,
+    id: Option<String>,
+    schedule: OpenClawSchedule,
+    payload: OpenClawPayload,
+    enabled: Option<bool>,
+    #[serde(default)]
+    max_attempts: Option<i64>,
+    #[serde(default)]
+    backoff_seconds: Option<i64>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenClawSchedule {
+    kind: String,
+    // For kind=cron — field is "expr" in OpenClaw JSON
+    #[serde(alias = "expression")]
+    expr: Option<String>,
+    // For kind=cron — field is "tz" in OpenClaw JSON
+    #[serde(alias = "timezone")]
+    tz: Option<String>,
+    // For kind=every
+    every_ms: Option<u64>,
+    anchor_ms: Option<u64>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenClawPayload {
+    kind: String,
+    message: Option<String>,
+    timeout_seconds: Option<u64>,
+    model: Option<String>,
+    thinking: Option<serde_json::Value>,
+}
+
+fn convert_openclaw_schedule(sched: &OpenClawSchedule) -> Result<String> {
+    match sched.kind.as_str() {
+        "every" => {
+            let every_ms = sched
+                .every_ms
+                .ok_or_else(|| anyhow::anyhow!("every schedule missing everyMs"))?;
+            let seconds = every_ms / 1000;
+            if seconds == 0 {
+                return Err(anyhow::anyhow!("everyMs must be >= 1000"));
+            }
+            match sched.anchor_ms {
+                Some(anchor_ms) => {
+                    let anchor_ts = (anchor_ms / 1000) as i64;
+                    Ok(format!("every:{seconds}@{anchor_ts}"))
+                }
+                None => Ok(format!("every:{seconds}")),
+            }
+        }
+        "cron" => {
+            let expr = sched
+                .expr
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("cron schedule missing expr"))?;
+            match &sched.tz {
+                Some(tz) if !tz.is_empty() => Ok(format!("cron:{expr}@{tz}")),
+                _ => Ok(expr.to_string()),
+            }
+        }
+        other => Err(anyhow::anyhow!("unknown OpenClaw schedule kind: {other}")),
+    }
+}
+
+fn convert_openclaw_job(oc: OpenClawJob, index: usize) -> Result<PortableJob> {
+    let schedule = convert_openclaw_schedule(&oc.schedule)?;
+
+    let (kind, payload) = match oc.payload.kind.as_str() {
+        "agentTurn" => {
+            let mut map = serde_json::Map::new();
+            if let Some(msg) = oc.payload.message {
+                map.insert("message".to_string(), serde_json::Value::String(msg));
+            }
+            if let Some(ts) = oc.payload.timeout_seconds {
+                map.insert(
+                    "timeoutSeconds".to_string(),
+                    serde_json::Value::Number(ts.into()),
+                );
+            }
+            if let Some(model) = oc.payload.model {
+                map.insert("model".to_string(), serde_json::Value::String(model));
+            }
+            if let Some(thinking) = oc.payload.thinking {
+                map.insert("thinking".to_string(), thinking);
+            }
+            ("agent_turn".to_string(), serde_json::Value::Object(map))
+        }
+        other => {
+            // Pass through as-is — unknown payload kinds become the kind field.
+            let payload = serde_json::json!({
+                "originalKind": other,
+                "message": oc.payload.message,
+            });
+            (other.to_string(), payload)
+        }
+    };
+
+    let name = oc
+        .name
+        .or(oc.id)
+        .unwrap_or_else(|| format!("openclaw-import-{index}"));
+
+    Ok(PortableJob {
+        name,
+        schedule,
+        kind,
+        payload,
+        enabled: oc.enabled,
+        max_attempts: oc.max_attempts,
+        backoff_seconds: oc.backoff_seconds,
+    })
 }
 
 #[tokio::main]
@@ -275,7 +469,33 @@ async fn main() -> Result<()> {
                             .await?;
                         println!("{id}");
                     }
-                    CronCommand::Remove { id } => {
+                    CronCommand::Edit {
+                        id,
+                        name,
+                        schedule,
+                        kind,
+                        payload,
+                        max_attempts,
+                        backoff_seconds,
+                    } => {
+                        let payload_json = match payload {
+                            Some(p) => Some(serde_json::from_str(&p)?),
+                            None => None,
+                        };
+                        scheduler
+                            .edit_job(
+                                id,
+                                name,
+                                schedule,
+                                kind,
+                                payload_json,
+                                max_attempts,
+                                backoff_seconds,
+                            )
+                            .await?;
+                        println!("ok");
+                    }
+                    CronCommand::Remove { id } | CronCommand::Rm { id } => {
                         scheduler.remove_job(id).await?;
                         println!("ok");
                     }
@@ -283,13 +503,52 @@ async fn main() -> Result<()> {
                         scheduler.run_job_now(id).await?;
                         println!("ok");
                     }
-                    CronCommand::Pause { id } => {
+                    CronCommand::Pause { id } | CronCommand::Disable { id } => {
                         scheduler.pause_job(id).await?;
                         println!("ok");
                     }
-                    CronCommand::Resume { id } => {
+                    CronCommand::Resume { id } | CronCommand::Enable { id } => {
                         scheduler.resume_job(id).await?;
                         println!("ok");
+                    }
+                    CronCommand::Runs {
+                        job_id,
+                        limit,
+                        json,
+                    } => {
+                        let rows = scheduler.list_runs(job_id, limit).await?;
+                        if json {
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(&serde_json::json!({"runs": rows}))?
+                            );
+                        } else {
+                            for r in rows {
+                                println!(
+                                    "{}\tjob={}\tstarted={}\tended={:?}\t{}\t{}",
+                                    r.id,
+                                    r.job_id,
+                                    r.started_at,
+                                    r.ended_at,
+                                    r.status,
+                                    r.error.unwrap_or_default()
+                                );
+                            }
+                        }
+                    }
+                    CronCommand::Status { json } => {
+                        let state = scheduler.state().await?;
+                        if json {
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(&serde_json::json!({
+                                    "scheduler": state,
+                                }))?
+                            );
+                        } else {
+                            println!("jobs={}", state.job_count);
+                            println!("nextRunAt={:?}", state.next_run_at);
+                        }
                     }
                     CronCommand::DeadLetters { limit, json } => {
                         let rows = scheduler.list_dead_letters(limit).await?;
@@ -372,6 +631,68 @@ async fn main() -> Result<()> {
                         }
 
                         println!("{imported}");
+                    }
+                    CronCommand::ImportOpenclaw { file, stdin } => {
+                        let raw = if stdin {
+                            let mut buf = String::new();
+                            std::io::stdin()
+                                .read_to_string(&mut buf)
+                                .context("read stdin")?;
+                            buf
+                        } else if let Some(path) = file {
+                            fs::read_to_string(&path)
+                                .with_context(|| format!("read file: {}", path.display()))?
+                        } else {
+                            anyhow::bail!("import-openclaw requires --file <path> or --stdin");
+                        };
+
+                        let oc_list: OpenClawCronList =
+                            serde_json::from_str(&raw).context("parse OpenClaw cron list JSON")?;
+
+                        let mut imported = 0usize;
+                        let mut errors = Vec::new();
+                        for (i, oc_job) in oc_list.jobs.into_iter().enumerate() {
+                            let job_name = oc_job
+                                .name
+                                .clone()
+                                .or_else(|| oc_job.id.clone())
+                                .unwrap_or_else(|| format!("job-{i}"));
+
+                            match convert_openclaw_job(oc_job, i) {
+                                Ok(portable) => {
+                                    let enabled = portable.enabled;
+                                    match scheduler
+                                        .add_job(
+                                            portable.name,
+                                            portable.schedule,
+                                            portable.kind,
+                                            portable.payload,
+                                            portable.max_attempts,
+                                            portable.backoff_seconds,
+                                        )
+                                        .await
+                                    {
+                                        Ok(id) => {
+                                            if matches!(enabled, Some(false)) {
+                                                let _ = scheduler.pause_job(id).await;
+                                            }
+                                            imported += 1;
+                                        }
+                                        Err(e) => {
+                                            errors.push(format!("{job_name}: {e:#}"));
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    errors.push(format!("{job_name}: {e:#}"));
+                                }
+                            }
+                        }
+
+                        println!("{imported}");
+                        for err in &errors {
+                            eprintln!("warning: {err}");
+                        }
                     }
                 }
                 return Ok(());

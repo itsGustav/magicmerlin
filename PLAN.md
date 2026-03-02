@@ -151,40 +151,69 @@ curl -s -X POST http://127.0.0.1:8099/cron/run/1 | jq
 
 ---
 
-## v0.6 — Production-grade scheduler wedge
+## v0.6 — Cron parity + OpenClaw import + agent_turn shell compat
 
-Goal: make the scheduler/cron subsystem *reliable* and safe to expose remotely.
+Goal: establish MagicMerlin as a credible OpenClaw cron fallback with CLI parity,
+OpenClaw job import, extended schedule parsing, run history, and a minimal
+agent-turn shell execution wedge.
 
 Deliverables:
-- Retry policy with exponential backoff and max attempts (dead-letter on exhaustion).
-- Pause/resume jobs.
-- Optional API key protection for cron HTTP endpoints.
+- **CLI parity shim:** OpenClaw-like cron verb aliases — `add`, `list`, `edit`,
+  `enable`/`disable`, `rm`, `run`, `runs`, `status`.
+  - `enable` → `resume`, `disable` → `pause`, `rm` → `remove`.
+  - `edit` patches a job: update name, schedule, kind, payload, maxAttempts, backoffSeconds.
+  - `status` prints scheduler state (jobCount, nextRunAt) with `--json`.
+  - `runs` shows recent run history from the new `runs` SQLite table.
+- **Schedule parsing extensions:**
+  - Plain cron (5-field auto-normalized to 6-field by prepending seconds=0).
+  - Interval: `every:<seconds>@<anchor_ts>` (anchor optional; defaults to now).
+  - Cron + timezone: `cron:<expr>@<IANA_tz>` via chrono-tz.
+- **Runs table:** SQLite `runs` table recording every job execution (started_at,
+  ended_at, status, error, metadata JSON). Backward-compatible schema migration.
+- **OpenClaw cron importer:** `cron import-openclaw --file <path>` or `--stdin`.
+  Parses `openclaw cron list --json` output and maps:
+  - `schedule.kind=every` → `every:<s>@<anchor>`
+  - `schedule.kind=cron` → `cron:<expr>@<tz>` (or plain if no tz)
+  - `payload.kind=agentTurn` → kind `agent_turn` with `{message, timeoutSeconds, model?, thinking?}`
+- **Agent-turn compat runner (Phase 2 wedge):** job kind `agent_turn`.
+  - Executes shell commands from `payload.message` only if prefixed with `Run:` or `Run `.
+  - Gated behind `MAGICMERLIN_ALLOW_SHELL=1`.
+  - Enforces `timeoutSeconds`, captures stdout/stderr (truncated to 8 KB each),
+    stores in `runs.metadata`.
+- Retry with exponential backoff + dead-letter queue (carried forward from v0.5).
+- Optional API key protection for cron HTTP endpoints (carried forward).
 
-### API protection
-Set an API key to protect `/cron*` routes:
-```bash
-export MAGICMERLIN_API_KEY="<random>"
-```
-Then call with:
-```bash
-curl -H "x-magicmerlin-api-key: <random>" http://127.0.0.1:8099/cron
-```
+### Runbook
 
-### Dead letters
-List recent dead-letter failures:
 ```bash
-cargo run -p magicmerlin-gateway -- cron dead-letters --json
-# or over HTTP:
-curl -H "x-magicmerlin-api-key: <random>" http://127.0.0.1:8099/cron/dead-letters | jq
+# Edit a job
+cargo run -p magicmerlin-gateway -- cron edit 1 --schedule "0 */10 * * * *" --name "renamed"
+
+# OpenClaw-like aliases
+cargo run -p magicmerlin-gateway -- cron enable 1
+cargo run -p magicmerlin-gateway -- cron disable 1
+cargo run -p magicmerlin-gateway -- cron rm 1
+
+# Scheduler status
+cargo run -p magicmerlin-gateway -- cron status --json
+
+# Run history
+cargo run -p magicmerlin-gateway -- cron runs --json
+cargo run -p magicmerlin-gateway -- cron runs --job-id 1 --limit 10
+
+# Import from OpenClaw
+openclaw cron list --json | cargo run -p magicmerlin-gateway -- cron import-openclaw --stdin
+cargo run -p magicmerlin-gateway -- cron import-openclaw --file ./oc-crons.json
+
+# Agent-turn shell jobs (requires env gate)
+MAGICMERLIN_ALLOW_SHELL=1 cargo run -p magicmerlin-gateway -- --serve 8099 --daemon
 ```
 
 ---
 
-## v0.7 — Operability + portability
+## v0.7 — Operability + portability (DONE — merged into v0.5/v0.6)
 
-Goal: make scheduler workflows easier to move between environments and support richer Discord delivery.
-
-Deliverables:
+Deliverables (all shipped earlier than planned):
 - `cron export --file <path>` and `cron import --file <path> [--replace]`.
 - New job kind: `discord_bot` (Discord Bot API send-message mode).
 - CLI and daemon options for deployment flexibility: `--bind`, `--db-path`.
