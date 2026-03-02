@@ -1,14 +1,14 @@
 {
-  "capturedAt": "2026-03-02T11:59:24-05:00",
+  "capturedAt": "2026-03-02T13:33:52-05:00",
   "openclawVersion": "2026.3.1",
-  "fingerprint": "350b8c6481f8c5ba4dfeca0b35ec917f89ee219d399aad01c60df13a4737107f",
+  "fingerprint": "680dd7f3e45e41d6c256d23179a0ac2256d8f164fed312aef53963705177d8cc",
   "snapshotHashes": {
-    "openclawHelp": "44e0a9cc26af51dd73ea7adb15ed1a3bdbe6ee490058e17738575d305906e735",
-    "openclawCronHelp": "cef5b44557290fb704e24db1684a531b119b4a5d84ff50c8c08b889f5c4cbfdb",
-    "openclawStatusJson": "47c3eba26cdb0ae8b727405f750711e53cba0c8c28598ecdb9fc6edb00d708e8",
-    "openclawStatusHeader": "600716b8e77a7e8397612df47d44cbb23d5e3d008d722d6a463cdb64e090a3ba",
-    "openclawVersionTxt": "2221636fdd5922091922e993f72461a21ca6ebbfb408416bc151aa37c8dae67b",
-    "runtimeToolSurfaceMd": "ab9576162dbcc8d634bbd9eb08cd0df23ade4a05449239674261dbb28ddd95ba"
+    "openclawHelp": "dc83d557e871f89c384eed39cff6f4324af48922d027a1304c55e0b39054efc9",
+    "openclawCronHelp": "3067a3f89ca5f5be228f6d95ba0c5c808943934afd35d9f9b6b5b0d714e7dda0",
+    "openclawStatusJson": "7f150527e0558a91f3fe178fac7cf877f30baa5075190c77d9e9bb3e4595ac63",
+    "openclawVersionTxt": "30b20e344c9e702a79a607ce67cf016e541be967f758e2ca9fb531baf49c8062",
+    "runtimeToolSurfaceMd": "ab9576162dbcc8d634bbd9eb08cd0df23ade4a05449239674261dbb28ddd95ba",
+    "openclawHelpTreeJson": "0dfcb29f564e3147107eb5ad74d8dd014f0c3a98c1a647862b907a337a6c3b03"
   },
   "files": {
     "openclawHelp": "2026-03-02_openclaw_help.txt",
@@ -16,6 +16,7 @@
     "openclawStatusJson": "2026-03-02_openclaw_status.json",
     "openclawStatusHeader": "2026-03-02_openclaw_status.header.txt",
     "openclawVersionTxt": "2026-03-02_openclaw_version.txt",
-    "runtimeToolSurfaceMd": "2026-02-24_runtime_tools_surface.md"
+    "runtimeToolSurfaceMd": "2026-02-24_runtime_tools_surface.md",
+    "openclawHelpTreeJson": "2026-03-02_openclaw_help_tree.json"
   }
 }

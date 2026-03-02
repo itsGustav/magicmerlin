@@ -9,4 +9,4 @@ pub mod snapshots;
 /// Current compatibility version (human-managed).
 ///
 /// Bump only when the compatibility contract changes materially.
-pub const COMPAT_VERSION: &str = "v0.4";
+pub const COMPAT_VERSION: &str = "v0.5";

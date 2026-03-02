@@ -41,6 +41,9 @@ pub struct SnapshotFiles {
     pub openclaw_status_header: Option<String>,
     pub openclaw_version_txt: String,
     pub runtime_tool_surface_md: String,
+
+    /// Optional full CLI help tree (all commands/subcommands) captured as JSON.
+    pub openclaw_help_tree_json: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,6 +55,8 @@ pub struct SnapshotBundle {
     pub openclaw_status_header: Option<String>,
     pub openclaw_version_txt: String,
     pub runtime_tool_surface_md: String,
+
+    pub openclaw_help_tree: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -105,6 +110,16 @@ impl SnapshotBundle {
         let runtime_tool_surface_md =
             read_text(base.join(&manifest.files.runtime_tool_surface_md))?;
 
+        let openclaw_help_tree = manifest
+            .files
+            .openclaw_help_tree_json
+            .as_ref()
+            .map(|p| read_text(base.join(p)))
+            .transpose()?
+            .map(|raw| serde_json::from_str::<serde_json::Value>(&raw))
+            .transpose()
+            .context("parse openclaw_help_tree.json")?;
+
         Ok(Self {
             manifest,
             openclaw_help,
@@ -113,6 +128,7 @@ impl SnapshotBundle {
             openclaw_status_header,
             openclaw_version_txt,
             runtime_tool_surface_md,
+            openclaw_help_tree,
         })
     }
 
@@ -133,9 +149,6 @@ impl SnapshotBundle {
             "openclawStatusJson",
             &self.manifest.files.openclaw_status_json,
         )?;
-        if let Some(h) = &self.manifest.files.openclaw_status_header {
-            add("openclawStatusHeader", h)?;
-        }
         add(
             "openclawVersionTxt",
             &self.manifest.files.openclaw_version_txt,
@@ -144,6 +157,10 @@ impl SnapshotBundle {
             "runtimeToolSurfaceMd",
             &self.manifest.files.runtime_tool_surface_md,
         )?;
+
+        if let Some(p) = &self.manifest.files.openclaw_help_tree_json {
+            add("openclawHelpTreeJson", p)?;
+        }
 
         let mut hasher = Sha256::new();
         for (k, v) in &files {

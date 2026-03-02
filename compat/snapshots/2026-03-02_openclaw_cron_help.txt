@@ -1,9 +1,8 @@
 # Snapshot: openclaw cron --help
-# captured_at: 2026-03-02T11:59:24-05:00
 # command: openclaw cron --help
 # ---
 
-🦞 OpenClaw 2026.3.1 (2a8ac97) — No $999 stand required.
+🦞 OpenClaw 2026.3.1 (2a8ac97)
 
 Usage: openclaw cron [options] [command]
 

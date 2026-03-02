@@ -1,0 +1,1094 @@
+{
+  "version": "1",
+  "capturedAt": "2026-03-02T13:33:58-05:00",
+  "openclawVersion": "2026.3.1",
+  "commandCount": 257,
+  "commands": {
+    "acp": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw acp [options] [command]\n\nRun an ACP bridge backed by the Gateway\n\nOptions:\n  -h, --help               Display help for command\n  --no-prefix-cwd          Do not prefix prompts with the working directory\n  --password <password>    Gateway password (if required)\n  --password-file <path>   Read gateway password from file\n  --require-existing       Fail if the session key/label does not exist\n                           (default: false)\n  --reset-session          Reset the session key before first use (default:\n                           false)\n  --session <key>          Default session key (e.g. agent:main:main)\n  --session-label <label>  Default session label to resolve\n  --token <token>          Gateway token (if required)\n  --token-file <path>      Read gateway token from file\n  --url <url>              Gateway WebSocket URL (defaults to gateway.remote.url\n                           when configured)\n  -v, --verbose            Verbose logging to stderr (default: false)\n\nCommands:\n  client                   Run an interactive ACP client against the local ACP\n                           bridge\n\nDocs: https://docs.openclaw.ai/cli/acp\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "client": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw acp client [options]\n\nRun an interactive ACP client against the local ACP bridge\n\nOptions:\n  --cwd <dir>              Working directory for the ACP session\n  -h, --help               Display help for command\n  --server <command>       ACP server command (default: openclaw)\n  --server-args <args...>  Extra arguments for the ACP server\n  --server-verbose         Enable verbose logging on the ACP server (default:\n                           false)\n  -v, --verbose            Verbose client logging (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "agent": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agent [options]\n\nRun an agent turn via the Gateway (use --local for embedded)\n\nOptions:\n  --agent <id>               Agent id (overrides routing bindings)\n  --channel <channel>        Delivery channel:\n                             last|telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n                             (omit to use the main session channel)\n  --deliver                  Send the agent's reply back to the selected channel\n                             (default: false)\n  -h, --help                 Display help for command\n  --json                     Output result as JSON (default: false)\n  --local                    Run the embedded agent locally (requires model\n                             provider API keys in your shell) (default: false)\n  -m, --message <text>       Message body for the agent\n  --reply-account <id>       Delivery account id override\n  --reply-channel <channel>  Delivery channel override (separate from routing)\n  --reply-to <target>        Delivery target override (separate from session\n                             routing)\n  --session-id <id>          Use an explicit session id\n  -t, --to <number>          Recipient number in E.164 used to derive the\n                             session key\n  --thinking <level>         Thinking level: off | minimal | low | medium | high\n  --timeout <seconds>        Override agent command timeout (seconds, default\n                             600 or config value)\n  --verbose <on|off>         Persist agent verbose level for the session\n\nExamples:\n  openclaw agent --to +15555550123 --message \"status update\"\n    Start a new session.\n  openclaw agent --agent ops --message \"Summarize logs\"\n    Use a specific agent.\n  openclaw agent --session-id 1234 --message \"Summarize inbox\" --thinking medium\n    Target a session with explicit thinking level.\n  openclaw agent --to +15555550123 --message \"Trace logs\" --verbose on --json\n    Enable verbose logging and JSON output.\n  openclaw agent --to +15555550123 --message \"Summon reply\" --deliver\n    Deliver reply.\n  openclaw agent --agent ops --message \"Generate report\" --deliver --reply-channel slack --reply-to \"#reports\"\n    Send reply to a different channel/target.\n\nDocs: https://docs.openclaw.ai/cli/agent\n",
+      "hasSubcommands": false
+    },
+    "agents": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents [options] [command]\n\nManage isolated agents (workspaces + auth + routing)\n\nOptions:\n  -h, --help    Display help for command\n\nCommands:\n  add           Add a new isolated agent\n  bind          Add routing bindings for an agent\n  bindings      List routing bindings\n  delete        Delete an agent and prune workspace/state\n  list          List configured agents\n  set-identity  Update an agent identity (name/theme/emoji/avatar)\n  unbind        Remove routing bindings for an agent\n\nDocs: https://docs.openclaw.ai/cli/agents\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "add": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents add [options] [name]\n\nAdd a new isolated agent\n\nOptions:\n  --agent-dir <dir>             Agent state directory for this agent\n  --bind <channel[:accountId]>  Route channel binding (repeatable) (default: [])\n  -h, --help                    Display help for command\n  --json                        Output JSON summary (default: false)\n  --model <id>                  Model id for this agent\n  --non-interactive             Disable prompts; requires --workspace (default:\n                                false)\n  --workspace <dir>             Workspace directory for the new agent\n",
+          "hasSubcommands": false
+        },
+        "bind": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents bind [options]\n\nAdd routing bindings for an agent\n\nOptions:\n  --agent <id>                  Agent id (defaults to current default agent)\n  --bind <channel[:accountId]>  Binding to add (repeatable). If omitted,\n                                accountId is resolved by channel defaults/hooks.\n                                (default: [])\n  -h, --help                    Display help for command\n  --json                        Output JSON summary (default: false)\n",
+          "hasSubcommands": false
+        },
+        "bindings": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents bindings [options]\n\nList routing bindings\n\nOptions:\n  --agent <id>  Filter by agent id\n  -h, --help    Display help for command\n  --json        Output JSON instead of text (default: false)\n",
+          "hasSubcommands": false
+        },
+        "delete": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   I don't just autocomplete—I auto-commit (emotionally), then ask you to review (logically).\n\nUsage: openclaw agents delete [options] <id>\n\nDelete an agent and prune workspace/state\n\nOptions:\n  --force     Skip confirmation (default: false)\n  -h, --help  Display help for command\n  --json      Output JSON summary (default: false)\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents list [options]\n\nList configured agents\n\nOptions:\n  --bindings  Include routing bindings (default: false)\n  -h, --help  Display help for command\n  --json      Output JSON instead of text (default: false)\n",
+          "hasSubcommands": false
+        },
+        "set-identity": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents set-identity [options]\n\nUpdate an agent identity (name/theme/emoji/avatar)\n\nOptions:\n  --agent <id>            Agent id to update\n  --avatar <value>        Identity avatar (workspace path, http(s) URL, or data\n                          URI)\n  --emoji <emoji>         Identity emoji\n  --from-identity         Read values from IDENTITY.md (default: false)\n  -h, --help              Display help for command\n  --identity-file <path>  Explicit IDENTITY.md path to read\n  --json                  Output JSON summary (default: false)\n  --name <name>           Identity name\n  --theme <theme>         Identity theme\n  --workspace <dir>       Workspace directory used to locate the agent +\n                          IDENTITY.md\n\nExamples:\n  openclaw agents set-identity --agent main --name \"OpenClaw\" --emoji \"🦞\"\n    Set name + emoji.\n  openclaw agents set-identity --agent main --avatar avatars/openclaw.png\n    Set avatar path.\n  openclaw agents set-identity --workspace ~/.openclaw/workspace --from-identity\n    Load from IDENTITY.md.\n  openclaw agents set-identity --identity-file ~/.openclaw/workspace/IDENTITY.md --agent main\n    Use a specific IDENTITY.md.\n\n",
+          "hasSubcommands": false
+        },
+        "unbind": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw agents unbind [options]\n\nRemove routing bindings for an agent\n\nOptions:\n  --agent <id>                  Agent id (defaults to current default agent)\n  --all                         Remove all bindings for this agent (default:\n                                false)\n  --bind <channel[:accountId]>  Binding to remove (repeatable) (default: [])\n  -h, --help                    Display help for command\n  --json                        Output JSON summary (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "approvals": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw approvals|exec-approvals [options] [command]\n\nManage exec approvals (gateway or node host)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  allowlist   Edit the per-agent allowlist\n  get         Fetch exec approvals snapshot\n  help        Display help for command\n  set         Replace exec approvals with a JSON file\n\nDocs: https://docs.openclaw.ai/cli/approvals\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "allowlist": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw approvals allowlist [options] [command]\n\nEdit the per-agent allowlist\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add a glob pattern to an allowlist\n  help        Display help for command\n  remove      Remove a glob pattern from an allowlist\n\nExamples:\n  openclaw approvals allowlist add \"~/Projects/**/bin/rg\"\n    Allowlist a local binary pattern for the main agent.\n  openclaw approvals allowlist add --agent main --node <id|name|ip> \"/usr/bin/uptime\"\n    Allowlist on a specific node/agent.\n  openclaw approvals allowlist add --agent \"*\" \"/usr/bin/uname\"\n    Allowlist for all agents (wildcard).\n  openclaw approvals allowlist remove \"~/Projects/**/bin/rg\"\n    Remove an allowlist pattern.\n\nDocs: https://docs.openclaw.ai/cli/approvals\n\n",
+          "hasSubcommands": false
+        },
+        "get": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw approvals get [options]\n\nFetch exec approvals snapshot\n\nOptions:\n  --gateway        Force gateway approvals (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --node <node>    Target node id/name/IP\n  --timeout <ms>   Timeout in ms (default: \"10000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw approvals|exec-approvals [options] [command]\n\nManage exec approvals (gateway or node host)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  allowlist   Edit the per-agent allowlist\n  get         Fetch exec approvals snapshot\n  help        Display help for command\n  set         Replace exec approvals with a JSON file\n\nDocs: https://docs.openclaw.ai/cli/approvals\n\n",
+          "hasSubcommands": false
+        },
+        "set": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw approvals set [options]\n\nReplace exec approvals with a JSON file\n\nOptions:\n  --file <path>    Path to JSON file to upload\n  --gateway        Force gateway approvals (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --node <node>    Target node id/name/IP\n  --stdin          Read JSON from stdin (default: false)\n  --timeout <ms>   Timeout in ms (default: \"10000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "browser": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser [options] [command]\n\nManage OpenClaw's dedicated browser (Chrome/Chromium)\n\nOptions:\n  --browser-profile <name>  Browser profile name (default from config)\n  --expect-final            Wait for final response (agent) (default: false)\n  -h, --help                Display help for command\n  --json                    Output machine-readable JSON (default: false)\n  --timeout <ms>            Timeout in ms (default: \"30000\")\n  --token <token>           Gateway token (if required)\n  --url <url>               Gateway WebSocket URL (defaults to\n                            gateway.remote.url when configured)\n\nCommands:\n  click                     Click an element by ref from snapshot\n  close                     Close a tab (target id optional)\n  console                   Get recent console messages\n  cookies                   Read/write cookies\n  create-profile            Create a new browser profile\n  delete-profile            Delete a browser profile\n  dialog                    Arm the next modal dialog (alert/confirm/prompt)\n  download                  Click a ref and save the resulting download\n  drag                      Drag from one ref to another\n  errors                    Get recent page errors\n  evaluate                  Evaluate a function against the page or a ref\n  extension                 Chrome extension helpers\n  fill                      Fill a form with JSON field descriptors\n  focus                     Focus a tab by target id (or unique prefix)\n  highlight                 Highlight an element by ref\n  hover                     Hover an element by ai ref\n  navigate                  Navigate the current tab to a URL\n  open                      Open a URL in a new tab\n  pdf                       Save page as PDF\n  press                     Press a key\n  profiles                  List all browser profiles\n  requests                  Get recent network requests (best-effort)\n  reset-profile             Reset browser profile (moves it to Trash)\n  resize                    Resize the viewport\n  responsebody              Wait for a network response and return its body\n  screenshot                Capture a screenshot (MEDIA:<path>)\n  scrollintoview            Scroll an element into view by ref from snapshot\n  select                    Select option(s) in a select element\n  set                       Browser environment settings\n  snapshot                  Capture a snapshot (default: ai; aria is the\n                            accessibility tree)\n  start                     Start the browser (no-op if already running)\n  status                    Show browser status\n  stop                      Stop the browser (best-effort)\n  storage                   Read/write localStorage/sessionStorage\n  tab                       Tab shortcuts (index-based)\n  tabs                      List open tabs\n  trace                     Record a Playwright trace\n  type                      Type into an element by ref from snapshot\n  upload                    Arm file upload for the next file chooser\n  wait                      Wait for time, selector, URL, load state, or JS\n                            conditions\n  waitfordownload           Wait for the next download (and save it)\n\nExamples:\n  openclaw browser status\n  openclaw browser start\n  openclaw browser stop\n  openclaw browser tabs\n  openclaw browser open https://example.com\n  openclaw browser focus abcd1234\n  openclaw browser close abcd1234\n  openclaw browser screenshot\n  openclaw browser screenshot --full-page\n  openclaw browser screenshot --ref 12\n  openclaw browser snapshot\n  openclaw browser snapshot --format aria --limit 200\n  openclaw browser snapshot --efficient\n  openclaw browser snapshot --labels\n  openclaw browser navigate https://example.com\n  openclaw browser resize 1280 720\n  openclaw browser click 12 --double\n  openclaw browser type 23 \"hello\" --submit\n  openclaw browser press Enter\n  openclaw browser hover 44\n  openclaw browser drag 10 11\n  openclaw browser select 9 OptionA OptionB\n  openclaw browser upload /tmp/openclaw/uploads/file.pdf\n  openclaw browser fill --fields '[{\"ref\":\"1\",\"value\":\"Ada\"}]'\n  openclaw browser dialog --accept\n  openclaw browser wait --text \"Done\"\n  openclaw browser evaluate --fn '(el) => el.textContent' --ref 7\n  openclaw browser console --level error\n  openclaw browser pdf\n\nDocs: https://docs.openclaw.ai/cli/browser\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "click": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser click [options] <ref>\n\nClick an element by ref from snapshot\n\nArguments:\n  ref                           Ref id from snapshot\n\nOptions:\n  --button <left|right|middle>  Mouse button to use\n  --double                      Double click (default: false)\n  -h, --help                    Display help for command\n  --modifiers <list>            Comma-separated modifiers (Shift,Alt,Meta)\n  --target-id <id>              CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "close": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser close [options] [targetId]\n\nClose a tab (target id optional)\n\nArguments:\n  targetId    Target id or unique prefix (optional)\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "console": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser console [options]\n\nGet recent console messages\n\nOptions:\n  -h, --help        Display help for command\n  --level <level>   Filter by level (error, warn, info)\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "cookies": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser cookies [options] [command]\n\nRead/write cookies\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n\nCommands:\n  clear             Clear all cookies\n  set               Set a cookie (requires --url or domain+path)\n",
+          "hasSubcommands": false
+        },
+        "create-profile": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser create-profile [options]\n\nCreate a new browser profile\n\nOptions:\n  --cdp-url <url>    CDP URL for remote Chrome (http/https)\n  --color <hex>      Profile color (hex format, e.g. #0066CC)\n  --driver <driver>  Profile driver (openclaw|extension). Default: openclaw\n  -h, --help         Display help for command\n  --name <name>      Profile name (lowercase, numbers, hyphens)\n",
+          "hasSubcommands": false
+        },
+        "delete-profile": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser delete-profile [options]\n\nDelete a browser profile\n\nOptions:\n  -h, --help     Display help for command\n  --name <name>  Profile name to delete\n",
+          "hasSubcommands": false
+        },
+        "dialog": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser dialog [options]\n\nArm the next modal dialog (alert/confirm/prompt)\n\nOptions:\n  --accept           Accept the dialog (default: false)\n  --dismiss          Dismiss the dialog (default: false)\n  -h, --help         Display help for command\n  --prompt <text>    Prompt response text\n  --target-id <id>   CDP target id (or unique prefix)\n  --timeout-ms <ms>  How long to wait for the next dialog (default: 120000)\n",
+          "hasSubcommands": false
+        },
+        "download": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser download [options] <ref> <path>\n\nClick a ref and save the resulting download\n\nArguments:\n  ref                Ref id from snapshot to click\n  path               Save path within openclaw temp downloads dir (e.g.\n                     report.pdf or /tmp/openclaw/downloads/report.pdf)\n\nOptions:\n  -h, --help         Display help for command\n  --target-id <id>   CDP target id (or unique prefix)\n  --timeout-ms <ms>  How long to wait for the download to start (default:\n                     120000)\n",
+          "hasSubcommands": false
+        },
+        "drag": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser drag [options] <startRef> <endRef>\n\nDrag from one ref to another\n\nArguments:\n  startRef          Start ref id\n  endRef            End ref id\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "errors": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser errors [options]\n\nGet recent page errors\n\nOptions:\n  --clear           Clear stored errors after reading (default: false)\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "evaluate": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser evaluate [options]\n\nEvaluate a function against the page or a ref\n\nOptions:\n  --fn <code>       Function source, e.g. (el) => el.textContent\n  -h, --help        Display help for command\n  --ref <id>        Ref from snapshot\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "extension": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser extension [options] [command]\n\nChrome extension helpers\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  install     Install the Chrome extension to a stable local path\n  path        Print the path to the installed Chrome extension (load unpacked)\n",
+          "hasSubcommands": false
+        },
+        "fill": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser fill [options]\n\nFill a form with JSON field descriptors\n\nOptions:\n  --fields <json>       JSON array of field objects\n  --fields-file <path>  Read JSON array from a file\n  -h, --help            Display help for command\n  --target-id <id>      CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "focus": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser focus [options] <targetId>\n\nFocus a tab by target id (or unique prefix)\n\nArguments:\n  targetId    Target id or unique prefix\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "highlight": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser highlight [options] <ref>\n\nHighlight an element by ref\n\nArguments:\n  ref               Ref id from snapshot\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "hover": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser hover [options] <ref>\n\nHover an element by ai ref\n\nArguments:\n  ref               Ref id from snapshot\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "navigate": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw browser navigate [options] <url>\n\nNavigate the current tab to a URL\n\nArguments:\n  url               URL to navigate to\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "open": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser open [options] <url>\n\nOpen a URL in a new tab\n\nArguments:\n  url         URL to open\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "pdf": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser pdf [options]\n\nSave page as PDF\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "press": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser press [options] <key>\n\nPress a key\n\nArguments:\n  key               Key to press (e.g. Enter)\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "profiles": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser profiles [options]\n\nList all browser profiles\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "requests": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser requests [options]\n\nGet recent network requests (best-effort)\n\nOptions:\n  --clear           Clear stored requests after reading (default: false)\n  --filter <text>   Only show URLs that contain this substring\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "reset-profile": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser reset-profile [options]\n\nReset browser profile (moves it to Trash)\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "resize": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser resize [options] <width> <height>\n\nResize the viewport\n\nArguments:\n  width             Viewport width\n  height            Viewport height\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "responsebody": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser responsebody [options] <url>\n\nWait for a network response and return its body\n\nArguments:\n  url                URL (exact, substring, or glob like **/api)\n\nOptions:\n  -h, --help         Display help for command\n  --max-chars <n>    Max body chars to return (default: 200000)\n  --target-id <id>   CDP target id (or unique prefix)\n  --timeout-ms <ms>  How long to wait for the response (default: 20000)\n",
+          "hasSubcommands": false
+        },
+        "screenshot": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser screenshot [options] [targetId]\n\nCapture a screenshot (MEDIA:<path>)\n\nArguments:\n  targetId              CDP target id (or unique prefix)\n\nOptions:\n  --element <selector>  CSS selector for element screenshot\n  --full-page           Capture full scrollable page (default: false)\n  -h, --help            Display help for command\n  --ref <ref>           ARIA ref from ai snapshot\n  --type <png|jpeg>     Output type (default: png) (default: \"png\")\n",
+          "hasSubcommands": false
+        },
+        "scrollintoview": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser scrollintoview [options] <ref>\n\nScroll an element into view by ref from snapshot\n\nArguments:\n  ref                Ref id from snapshot\n\nOptions:\n  -h, --help         Display help for command\n  --target-id <id>   CDP target id (or unique prefix)\n  --timeout-ms <ms>  How long to wait for scroll (default: 20000)\n",
+          "hasSubcommands": false
+        },
+        "select": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser select [options] <ref> <values...>\n\nSelect option(s) in a select element\n\nArguments:\n  ref               Ref id from snapshot\n  values            Option values to select\n\nOptions:\n  -h, --help        Display help for command\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "set": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser set [options] [command]\n\nBrowser environment settings\n\nOptions:\n  -h, --help   Display help for command\n\nCommands:\n  credentials  Set HTTP basic auth credentials\n  device       Apply a Playwright device descriptor (e.g. \"iPhone 14\")\n  geo          Set geolocation (and grant permission)\n  headers      Set extra HTTP headers (JSON object)\n  help         Display help for command\n  locale       Override locale (CDP)\n  media        Emulate prefers-color-scheme\n  offline      Toggle offline mode\n  timezone     Override timezone (CDP)\n  viewport     Set viewport size (alias for resize)\n",
+          "hasSubcommands": false
+        },
+        "snapshot": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser snapshot [options]\n\nCapture a snapshot (default: ai; aria is the accessibility tree)\n\nOptions:\n  --compact           Role snapshot: compact output (default: false)\n  --depth <n>         Role snapshot: max depth\n  --efficient         Use the efficient snapshot preset (default: false)\n  --format <aria|ai>  Snapshot format (default: ai) (default: \"ai\")\n  --frame <sel>       Role snapshot: scope to an iframe selector\n  -h, --help          Display help for command\n  --interactive       Role snapshot: interactive elements only (default: false)\n  --labels            Include viewport label overlay screenshot (default: false)\n  --limit <n>         Max nodes (default: 500/800)\n  --mode <efficient>  Snapshot preset (efficient)\n  --out <path>        Write snapshot to a file\n  --selector <sel>    Role snapshot: scope to CSS selector\n  --target-id <id>    CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "start": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser start [options]\n\nStart the browser (no-op if already running)\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser status [options]\n\nShow browser status\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "stop": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser stop [options]\n\nStop the browser (best-effort)\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "storage": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser storage [options] [command]\n\nRead/write localStorage/sessionStorage\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  local       localStorage commands\n  session     sessionStorage commands\n",
+          "hasSubcommands": false
+        },
+        "tab": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser tab [options] [command]\n\nTab shortcuts (index-based)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  close       Close tab by index (1-based); default: first tab\n  new         Open a new tab (about:blank)\n  select      Focus tab by index (1-based)\n",
+          "hasSubcommands": false
+        },
+        "tabs": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser tabs [options]\n\nList open tabs\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "trace": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser trace [options] [command]\n\nRecord a Playwright trace\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  start       Start trace recording\n  stop        Stop trace recording and write a .zip\n",
+          "hasSubcommands": false
+        },
+        "type": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser type [options] <ref> <text>\n\nType into an element by ref from snapshot\n\nArguments:\n  ref               Ref id from snapshot\n  text              Text to type\n\nOptions:\n  -h, --help        Display help for command\n  --slowly          Type slowly (human-like) (default: false)\n  --submit          Press Enter after typing (default: false)\n  --target-id <id>  CDP target id (or unique prefix)\n",
+          "hasSubcommands": false
+        },
+        "upload": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser upload [options] <paths...>\n\nArm file upload for the next file chooser\n\nArguments:\n  paths                 File paths to upload (must be within OpenClaw temp\n                        uploads dir, e.g. /tmp/openclaw/uploads/file.pdf)\n\nOptions:\n  --element <selector>  CSS selector for <input type=file>\n  -h, --help            Display help for command\n  --input-ref <ref>     Ref id for <input type=file> to set directly\n  --ref <ref>           Ref id from snapshot to click after arming\n  --target-id <id>      CDP target id (or unique prefix)\n  --timeout-ms <ms>     How long to wait for the next file chooser (default:\n                        120000)\n",
+          "hasSubcommands": false
+        },
+        "wait": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser wait [options] [selector]\n\nWait for time, selector, URL, load state, or JS conditions\n\nArguments:\n  selector                                    CSS selector to wait for (visible)\n\nOptions:\n  --fn <js>                                   Wait for JS condition (passed to waitForFunction)\n  -h, --help                                  Display help for command\n  --load <load|domcontentloaded|networkidle>  Wait for load state\n  --target-id <id>                            CDP target id (or unique prefix)\n  --text <value>                              Wait for text to appear\n  --text-gone <value>                         Wait for text to disappear\n  --time <ms>                                 Wait for N milliseconds\n  --timeout-ms <ms>                           How long to wait for each condition (default: 20000)\n  --url <pattern>                             Wait for URL (supports globs like **/dash)\n",
+          "hasSubcommands": false
+        },
+        "waitfordownload": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw browser waitfordownload [options] [path]\n\nWait for the next download (and save it)\n\nArguments:\n  path               Save path within openclaw temp downloads dir (default:\n                     /tmp/openclaw/downloads/...; fallback:\n                     os.tmpdir()/openclaw/downloads/...)\n\nOptions:\n  -h, --help         Display help for command\n  --target-id <id>   CDP target id (or unique prefix)\n  --timeout-ms <ms>  How long to wait for the next download (default: 120000)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "channels": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels [options] [command]\n\nManage connected chat channels and accounts\n\nOptions:\n  -h, --help    Display help for command\n\nCommands:\n  add           Add or update a channel account\n  capabilities  Show provider capabilities (intents/scopes + supported features)\n  help          Display help for command\n  list          List configured channels + auth profiles\n  login         Link a channel account (if supported)\n  logout        Log out of a channel session (if supported)\n  logs          Show recent channel logs from the gateway log file\n  remove        Disable or delete a channel account\n  resolve       Resolve channel/user names to IDs\n  status        Show gateway channel status (use status --deep for local)\n\nExamples:\n  openclaw channels list\n    List configured channels and auth profiles.\n  openclaw channels status --probe\n    Run channel status checks and probes.\n  openclaw channels add --channel telegram --token <token>\n    Add or update a channel account non-interactively.\n  openclaw channels login --channel whatsapp\n    Link a WhatsApp Web account.\n\nDocs: https://docs.openclaw.ai/cli/channels\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "add": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels add [options]\n\nAdd or update a channel account\n\nOptions:\n  --access-token <token>       Matrix access token\n  --account <id>               Account id (default when omitted)\n  --app-token <token>          Slack app token (xapp-...)\n  --audience <value>           Google Chat audience value (app URL or project\n                               number)\n  --audience-type <type>       Google Chat audience type\n                               (app-url|project-number)\n  --auth-dir <path>            WhatsApp auth directory override\n  --auto-discover-channels     Tlon auto-discover group channels\n  --bot-token <token>          Slack bot token (xoxb-...)\n  --channel <name>             Channel\n                               (telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon)\n  --cli-path <path>            CLI path (signal-cli or imsg)\n  --code <code>                Tlon login code\n  --db-path <path>             iMessage database path\n  --device-name <name>         Matrix device name\n  --dm-allowlist <list>        Tlon DM allowlist (comma-separated ships)\n  --group-channels <list>      Tlon group channels (comma-separated)\n  -h, --help                   Display help for command\n  --homeserver <url>           Matrix homeserver URL\n  --http-host <host>           Signal HTTP host\n  --http-port <port>           Signal HTTP port\n  --http-url <url>             Signal HTTP daemon base URL\n  --initial-sync-limit <n>     Matrix initial sync limit\n  --name <name>                Display name for this account\n  --no-auto-discover-channels  Disable Tlon auto-discovery\n  --password <password>        Matrix password\n  --region <region>            iMessage region (for SMS)\n  --service <service>          iMessage service (imessage|sms|auto)\n  --ship <ship>                Tlon ship name (~sampel-palnet)\n  --signal-number <e164>       Signal account number (E.164)\n  --token <token>              Bot token (Telegram/Discord)\n  --token-file <path>          Bot token file (Telegram)\n  --url <url>                  Tlon ship URL\n  --use-env                    Use env token (default account only) (default:\n                               false)\n  --user-id <id>               Matrix user ID\n  --webhook-path <path>        Webhook path (Google Chat/BlueBubbles)\n  --webhook-url <url>          Google Chat webhook URL\n",
+          "hasSubcommands": false
+        },
+        "capabilities": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels capabilities [options]\n\nShow provider capabilities (intents/scopes + supported features)\n\nOptions:\n  --account <id>    Account id (only with --channel)\n  --channel <name>  Channel\n                    (all|telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon)\n  -h, --help        Display help for command\n  --json            Output JSON (default: false)\n  --target <dest>   Channel target for permission audit (Discord channel:<id>)\n  --timeout <ms>    Timeout in ms (default: \"10000\")\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels [options] [command]\n\nManage connected chat channels and accounts\n\nOptions:\n  -h, --help    Display help for command\n\nCommands:\n  add           Add or update a channel account\n  capabilities  Show provider capabilities (intents/scopes + supported features)\n  help          Display help for command\n  list          List configured channels + auth profiles\n  login         Link a channel account (if supported)\n  logout        Log out of a channel session (if supported)\n  logs          Show recent channel logs from the gateway log file\n  remove        Disable or delete a channel account\n  resolve       Resolve channel/user names to IDs\n  status        Show gateway channel status (use status --deep for local)\n\nExamples:\n  openclaw channels list\n    List configured channels and auth profiles.\n  openclaw channels status --probe\n    Run channel status checks and probes.\n  openclaw channels add --channel telegram --token <token>\n    Add or update a channel account non-interactively.\n  openclaw channels login --channel whatsapp\n    Link a WhatsApp Web account.\n\nDocs: https://docs.openclaw.ai/cli/channels\n\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels list [options]\n\nList configured channels + auth profiles\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n  --no-usage  Skip model provider usage/quota snapshots\n",
+          "hasSubcommands": false
+        },
+        "login": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels login [options]\n\nLink a channel account (if supported)\n\nOptions:\n  --account <id>       Account id (accountId)\n  --channel <channel>  Channel alias (auto when only one is configured)\n  -h, --help           Display help for command\n  --verbose            Verbose connection logs (default: false)\n",
+          "hasSubcommands": false
+        },
+        "logout": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   I don't just autocomplete—I auto-commit (emotionally), then ask you to review (logically).\n\nUsage: openclaw channels logout [options]\n\nLog out of a channel session (if supported)\n\nOptions:\n  --account <id>       Account id (accountId)\n  --channel <channel>  Channel alias (auto when only one is configured)\n  -h, --help           Display help for command\n",
+          "hasSubcommands": false
+        },
+        "logs": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels logs [options]\n\nShow recent channel logs from the gateway log file\n\nOptions:\n  --channel <name>  Channel\n                    (all|telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon)\n                    (default: \"all\")\n  -h, --help        Display help for command\n  --json            Output JSON (default: false)\n  --lines <n>       Number of lines (default: 200) (default: \"200\")\n",
+          "hasSubcommands": false
+        },
+        "remove": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels remove [options]\n\nDisable or delete a channel account\n\nOptions:\n  --account <id>    Account id (default when omitted)\n  --channel <name>  Channel\n                    (telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon)\n  --delete          Delete config entries (no prompt) (default: false)\n  -h, --help        Display help for command\n",
+          "hasSubcommands": false
+        },
+        "resolve": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels resolve [options] <entries...>\n\nResolve channel/user names to IDs\n\nArguments:\n  entries           Entries to resolve (names or ids)\n\nOptions:\n  --account <id>    Account id (accountId)\n  --channel <name>  Channel\n                    (telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon)\n  -h, --help        Display help for command\n  --json            Output JSON (default: false)\n  --kind <kind>     Target kind (auto|user|group) (default: \"auto\")\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw channels status [options]\n\nShow gateway channel status (use status --deep for local)\n\nOptions:\n  -h, --help      Display help for command\n  --json          Output JSON (default: false)\n  --probe         Probe channel credentials (default: false)\n  --timeout <ms>  Timeout in ms (default: \"10000\")\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "clawbot": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw clawbot [options] [command]\n\nLegacy clawbot command aliases\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  qr          Generate an iOS pairing QR code and setup code\n\nDocs: https://docs.openclaw.ai/cli/clawbot\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw clawbot [options] [command]\n\nLegacy clawbot command aliases\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  qr          Generate an iOS pairing QR code and setup code\n\nDocs: https://docs.openclaw.ai/cli/clawbot\n\n",
+          "hasSubcommands": false
+        },
+        "qr": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw clawbot qr [options]\n\nGenerate an iOS pairing QR code and setup code\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --no-ascii             Skip ASCII QR rendering\n  --password <password>  Override gateway password for setup payload\n  --public-url <url>     Override gateway public URL used in the setup payload\n  --remote               Use gateway.remote.url and gateway.remote\n                         token/password (ignores device-pair publicUrl)\n                         (default: false)\n  --setup-code-only      Print only the setup code (default: false)\n  --token <token>        Override gateway token for setup payload\n  --url <url>            Override gateway URL used in the setup payload\n\nDocs: https://docs.openclaw.ai/cli/qr\n\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "completion": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw completion [options]\n\nGenerate shell completion script\n\nOptions:\n  -h, --help           Display help for command\n  -i, --install        Install completion script to shell profile\n  -s, --shell <shell>  Shell to generate completion for (default: zsh) (choices:\n                       \"zsh\", \"bash\", \"powershell\", \"fish\")\n  --write-state        Write completion scripts to\n                       $OPENCLAW_STATE_DIR/completions (no stdout)\n  -y, --yes            Skip confirmation (non-interactive) (default: false)\n\nDocs: https://docs.openclaw.ai/cli/completion\n\n",
+      "hasSubcommands": false
+    },
+    "config": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw config [options] [command]\n\nNon-interactive config helpers (get/set/unset/file). Run without subcommand for\nthe setup wizard.\n\nOptions:\n  -h, --help           Display help for command\n  --section <section>  Configure wizard sections (repeatable). Use with no\n                       subcommand. (default: [])\n\nCommands:\n  file                 Print the active config file path\n  get                  Get a config value by dot path\n  set                  Set a config value by dot path\n  unset                Remove a config value by dot path\n\nDocs: https://docs.openclaw.ai/cli/config\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "file": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw config file [options]\n\nPrint the active config file path\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "get": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw config get [options] <path>\n\nGet a config value by dot path\n\nArguments:\n  path        Config path (dot or bracket notation)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "set": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw config set [options] <path> <value>\n\nSet a config value by dot path\n\nArguments:\n  path           Config path (dot or bracket notation)\n  value          Value (JSON5 or raw string)\n\nOptions:\n  -h, --help     Display help for command\n  --json         Legacy alias for --strict-json (default: false)\n  --strict-json  Strict JSON5 parsing (error instead of raw string fallback)\n                 (default: false)\n",
+          "hasSubcommands": false
+        },
+        "unset": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw config unset [options] <path>\n\nRemove a config value by dot path\n\nArguments:\n  path        Config path (dot or bracket notation)\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "configure": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw configure [options]\n\nInteractive setup wizard for credentials, channels, gateway, and agent defaults\n\nOptions:\n  -h, --help           Display help for command\n  --section <section>  Configuration sections (repeatable). Options: workspace,\n                       model, web, gateway, daemon, channels, skills, health\n                       (default: [])\n\nDocs: https://docs.openclaw.ai/cli/configure\n\n",
+      "hasSubcommands": false
+    },
+    "cron": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron [options] [command]\n\nManage cron jobs (via Gateway)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add a cron job\n  disable     Disable a cron job\n  edit        Edit a cron job (patch fields)\n  enable      Enable a cron job\n  help        Display help for command\n  list        List cron jobs\n  rm          Remove a cron job\n  run         Run a cron job now (debug)\n  runs        Show cron run history (JSONL-backed)\n  status      Show cron scheduler status\n\nDocs: https://docs.openclaw.ai/cli/cron\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "add": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron add|create [options]\n\nAdd a cron job\n\nOptions:\n  --account <id>         Channel account id for delivery (multi-account setups)\n  --agent <id>           Agent id for this job\n  --announce             Announce summary to a chat (subagent-style) (default:\n                         false)\n  --at <when>            Run once at time (ISO) or +duration (e.g. 20m)\n  --best-effort-deliver  Do not fail the job if delivery fails (default: false)\n  --channel <channel>    Delivery channel (last) (default: \"last\")\n  --cron <expr>          Cron expression (5-field or 6-field with seconds)\n  --delete-after-run     Delete one-shot job after it succeeds (default: false)\n  --deliver              Deprecated (use --announce). Announces a summary to a\n                         chat.\n  --description <text>   Optional description\n  --disabled             Create job disabled (default: false)\n  --every <duration>     Run every duration (e.g. 10m, 1h)\n  --exact                Disable cron staggering (set stagger to 0) (default:\n                         false)\n  --expect-final         Wait for final response (agent) (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --keep-after-run       Keep one-shot job after it succeeds (default: false)\n  --light-context        Use lightweight bootstrap context for agent jobs\n                         (default: false)\n  --message <text>       Agent message payload\n  --model <model>        Model override for agent jobs (provider/model or alias)\n  --name <name>          Job name\n  --no-deliver           Disable announce delivery and skip main-session summary\n  --session <target>     Session target (main|isolated)\n  --session-key <key>    Session key for job routing (e.g.\n                         agent:my-agent:my-session)\n  --stagger <duration>   Cron stagger window (e.g. 30s, 5m)\n  --system-event <text>  System event payload (main session)\n  --thinking <level>     Thinking level for agent jobs\n                         (off|minimal|low|medium|high)\n  --timeout <ms>         Timeout in ms (default: \"30000\")\n  --timeout-seconds <n>  Timeout seconds for agent jobs\n  --to <dest>            Delivery destination (E.164, Telegram chatId, or\n                         Discord channel/user)\n  --token <token>        Gateway token (if required)\n  --tz <iana>            Timezone for cron expressions (IANA) (default: \"\")\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n  --wake <mode>          Wake mode (now|next-heartbeat) (default: \"now\")\n",
+          "hasSubcommands": false
+        },
+        "disable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron disable [options] <id>\n\nDisable a cron job\n\nArguments:\n  id               Job id\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "edit": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron edit [options] <id>\n\nEdit a cron job (patch fields)\n\nArguments:\n  id                                   Job id\n\nOptions:\n  --account <id>                       Channel account id for delivery\n                                       (multi-account setups)\n  --agent <id>                         Set agent id\n  --announce                           Announce summary to a chat\n                                       (subagent-style)\n  --at <when>                          Set one-shot time (ISO) or duration like\n                                       20m\n  --best-effort-deliver                Do not fail job if delivery fails\n  --channel <channel>                  Delivery channel (last)\n  --clear-agent                        Unset agent and use default (default:\n                                       false)\n  --clear-session-key                  Unset session key (default: false)\n  --cron <expr>                        Set cron expression\n  --delete-after-run                   Delete one-shot job after it succeeds\n                                       (default: false)\n  --deliver                            Deprecated (use --announce). Announces a\n                                       summary to a chat.\n  --description <text>                 Set description\n  --disable                            Disable job (default: false)\n  --enable                             Enable job (default: false)\n  --every <duration>                   Set interval duration like 10m\n  --exact                              Disable cron staggering (set stagger to\n                                       0)\n  --expect-final                       Wait for final response (agent) (default:\n                                       false)\n  --failure-alert                      Enable failure alerts for this job\n  --failure-alert-after <n>            Alert after N consecutive job errors\n  --failure-alert-channel <channel>    Failure alert channel (last)\n  --failure-alert-cooldown <duration>  Minimum time between alerts (e.g. 1h,\n                                       30m)\n  --failure-alert-to <dest>            Failure alert destination\n  -h, --help                           Display help for command\n  --keep-after-run                     Keep one-shot job after it succeeds\n                                       (default: false)\n  --light-context                      Enable lightweight bootstrap context for\n                                       agent jobs\n  --message <text>                     Set agentTurn payload message\n  --model <model>                      Model override for agent jobs\n  --name <name>                        Set name\n  --no-best-effort-deliver             Fail job when delivery fails\n  --no-deliver                         Disable announce delivery\n  --no-failure-alert                   Disable failure alerts for this job\n  --no-light-context                   Disable lightweight bootstrap context for\n                                       agent jobs\n  --session <target>                   Session target (main|isolated)\n  --session-key <key>                  Set session key for job routing\n  --stagger <duration>                 Cron stagger window (e.g. 30s, 5m)\n  --system-event <text>                Set systemEvent payload\n  --thinking <level>                   Thinking level for agent jobs\n  --timeout <ms>                       Timeout in ms (default: \"30000\")\n  --timeout-seconds <n>                Timeout seconds for agent jobs\n  --to <dest>                          Delivery destination (E.164, Telegram\n                                       chatId, or Discord channel/user)\n  --token <token>                      Gateway token (if required)\n  --tz <iana>                          Timezone for cron expressions (IANA)\n  --url <url>                          Gateway WebSocket URL (defaults to\n                                       gateway.remote.url when configured)\n  --wake <mode>                        Wake mode (now|next-heartbeat)\n",
+          "hasSubcommands": false
+        },
+        "enable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron enable [options] <id>\n\nEnable a cron job\n\nArguments:\n  id               Job id\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron [options] [command]\n\nManage cron jobs (via Gateway)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add a cron job\n  disable     Disable a cron job\n  edit        Edit a cron job (patch fields)\n  enable      Enable a cron job\n  help        Display help for command\n  list        List cron jobs\n  rm          Remove a cron job\n  run         Run a cron job now (debug)\n  runs        Show cron run history (JSONL-backed)\n  status      Show cron scheduler status\n\nDocs: https://docs.openclaw.ai/cli/cron\n\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron list [options]\n\nList cron jobs\n\nOptions:\n  --all            Include disabled jobs (default: false)\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "rm": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron rm|remove [options] <id>\n\nRemove a cron job\n\nArguments:\n  id               Job id\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "run": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron run [options] <id>\n\nRun a cron job now (debug)\n\nArguments:\n  id               Job id\n\nOptions:\n  --due            Run only when due (default behavior in older versions)\n                   (default: false)\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "runs": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron runs [options]\n\nShow cron run history (JSONL-backed)\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --id <id>        Job id\n  --limit <n>      Max entries (default 50) (default: \"50\")\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw cron status [options]\n\nShow cron scheduler status\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "daemon": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon [options] [command]\n\nManage the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  install     Install the Gateway service (launchd/systemd/schtasks)\n  restart     Restart the Gateway service (launchd/systemd/schtasks)\n  start       Start the Gateway service (launchd/systemd/schtasks)\n  status      Show service install status + probe the Gateway\n  stop        Stop the Gateway service (launchd/systemd/schtasks)\n  uninstall   Uninstall the Gateway service (launchd/systemd/schtasks)\n\nDocs: https://docs.openclaw.ai/cli/gateway\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon [options] [command]\n\nManage the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  install     Install the Gateway service (launchd/systemd/schtasks)\n  restart     Restart the Gateway service (launchd/systemd/schtasks)\n  start       Start the Gateway service (launchd/systemd/schtasks)\n  status      Show service install status + probe the Gateway\n  stop        Stop the Gateway service (launchd/systemd/schtasks)\n  uninstall   Uninstall the Gateway service (launchd/systemd/schtasks)\n\nDocs: https://docs.openclaw.ai/cli/gateway\n\n",
+          "hasSubcommands": false
+        },
+        "install": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon install [options]\n\nInstall the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  --force              Reinstall/overwrite if already installed (default: false)\n  -h, --help           Display help for command\n  --json               Output JSON (default: false)\n  --port <port>        Gateway port\n  --runtime <runtime>  Daemon runtime (node|bun). Default: node\n  --token <token>      Gateway token (token auth)\n",
+          "hasSubcommands": false
+        },
+        "restart": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon restart [options]\n\nRestart the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "start": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon start [options]\n\nStart the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon status [options]\n\nShow service install status + probe the Gateway\n\nOptions:\n  --deep                 Scan system-level services (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --no-probe             Skip RPC probe\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to config/remote/local)\n",
+          "hasSubcommands": false
+        },
+        "stop": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon stop [options]\n\nStop the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "uninstall": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw daemon uninstall [options]\n\nUninstall the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "dashboard": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw dashboard [options]\n\nOpen the Control UI with your current token\n\nOptions:\n  -h, --help  Display help for command\n  --no-open   Print URL but do not launch a browser\n\nDocs: https://docs.openclaw.ai/cli/dashboard\n\n",
+      "hasSubcommands": false
+    },
+    "devices": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices [options] [command]\n\nDevice pairing and auth tokens\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pending device pairing request\n  clear       Clear paired devices from the gateway table\n  help        Display help for command\n  list        List pending and paired devices\n  reject      Reject a pending device pairing request\n  remove      Remove a paired device entry\n  revoke      Revoke a device token for a role\n  rotate      Rotate a device token for a role\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "approve": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices approve [options] [requestId]\n\nApprove a pending device pairing request\n\nArguments:\n  requestId              Pending request id\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --latest               Approve the most recent pending request (default:\n                         false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "clear": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices clear [options]\n\nClear paired devices from the gateway table\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --pending              Also reject all pending pairing requests (default:\n                         false)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n  --yes                  Confirm destructive clear (default: false)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices [options] [command]\n\nDevice pairing and auth tokens\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pending device pairing request\n  clear       Clear paired devices from the gateway table\n  help        Display help for command\n  list        List pending and paired devices\n  reject      Reject a pending device pairing request\n  remove      Remove a paired device entry\n  revoke      Revoke a device token for a role\n  rotate      Rotate a device token for a role\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices list [options]\n\nList pending and paired devices\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "reject": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices reject [options] <requestId>\n\nReject a pending device pairing request\n\nArguments:\n  requestId              Pending request id\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "remove": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices remove [options] <deviceId>\n\nRemove a paired device entry\n\nArguments:\n  deviceId               Paired device id\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "revoke": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices revoke [options]\n\nRevoke a device token for a role\n\nOptions:\n  --device <id>          Device id\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --role <role>          Role name\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "rotate": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw devices rotate [options]\n\nRotate a device token for a role\n\nOptions:\n  --device <id>          Device id\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --role <role>          Role name\n  --scope <scope...>     Scopes to attach to the token (repeatable)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "directory": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw directory [options] [command]\n\nLookup contact and group IDs (self, peers, groups) for supported chat channels\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  groups      Group directory\n  peers       Peer directory (contacts/users)\n  self        Show the current account user\n\nExamples:\n  openclaw directory self --channel slack\n    Show the connected account identity.\n  openclaw directory peers list --channel slack --query \"alice\"\n    Search contact/user IDs by name.\n  openclaw directory groups list --channel discord\n    List available groups/channels.\n  openclaw directory groups members --channel discord --group-id <id>\n    List members for a specific group.\n\nDocs: https://docs.openclaw.ai/cli/directory\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "groups": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw directory groups [options] [command]\n\nGroup directory\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  list        List groups\n  members     List group members\n",
+          "hasSubcommands": false
+        },
+        "peers": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw directory peers [options] [command]\n\nPeer directory (contacts/users)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  list        List peers\n",
+          "hasSubcommands": false
+        },
+        "self": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw directory self [options]\n\nShow the current account user\n\nOptions:\n  --account <id>    Account id (accountId)\n  --channel <name>  Channel (auto when only one is configured)\n  -h, --help        Display help for command\n  --json            Output JSON (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "dns": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw dns [options] [command]\n\nDNS helpers for wide-area discovery (Tailscale + CoreDNS)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  setup       Set up CoreDNS to serve your discovery domain for unicast DNS-SD\n              (Wide-Area Bonjour)\n\nDocs: https://docs.openclaw.ai/cli/dns\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw dns [options] [command]\n\nDNS helpers for wide-area discovery (Tailscale + CoreDNS)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  setup       Set up CoreDNS to serve your discovery domain for unicast DNS-SD\n              (Wide-Area Bonjour)\n\nDocs: https://docs.openclaw.ai/cli/dns\n\n",
+          "hasSubcommands": false
+        },
+        "setup": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw dns setup [options]\n\nSet up CoreDNS to serve your discovery domain for unicast DNS-SD (Wide-Area\nBonjour)\n\nOptions:\n  --apply            Install/update CoreDNS config and (re)start the service\n                     (requires sudo) (default: false)\n  --domain <domain>  Wide-area discovery domain (e.g. openclaw.internal)\n  -h, --help         Display help for command\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "docs": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw docs [options] [query...]\n\nSearch the live OpenClaw docs\n\nArguments:\n  query       Search query\n\nOptions:\n  -h, --help  Display help for command\n\nDocs: https://docs.openclaw.ai/cli/docs\n\n",
+      "hasSubcommands": false
+    },
+    "doctor": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw doctor [options]\n\nHealth checks + quick fixes for the gateway and channels\n\nOptions:\n  --deep                      Scan system services for extra gateway installs\n                              (default: false)\n  --fix                       Apply recommended repairs (alias for --repair)\n                              (default: false)\n  --force                     Apply aggressive repairs (overwrites custom\n                              service config) (default: false)\n  --generate-gateway-token    Generate and configure a gateway token (default:\n                              false)\n  -h, --help                  Display help for command\n  --no-workspace-suggestions  Disable workspace memory system suggestions\n  --non-interactive           Run without prompts (safe migrations only)\n                              (default: false)\n  --repair                    Apply recommended repairs without prompting\n                              (default: false)\n  --yes                       Accept defaults without prompting (default: false)\n\nDocs: https://docs.openclaw.ai/cli/doctor\n\n",
+      "hasSubcommands": false
+    },
+    "gateway": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway [options] [command]\n\nRun, inspect, and query the WebSocket Gateway\n\nOptions:\n  --allow-unconfigured       Allow gateway start without gateway.mode=local in\n                             config (default: false)\n  --auth <mode>              Gateway auth mode\n                             (\"none\"|\"token\"|\"password\"|\"trusted-proxy\")\n  --bind <mode>              Bind mode\n                             (\"loopback\"|\"lan\"|\"tailnet\"|\"auto\"|\"custom\").\n                             Defaults to config gateway.bind (or loopback).\n  --claude-cli-logs          Only show claude-cli logs in the console (includes\n                             stdout/stderr) (default: false)\n  --compact                  Alias for \"--ws-log compact\" (default: false)\n  --dev                      Create a dev config + workspace if missing (no\n                             BOOTSTRAP.md) (default: false)\n  --force                    Kill any existing listener on the target port\n                             before starting (default: false)\n  -h, --help                 Display help for command\n  --password <password>      Password for auth mode=password\n  --port <port>              Port for the gateway WebSocket\n  --raw-stream               Log raw model stream events to jsonl (default:\n                             false)\n  --raw-stream-path <path>   Raw stream jsonl path\n  --reset                    Reset dev config + credentials + sessions +\n                             workspace (requires --dev) (default: false)\n  --tailscale <mode>         Tailscale exposure mode (\"off\"|\"serve\"|\"funnel\")\n  --tailscale-reset-on-exit  Reset Tailscale serve/funnel configuration on\n                             shutdown (default: false)\n  --token <token>            Shared token required in connect.params.auth.token\n                             (default: OPENCLAW_GATEWAY_TOKEN env if set)\n  --verbose                  Verbose logging to stdout/stderr (default: false)\n  --ws-log <style>           WebSocket log style (\"auto\"|\"full\"|\"compact\")\n                             (default: \"auto\")\n\nCommands:\n  call                       Call a Gateway method\n  discover                   Discover gateways via Bonjour (local + wide-area if\n                             configured)\n  health                     Fetch Gateway health\n  install                    Install the Gateway service\n                             (launchd/systemd/schtasks)\n  probe                      Show gateway reachability + discovery + health +\n                             status summary (local + remote)\n  restart                    Restart the Gateway service\n                             (launchd/systemd/schtasks)\n  run                        Run the WebSocket Gateway (foreground)\n  start                      Start the Gateway service\n                             (launchd/systemd/schtasks)\n  status                     Show gateway service status + probe the Gateway\n  stop                       Stop the Gateway service (launchd/systemd/schtasks)\n  uninstall                  Uninstall the Gateway service\n                             (launchd/systemd/schtasks)\n  usage-cost                 Fetch usage cost summary from session logs\n\nExamples:\n  openclaw gateway run\n    Run the gateway in the foreground.\n  openclaw gateway status\n    Show service status and probe reachability.\n  openclaw gateway discover\n    Find local and wide-area gateway beacons.\n  openclaw gateway call health\n    Call a gateway RPC method directly.\n\nDocs: https://docs.openclaw.ai/cli/gateway\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "call": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway call [options] <method>\n\nCall a Gateway method\n\nArguments:\n  method                 Method name (health/status/system-presence/cron.*)\n\nOptions:\n  --expect-final         Wait for final response (agent) (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --params <json>        JSON object string for params (default: \"{}\")\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "discover": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway discover [options]\n\nDiscover gateways via Bonjour (local + wide-area if configured)\n\nOptions:\n  -h, --help      Display help for command\n  --json          Output JSON (default: false)\n  --timeout <ms>  Per-command timeout in ms (default: \"2000\")\n",
+          "hasSubcommands": false
+        },
+        "health": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway health [options]\n\nFetch Gateway health\n\nOptions:\n  --expect-final         Wait for final response (agent) (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "install": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway install [options]\n\nInstall the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  --force              Reinstall/overwrite if already installed (default: false)\n  -h, --help           Display help for command\n  --json               Output JSON (default: false)\n  --port <port>        Gateway port\n  --runtime <runtime>  Daemon runtime (node|bun). Default: node\n  --token <token>      Gateway token (token auth)\n",
+          "hasSubcommands": false
+        },
+        "probe": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway probe [options]\n\nShow gateway reachability + discovery + health + status summary (local + remote)\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (applies to all probes)\n  --ssh <target>         SSH target for remote gateway tunnel (user@host or\n                         user@host:port)\n  --ssh-auto             Try to derive an SSH target from Bonjour discovery\n                         (default: false)\n  --ssh-identity <path>  SSH identity file path\n  --timeout <ms>         Overall probe budget in ms (default: \"3000\")\n  --token <token>        Gateway token (applies to all probes)\n  --url <url>            Explicit Gateway WebSocket URL (still probes localhost)\n",
+          "hasSubcommands": false
+        },
+        "restart": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway restart [options]\n\nRestart the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "run": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway run [options]\n\nRun the WebSocket Gateway (foreground)\n\nOptions:\n  --allow-unconfigured       Allow gateway start without gateway.mode=local in\n                             config (default: false)\n  --auth <mode>              Gateway auth mode\n                             (\"none\"|\"token\"|\"password\"|\"trusted-proxy\")\n  --bind <mode>              Bind mode\n                             (\"loopback\"|\"lan\"|\"tailnet\"|\"auto\"|\"custom\").\n                             Defaults to config gateway.bind (or loopback).\n  --claude-cli-logs          Only show claude-cli logs in the console (includes\n                             stdout/stderr) (default: false)\n  --compact                  Alias for \"--ws-log compact\" (default: false)\n  --dev                      Create a dev config + workspace if missing (no\n                             BOOTSTRAP.md) (default: false)\n  --force                    Kill any existing listener on the target port\n                             before starting (default: false)\n  -h, --help                 Display help for command\n  --password <password>      Password for auth mode=password\n  --port <port>              Port for the gateway WebSocket\n  --raw-stream               Log raw model stream events to jsonl (default:\n                             false)\n  --raw-stream-path <path>   Raw stream jsonl path\n  --reset                    Reset dev config + credentials + sessions +\n                             workspace (requires --dev) (default: false)\n  --tailscale <mode>         Tailscale exposure mode (\"off\"|\"serve\"|\"funnel\")\n  --tailscale-reset-on-exit  Reset Tailscale serve/funnel configuration on\n                             shutdown (default: false)\n  --token <token>            Shared token required in connect.params.auth.token\n                             (default: OPENCLAW_GATEWAY_TOKEN env if set)\n  --verbose                  Verbose logging to stdout/stderr (default: false)\n  --ws-log <style>           WebSocket log style (\"auto\"|\"full\"|\"compact\")\n                             (default: \"auto\")\n",
+          "hasSubcommands": false
+        },
+        "start": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway start [options]\n\nStart the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway status [options]\n\nShow gateway service status + probe the Gateway\n\nOptions:\n  --deep                 Scan system-level services (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --no-probe             Skip RPC probe\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to config/remote/local)\n",
+          "hasSubcommands": false
+        },
+        "stop": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway stop [options]\n\nStop the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "uninstall": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway uninstall [options]\n\nUninstall the Gateway service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "usage-cost": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw gateway usage-cost [options]\n\nFetch usage cost summary from session logs\n\nOptions:\n  --days <days>          Number of days to include (default: \"30\")\n  --expect-final         Wait for final response (agent) (default: false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --password <password>  Gateway password (password auth)\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "health": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw health [options]\n\nFetch health from the running gateway\n\nOptions:\n  --debug         Alias for --verbose (default: false)\n  -h, --help      Display help for command\n  --json          Output JSON instead of text (default: false)\n  --timeout <ms>  Connection timeout in milliseconds (default: \"10000\")\n  --verbose       Verbose logging (default: false)\n\nDocs: https://docs.openclaw.ai/cli/health\n\n",
+      "hasSubcommands": false
+    },
+    "help": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw [options] [command]\n\nOptions:\n  --dev                Dev profile: isolate state under ~/.openclaw-dev, default\n                       gateway port 19001, and shift derived ports\n                       (browser/canvas)\n  -h, --help           Display help for command\n  --log-level <level>  Global log level override for file + console\n                       (silent|fatal|error|warn|info|debug|trace)\n  --no-color           Disable ANSI colors\n  --profile <name>     Use a named profile (isolates\n                       OPENCLAW_STATE_DIR/OPENCLAW_CONFIG_PATH under\n                       ~/.openclaw-<name>)\n  -V, --version        output the version number\n\nCommands:\n  Hint: commands suffixed with * have subcommands. Run <command> --help for details.\n  acp *                Agent Control Protocol tools\n  agent                Run one agent turn via the Gateway\n  agents *             Manage isolated agents (workspaces, auth, routing)\n  approvals *          Manage exec approvals (gateway or node host)\n  browser *            Manage OpenClaw's dedicated browser (Chrome/Chromium)\n  channels *           Manage connected chat channels (Telegram, Discord, etc.)\n  clawbot *            Legacy clawbot command aliases\n  completion           Generate shell completion script\n  config *             Non-interactive config helpers (get/set/unset/file).\n                       Default: starts setup wizard.\n  configure            Interactive setup wizard for credentials, channels,\n                       gateway, and agent defaults\n  cron *               Manage cron jobs via the Gateway scheduler\n  daemon *             Gateway service (legacy alias)\n  dashboard            Open the Control UI with your current token\n  devices *            Device pairing + token management\n  directory *          Lookup contact and group IDs (self, peers, groups) for\n                       supported chat channels\n  dns *                DNS helpers for wide-area discovery (Tailscale + CoreDNS)\n  docs                 Search the live OpenClaw docs\n  doctor               Health checks + quick fixes for the gateway and channels\n  gateway *            Run, inspect, and query the WebSocket Gateway\n  health               Fetch health from the running gateway\n  help                 Display help for command\n  hooks *              Manage internal agent hooks\n  logs                 Tail gateway file logs via RPC\n  memory *             Search and reindex memory files\n  message *            Send, read, and manage messages\n  models *             Discover, scan, and configure models\n  node *               Run and manage the headless node host service\n  nodes *              Manage gateway-owned node pairing and node commands\n  onboard              Interactive onboarding wizard for gateway, workspace, and\n                       skills\n  pairing *            Secure DM pairing (approve inbound requests)\n  plugins *            Manage OpenClaw plugins and extensions\n  qr                   Generate iOS pairing QR/setup code\n  reset                Reset local config/state (keeps the CLI installed)\n  sandbox *            Manage sandbox containers for agent isolation\n  secrets *            Secrets runtime reload controls\n  security *           Security tools and local config audits\n  sessions *           List stored conversation sessions\n  setup                Initialize local config and agent workspace\n  skills *             List and inspect available skills\n  status               Show channel health and recent session recipients\n  system *             System events, heartbeat, and presence\n  tui                  Open a terminal UI connected to the Gateway\n  uninstall            Uninstall the gateway service + local data (CLI remains)\n  update *             Update OpenClaw and inspect update channel status\n  webhooks *           Webhook helpers and integrations\n\nExamples:\n  openclaw models --help\n    Show detailed help for the models command.\n  openclaw channels login --verbose\n    Link personal WhatsApp Web and show QR + connection logs.\n  openclaw message send --target +15555550123 --message \"Hi\" --json\n    Send via your web session and print JSON result.\n  openclaw gateway --port 18789\n    Run the WebSocket Gateway locally.\n  openclaw --dev gateway\n    Run a dev Gateway (isolated state/config) on ws://127.0.0.1:19001.\n  openclaw gateway --force\n    Kill anything bound to the default gateway port, then start it.\n  openclaw gateway ...\n    Gateway control via WebSocket.\n  openclaw agent --to +15555550123 --message \"Run summary\" --deliver\n    Talk directly to the agent using the Gateway; optionally send the WhatsApp reply.\n  openclaw message send --channel telegram --target @mychat --message \"Hi\"\n    Send via your Telegram bot.\n\nDocs: https://docs.openclaw.ai/cli\n\n",
+      "hasSubcommands": false
+    },
+    "hooks": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks [options] [command]\n\nManage internal agent hooks\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  check       Check hooks eligibility status\n  disable     Disable a hook\n  enable      Enable a hook\n  info        Show detailed information about a hook\n  install     Install a hook pack (path, archive, or npm spec)\n  list        List all hooks\n  update      Update installed hooks (npm installs only)\n\nDocs: https://docs.openclaw.ai/cli/hooks\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "check": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks check [options]\n\nCheck hooks eligibility status\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output as JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "disable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks disable [options] <name>\n\nDisable a hook\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "enable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks enable [options] <name>\n\nEnable a hook\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "info": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks info [options] <name>\n\nShow detailed information about a hook\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output as JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "install": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks install [options] <path-or-spec>\n\nInstall a hook pack (path, archive, or npm spec)\n\nArguments:\n  path-or-spec  Path to a hook pack or npm package spec\n\nOptions:\n  -h, --help    Display help for command\n  -l, --link    Link a local path instead of copying (default: false)\n  --pin         Record npm installs as exact resolved <name>@<version> (default:\n                false)\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks list [options]\n\nList all hooks\n\nOptions:\n  --eligible     Show only eligible hooks (default: false)\n  -h, --help     Display help for command\n  --json         Output as JSON (default: false)\n  -v, --verbose  Show more details including missing requirements (default:\n                 false)\n",
+          "hasSubcommands": false
+        },
+        "update": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw hooks update [options] [id]\n\nUpdate installed hooks (npm installs only)\n\nArguments:\n  id          Hook pack id (omit with --all)\n\nOptions:\n  --all       Update all tracked hooks (default: false)\n  --dry-run   Show what would change without writing (default: false)\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "logs": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw logs [options]\n\nTail gateway file logs via RPC\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  --follow         Follow log output (default: false)\n  -h, --help       Display help for command\n  --interval <ms>  Polling interval in ms (default: \"1000\")\n  --json           Emit JSON log lines (default: false)\n  --limit <n>      Max lines to return (default: \"200\")\n  --local-time     Display timestamps in local timezone (default: false)\n  --max-bytes <n>  Max bytes to read (default: \"250000\")\n  --no-color       Disable ANSI colors\n  --plain          Plain text output (no ANSI styling) (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n\nDocs: https://docs.openclaw.ai/cli/logs\n\n",
+      "hasSubcommands": false
+    },
+    "memory": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw memory [options] [command]\n\nSearch, inspect, and reindex memory files\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  index       Reindex memory files\n  search      Search memory files\n  status      Show memory search index status\n\nExamples:\n  openclaw memory status\n    Show index and provider status.\n  openclaw memory index --force\n    Force a full reindex.\n  openclaw memory search --query \"deployment notes\"\n    Search indexed memory entries.\n  openclaw memory status --json\n    Output machine-readable JSON.\n\nDocs: https://docs.openclaw.ai/cli/memory\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw memory [options] [command]\n\nSearch, inspect, and reindex memory files\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  index       Reindex memory files\n  search      Search memory files\n  status      Show memory search index status\n\nExamples:\n  openclaw memory status\n    Show index and provider status.\n  openclaw memory index --force\n    Force a full reindex.\n  openclaw memory search --query \"deployment notes\"\n    Search indexed memory entries.\n  openclaw memory status --json\n    Output machine-readable JSON.\n\nDocs: https://docs.openclaw.ai/cli/memory\n\n",
+          "hasSubcommands": false
+        },
+        "index": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw memory index [options]\n\nReindex memory files\n\nOptions:\n  --agent <id>  Agent id (default: default agent)\n  --force       Force full reindex (default: false)\n  -h, --help    Display help for command\n  --verbose     Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "search": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw memory search [options] [query]\n\nSearch memory files\n\nArguments:\n  query              Search query\n\nOptions:\n  --agent <id>       Agent id (default: default agent)\n  -h, --help         Display help for command\n  --json             Print JSON\n  --max-results <n>  Max results\n  --min-score <n>    Minimum score\n  --query <text>     Search query (alternative to positional argument)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw memory status [options]\n\nShow memory search index status\n\nOptions:\n  --agent <id>  Agent id (default: default agent)\n  --deep        Probe embedding provider availability\n  -h, --help    Display help for command\n  --index       Reindex if dirty (implies --deep)\n  --json        Print JSON\n  --verbose     Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "message": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message [options] [command]\n\nSend, read, and manage messages and channel actions\n\nOptions:\n  -h, --help   Display help for command\n\nCommands:\n  ban          Ban a member\n  broadcast    Broadcast a message to multiple targets\n  channel      Channel actions\n  delete       Delete a message\n  edit         Edit a message\n  emoji        Emoji actions\n  event        Event actions\n  kick         Kick a member\n  member       Member actions\n  permissions  Fetch channel permissions\n  pin          Pin a message\n  pins         List pinned messages\n  poll         Send a poll\n  react        Add or remove a reaction\n  reactions    List reactions on a message\n  read         Read recent messages\n  role         Role actions\n  search       Search Discord messages\n  send         Send a message\n  sticker      Sticker actions\n  thread       Thread actions\n  timeout      Timeout a member\n  unpin        Unpin a message\n  voice        Voice actions\n\nExamples:\n  openclaw message send --target +15555550123 --message \"Hi\"\n    Send a text message.\n  openclaw message send --target +15555550123 --message \"Hi\" --media photo.jpg\n    Send a message with media.\n  openclaw message poll --channel discord --target channel:123 --poll-question \"Snack?\" --poll-option Pizza --poll-option Sushi\n    Create a Discord poll.\n  openclaw message react --channel discord --target 123 --message-id 456 --emoji \"✅\"\n    React to a message.\n\nDocs: https://docs.openclaw.ai/cli/message\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "ban": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message ban [options]\n\nBan a member\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --delete-days <n>    Ban delete message days\n  --dry-run            Print payload and skip sending (default: false)\n  --guild-id <id>      Guild id\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --reason <text>      Moderation reason\n  --user-id <id>       User id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "broadcast": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message broadcast [options]\n\nBroadcast a message to multiple targets\n\nOptions:\n  --account <id>         Channel account id (accountId)\n  --channel <channel>    Channel:\n                         telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run              Print payload and skip sending (default: false)\n  -h, --help             Display help for command\n  --json                 Output result as JSON (default: false)\n  --media <url>          Media URL\n  --message <text>       Message to send\n  --targets <target...>  Recipient/channel targets (same format as --target);\n                         accepts ids or names when the directory is available.\n  --verbose              Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "channel": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message channel [options] [command]\n\nChannel actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  info        Fetch channel info\n  list        List channels\n",
+          "hasSubcommands": false
+        },
+        "delete": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message delete [options]\n\nDelete a message\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --message-id <id>    Message id\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "edit": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message edit [options]\n\nEdit a message\n\nOptions:\n  --account <id>        Channel account id (accountId)\n  --channel <channel>   Channel:\n                        telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run             Print payload and skip sending (default: false)\n  -h, --help            Display help for command\n  --json                Output result as JSON (default: false)\n  -m, --message <text>  Message body\n  --message-id <id>     Message id\n  -t, --target <dest>   Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                        chat id/@username, Discord/Slack channel/user, or\n                        iMessage handle/chat_id\n  --thread-id <id>      Thread id (Telegram forum thread)\n  --verbose             Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "emoji": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message emoji [options] [command]\n\nEmoji actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  list        List emojis\n  upload      Upload an emoji\n",
+          "hasSubcommands": false
+        },
+        "event": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message event [options] [command]\n\nEvent actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  create      Create a scheduled event\n  help        Display help for command\n  list        List scheduled events\n",
+          "hasSubcommands": false
+        },
+        "kick": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message kick [options]\n\nKick a member\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  --guild-id <id>      Guild id\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --reason <text>      Moderation reason\n  --user-id <id>       User id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "member": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message member [options] [command]\n\nMember actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  info        Fetch member info\n",
+          "hasSubcommands": false
+        },
+        "permissions": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message permissions [options]\n\nFetch channel permissions\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "pin": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message pin [options]\n\nPin a message\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --message-id <id>    Message id\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "pins": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message pins [options]\n\nList pinned messages\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --limit <n>          Result limit\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "poll": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message poll [options]\n\nSend a poll\n\nOptions:\n  --account <id>               Channel account id (accountId)\n  --channel <channel>          Channel:\n                               telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run                    Print payload and skip sending (default: false)\n  -h, --help                   Display help for command\n  --json                       Output result as JSON (default: false)\n  -m, --message <text>         Optional message body\n  --poll-anonymous             Send an anonymous poll (Telegram) (default:\n                               false)\n  --poll-duration-hours <n>    Poll duration in hours (Discord)\n  --poll-duration-seconds <n>  Poll duration in seconds (Telegram; 5-600)\n  --poll-multi                 Allow multiple selections (default: false)\n  --poll-option <choice>       Poll option (repeat 2-12 times) (default: [])\n  --poll-public                Send a non-anonymous poll (Telegram) (default:\n                               false)\n  --poll-question <text>       Poll question\n  --silent                     Send poll silently without notification (Telegram\n                               + Discord where supported) (default: false)\n  -t, --target <dest>          Recipient/channel: E.164 for WhatsApp/Signal,\n                               Telegram chat id/@username, Discord/Slack\n                               channel/user, or iMessage handle/chat_id\n  --thread-id <id>             Thread id (Telegram forum topic / Slack thread\n                               ts)\n  --verbose                    Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "react": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message react [options]\n\nAdd or remove a reaction\n\nOptions:\n  --account <id>               Channel account id (accountId)\n  --channel <channel>          Channel:\n                               telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run                    Print payload and skip sending (default: false)\n  --emoji <emoji>              Emoji for reactions\n  --from-me                    WhatsApp reaction fromMe (default: false)\n  -h, --help                   Display help for command\n  --json                       Output result as JSON (default: false)\n  --message-id <id>            Message id\n  --participant <id>           WhatsApp reaction participant\n  --remove                     Remove reaction (default: false)\n  -t, --target <dest>          Recipient/channel: E.164 for WhatsApp/Signal,\n                               Telegram chat id/@username, Discord/Slack\n                               channel/user, or iMessage handle/chat_id\n  --target-author <id>         Signal reaction target author (uuid or phone)\n  --target-author-uuid <uuid>  Signal reaction target author uuid\n  --verbose                    Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "reactions": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message reactions [options]\n\nList reactions on a message\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --limit <n>          Result limit\n  --message-id <id>    Message id\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "read": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message read [options]\n\nRead recent messages\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --after <id>         Read/search after id\n  --around <id>        Read around id\n  --before <id>        Read/search before id\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --include-thread     Include thread replies (Discord) (default: false)\n  --json               Output result as JSON (default: false)\n  --limit <n>          Result limit\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "role": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message role [options] [command]\n\nRole actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add role to a member\n  help        Display help for command\n  info        List roles\n  remove      Remove role from a member\n",
+          "hasSubcommands": false
+        },
+        "search": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message search [options]\n\nSearch Discord messages\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --author-id <id>     Author id\n  --author-ids <id>    Author id (repeat) (default: [])\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --channel-id <id>    Channel id\n  --channel-ids <id>   Channel id (repeat) (default: [])\n  --dry-run            Print payload and skip sending (default: false)\n  --guild-id <id>      Guild id\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --limit <n>          Result limit\n  --query <text>       Search query\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "send": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw message send [options]\n\nSend a message\n\nOptions:\n  --account <id>         Channel account id (accountId)\n  --buttons <json>       Telegram inline keyboard buttons as JSON (array of\n                         button rows)\n  --card <json>          Adaptive Card JSON object (when supported by the\n                         channel)\n  --channel <channel>    Channel:\n                         telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --components <json>    Discord components payload as JSON\n  --dry-run              Print payload and skip sending (default: false)\n  --gif-playback         Treat video media as GIF playback (WhatsApp only).\n                         (default: false)\n  -h, --help             Display help for command\n  --json                 Output result as JSON (default: false)\n  -m, --message <text>   Message body (required unless --media is set)\n  --media <path-or-url>  Attach media (image/audio/video/document). Accepts\n                         local paths or URLs.\n  --reply-to <id>        Reply-to message id\n  --silent               Send message silently without notification (Telegram +\n                         Discord) (default: false)\n  -t, --target <dest>    Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                         chat id/@username, Discord/Slack channel/user, or\n                         iMessage handle/chat_id\n  --thread-id <id>       Thread id (Telegram forum thread)\n  --verbose              Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "sticker": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message sticker [options] [command]\n\nSticker actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  send        Send stickers\n  upload      Upload a sticker\n",
+          "hasSubcommands": false
+        },
+        "thread": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message thread [options] [command]\n\nThread actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  create      Create a thread\n  help        Display help for command\n  list        List threads\n  reply       Reply in a thread\n",
+          "hasSubcommands": false
+        },
+        "timeout": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message timeout [options]\n\nTimeout a member\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  --duration-min <n>   Timeout duration minutes\n  --guild-id <id>      Guild id\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --reason <text>      Moderation reason\n  --until <iso>        Timeout until\n  --user-id <id>       User id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "unpin": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message unpin [options]\n\nUnpin a message\n\nOptions:\n  --account <id>       Channel account id (accountId)\n  --channel <channel>  Channel:\n                       telegram|whatsapp|discord|irc|googlechat|slack|signal|imessage|feishu|nostr|msteams|mattermost|nextcloud-talk|matrix|bluebubbles|line|zalo|zalouser|synology-chat|tlon\n  --dry-run            Print payload and skip sending (default: false)\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --message-id <id>    Message id\n  -t, --target <dest>  Recipient/channel: E.164 for WhatsApp/Signal, Telegram\n                       chat id/@username, Discord/Slack channel/user, or\n                       iMessage handle/chat_id\n  --verbose            Verbose logging (default: false)\n",
+          "hasSubcommands": false
+        },
+        "voice": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw message voice [options] [command]\n\nVoice actions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  status      Fetch voice status\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "models": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models [options] [command]\n\nModel discovery, scanning, and configuration\n\nOptions:\n  --agent <id>     Agent id to inspect (overrides\n                   OPENCLAW_AGENT_DIR/PI_CODING_AGENT_DIR)\n  -h, --help       Display help for command\n  --status-json    Output JSON (alias for `models status --json`) (default:\n                   false)\n  --status-plain   Plain output (alias for `models status --plain`) (default:\n                   false)\n\nCommands:\n  aliases          Manage model aliases\n  auth             Manage model auth profiles\n  fallbacks        Manage model fallback list\n  image-fallbacks  Manage image model fallback list\n  list             List models (configured by default)\n  scan             Scan OpenRouter free models for tools + images\n  set              Set the default model\n  set-image        Set the image model\n  status           Show configured model state\n\nDocs: https://docs.openclaw.ai/cli/models\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "aliases": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models aliases [options] [command]\n\nManage model aliases\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add or update a model alias\n  help        Display help for command\n  list        List model aliases\n  remove      Remove a model alias\n",
+          "hasSubcommands": false
+        },
+        "auth": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models auth [options] [command]\n\nManage model auth profiles\n\nOptions:\n  --agent <id>          Agent id for auth order get/set/clear\n  -h, --help            Display help for command\n\nCommands:\n  add                   Interactive auth helper (setup-token or paste token)\n  login                 Run a provider plugin auth flow (OAuth/API key)\n  login-github-copilot  Login to GitHub Copilot via GitHub device flow (TTY\n                        required)\n  order                 Manage per-agent auth profile order overrides\n  paste-token           Paste a token into auth-profiles.json and update config\n  setup-token           Run a provider CLI to create/sync a token (TTY required)\n",
+          "hasSubcommands": false
+        },
+        "fallbacks": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models fallbacks [options] [command]\n\nManage model fallback list\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add a fallback model\n  clear       Clear all fallback models\n  help        Display help for command\n  list        List fallback models\n  remove      Remove a fallback model\n",
+          "hasSubcommands": false
+        },
+        "image-fallbacks": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models image-fallbacks [options] [command]\n\nManage image model fallback list\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  add         Add an image fallback model\n  clear       Clear all image fallback models\n  help        Display help for command\n  list        List image fallback models\n  remove      Remove an image fallback model\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models list [options]\n\nList models (configured by default)\n\nOptions:\n  --all              Show full model catalog (default: false)\n  -h, --help         Display help for command\n  --json             Output JSON (default: false)\n  --local            Filter to local models (default: false)\n  --plain            Plain line output (default: false)\n  --provider <name>  Filter by provider\n",
+          "hasSubcommands": false
+        },
+        "scan": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models scan [options]\n\nScan OpenRouter free models for tools + images\n\nOptions:\n  --concurrency <n>      Probe concurrency\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --max-age-days <days>  Skip models older than N days\n  --max-candidates <n>   Max fallback candidates (default: \"6\")\n  --min-params <b>       Minimum parameter size (billions)\n  --no-input             Disable prompts (use defaults)\n  --no-probe             Skip live probes; list free candidates only\n  --provider <name>      Filter by provider prefix\n  --set-default          Set agents.defaults.model to the first selection\n                         (default: false)\n  --set-image            Set agents.defaults.imageModel to the first image\n                         selection (default: false)\n  --timeout <ms>         Per-probe timeout in ms\n  --yes                  Accept defaults without prompting (default: false)\n",
+          "hasSubcommands": false
+        },
+        "set": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models set [options] <model>\n\nSet the default model\n\nArguments:\n  model       Model id or alias\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "set-image": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models set-image [options] <model>\n\nSet the image model\n\nArguments:\n  model       Model id or alias\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw models status [options]\n\nShow configured model state\n\nOptions:\n  --agent <id>             Agent id to inspect (overrides\n                           OPENCLAW_AGENT_DIR/PI_CODING_AGENT_DIR)\n  --check                  Exit non-zero if auth is expiring/expired\n                           (1=expired/missing, 2=expiring) (default: false)\n  -h, --help               Display help for command\n  --json                   Output JSON (default: false)\n  --plain                  Plain output (default: false)\n  --probe                  Probe configured provider auth (live) (default:\n                           false)\n  --probe-concurrency <n>  Concurrent probes\n  --probe-max-tokens <n>   Probe max tokens (best-effort)\n  --probe-profile <id>     Only probe specific auth profile ids (repeat or\n                           comma-separated)\n  --probe-provider <name>  Only probe a single provider\n  --probe-timeout <ms>     Per-probe timeout in ms\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "node": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node [options] [command]\n\nRun and manage the headless node host service\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  install     Install the node host service (launchd/systemd/schtasks)\n  restart     Restart the node host service (launchd/systemd/schtasks)\n  run         Run the headless node host (foreground)\n  status      Show node host status\n  stop        Stop the node host service (launchd/systemd/schtasks)\n  uninstall   Uninstall the node host service (launchd/systemd/schtasks)\n\nExamples:\n  openclaw node run --host 127.0.0.1 --port 18789\n    Run the node host in the foreground.\n  openclaw node status\n    Check node host service status.\n  openclaw node install\n    Install the node host service.\n  openclaw node restart\n    Restart the installed node host service.\n\nDocs: https://docs.openclaw.ai/cli/node\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node [options] [command]\n\nRun and manage the headless node host service\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  install     Install the node host service (launchd/systemd/schtasks)\n  restart     Restart the node host service (launchd/systemd/schtasks)\n  run         Run the headless node host (foreground)\n  status      Show node host status\n  stop        Stop the node host service (launchd/systemd/schtasks)\n  uninstall   Uninstall the node host service (launchd/systemd/schtasks)\n\nExamples:\n  openclaw node run --host 127.0.0.1 --port 18789\n    Run the node host in the foreground.\n  openclaw node status\n    Check node host service status.\n  openclaw node install\n    Install the node host service.\n  openclaw node restart\n    Restart the installed node host service.\n\nDocs: https://docs.openclaw.ai/cli/node\n\n",
+          "hasSubcommands": false
+        },
+        "install": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node install [options]\n\nInstall the node host service (launchd/systemd/schtasks)\n\nOptions:\n  --display-name <name>       Override node display name\n  --force                     Reinstall/overwrite if already installed (default:\n                              false)\n  -h, --help                  Display help for command\n  --host <host>               Gateway host\n  --json                      Output JSON (default: false)\n  --node-id <id>              Override node id (clears pairing token)\n  --port <port>               Gateway port\n  --runtime <runtime>         Service runtime (node|bun). Default: node\n  --tls                       Use TLS for the gateway connection (default:\n                              false)\n  --tls-fingerprint <sha256>  Expected TLS certificate fingerprint (sha256)\n",
+          "hasSubcommands": false
+        },
+        "restart": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node restart [options]\n\nRestart the node host service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "run": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node run [options]\n\nRun the headless node host (foreground)\n\nOptions:\n  --display-name <name>       Override node display name\n  -h, --help                  Display help for command\n  --host <host>               Gateway host\n  --node-id <id>              Override node id (clears pairing token)\n  --port <port>               Gateway port\n  --tls                       Use TLS for the gateway connection (default:\n                              false)\n  --tls-fingerprint <sha256>  Expected TLS certificate fingerprint (sha256)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node status [options]\n\nShow node host status\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "stop": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node stop [options]\n\nStop the node host service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "uninstall": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw node uninstall [options]\n\nUninstall the node host service (launchd/systemd/schtasks)\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "nodes": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes [options] [command]\n\nManage gateway-owned nodes (pairing, status, invoke, and media)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pending pairing request\n  camera      Capture camera media from a paired node\n  canvas      Capture or render canvas content from a paired node\n  describe    Describe a node (capabilities + supported invoke commands)\n  help        Display help for command\n  invoke      Invoke a command on a paired node\n  list        List pending and paired nodes\n  location    Fetch location from a paired node\n  notify      Send a local notification on a node (mac only)\n  pending     List pending pairing requests\n  push        Send an APNs test push to an iOS node\n  reject      Reject a pending pairing request\n  rename      Rename a paired node (display name override)\n  run         Run a shell command on a node (mac only)\n  screen      Capture screen recordings from a paired node\n  status      List known nodes with connection status and capabilities\n\nExamples:\n  openclaw nodes status\n    List known nodes with live status.\n  openclaw nodes pairing pending\n    Show pending node pairing requests.\n  openclaw nodes run --node <id> --raw \"uname -a\"\n    Run a shell command on a node.\n  openclaw nodes camera snap --node <id>\n    Capture a photo from a node camera.\n\nDocs: https://docs.openclaw.ai/cli/nodes\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "approve": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes approve [options] <requestId>\n\nApprove a pending pairing request\n\nArguments:\n  requestId        Pending request id\n\nOptions:\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"10000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "camera": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes camera [options] [command]\n\nCapture camera media from a paired node\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  clip        Capture a short video clip from a node camera (prints\n              MEDIA:<path>)\n  help        Display help for command\n  list        List available cameras on a node\n  snap        Capture a photo from a node camera (prints MEDIA:<path>)\n",
+          "hasSubcommands": false
+        },
+        "canvas": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes canvas [options] [command]\n\nCapture or render canvas content from a paired node\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  a2ui        Render A2UI content on the canvas\n  eval        Evaluate JavaScript in the canvas\n  help        Display help for command\n  hide        Hide the canvas\n  navigate    Navigate the canvas to a URL\n  present     Show the canvas (optionally with a target URL/path)\n  snapshot    Capture a canvas snapshot (prints MEDIA:<path>)\n",
+          "hasSubcommands": false
+        },
+        "describe": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes describe [options]\n\nDescribe a node (capabilities + supported invoke commands)\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --node <idOrNameOrIp>  Node id, name, or IP\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes [options] [command]\n\nManage gateway-owned nodes (pairing, status, invoke, and media)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pending pairing request\n  camera      Capture camera media from a paired node\n  canvas      Capture or render canvas content from a paired node\n  describe    Describe a node (capabilities + supported invoke commands)\n  help        Display help for command\n  invoke      Invoke a command on a paired node\n  list        List pending and paired nodes\n  location    Fetch location from a paired node\n  notify      Send a local notification on a node (mac only)\n  pending     List pending pairing requests\n  push        Send an APNs test push to an iOS node\n  reject      Reject a pending pairing request\n  rename      Rename a paired node (display name override)\n  run         Run a shell command on a node (mac only)\n  screen      Capture screen recordings from a paired node\n  status      List known nodes with connection status and capabilities\n\nExamples:\n  openclaw nodes status\n    List known nodes with live status.\n  openclaw nodes pairing pending\n    Show pending node pairing requests.\n  openclaw nodes run --node <id> --raw \"uname -a\"\n    Run a shell command on a node.\n  openclaw nodes camera snap --node <id>\n    Capture a photo from a node camera.\n\nDocs: https://docs.openclaw.ai/cli/nodes\n\n",
+          "hasSubcommands": false
+        },
+        "invoke": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes invoke [options]\n\nInvoke a command on a paired node\n\nOptions:\n  --command <command>      Command (e.g. canvas.eval)\n  -h, --help               Display help for command\n  --idempotency-key <key>  Idempotency key (optional)\n  --invoke-timeout <ms>    Node invoke timeout in ms (default 15000) (default:\n                           \"15000\")\n  --json                   Output JSON (default: false)\n  --node <idOrNameOrIp>    Node id, name, or IP\n  --params <json>          JSON object string for params (default: \"{}\")\n  --timeout <ms>           Timeout in ms (default: \"30000\")\n  --token <token>          Gateway token (if required)\n  --url <url>              Gateway WebSocket URL (defaults to gateway.remote.url\n                           when configured)\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes list [options]\n\nList pending and paired nodes\n\nOptions:\n  --connected                  Only show connected nodes\n  -h, --help                   Display help for command\n  --json                       Output JSON (default: false)\n  --last-connected <duration>  Only show nodes connected within duration (e.g.\n                               24h)\n  --timeout <ms>               Timeout in ms (default: \"10000\")\n  --token <token>              Gateway token (if required)\n  --url <url>                  Gateway WebSocket URL (defaults to\n                               gateway.remote.url when configured)\n",
+          "hasSubcommands": false
+        },
+        "location": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes location [options] [command]\n\nFetch location from a paired node\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  get         Fetch the current location from a node\n  help        Display help for command\n",
+          "hasSubcommands": false
+        },
+        "notify": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes notify [options]\n\nSend a local notification on a node (mac only)\n\nOptions:\n  --body <text>                              Notification body\n  --delivery <system|overlay|auto>           Delivery mode (default: \"system\")\n  -h, --help                                 Display help for command\n  --invoke-timeout <ms>                      Node invoke timeout in ms (default 15000) (default: \"15000\")\n  --json                                     Output JSON (default: false)\n  --node <idOrNameOrIp>                      Node id, name, or IP\n  --priority <passive|active|timeSensitive>  Notification priority\n  --sound <name>                             Notification sound\n  --timeout <ms>                             Timeout in ms (default: \"10000\")\n  --title <text>                             Notification title\n  --token <token>                            Gateway token (if required)\n  --url <url>                                Gateway WebSocket URL (defaults to gateway.remote.url when configured)\n",
+          "hasSubcommands": false
+        },
+        "pending": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes pending [options]\n\nList pending pairing requests\n\nOptions:\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"10000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "push": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes push [options]\n\nSend an APNs test push to an iOS node\n\nOptions:\n  --body <text>                       Push body\n  --environment <sandbox|production>  Override APNs environment\n  -h, --help                          Display help for command\n  --json                              Output JSON (default: false)\n  --node <idOrNameOrIp>               Node id, name, or IP\n  --timeout <ms>                      Timeout in ms (default: \"25000\")\n  --title <text>                      Push title (default: \"OpenClaw\")\n  --token <token>                     Gateway token (if required)\n  --url <url>                         Gateway WebSocket URL (defaults to\n                                      gateway.remote.url when configured)\n",
+          "hasSubcommands": false
+        },
+        "reject": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes reject [options] <requestId>\n\nReject a pending pairing request\n\nArguments:\n  requestId        Pending request id\n\nOptions:\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"10000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "rename": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes rename [options]\n\nRename a paired node (display name override)\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --name <displayName>   New display name\n  --node <idOrNameOrIp>  Node id, name, or IP\n  --timeout <ms>         Timeout in ms (default: \"10000\")\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n",
+          "hasSubcommands": false
+        },
+        "run": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes run [options] [command...]\n\nRun a shell command on a node (mac only)\n\nArguments:\n  command                   Command and args\n\nOptions:\n  --agent <id>              Agent id (default: configured default agent)\n  --ask <mode>              Exec ask mode (off|on-miss|always)\n  --command-timeout <ms>    Command timeout (ms)\n  --cwd <path>              Working directory\n  --env <key=val>           Environment override (repeatable)\n  -h, --help                Display help for command\n  --invoke-timeout <ms>     Node invoke timeout in ms (default 30000) (default:\n                            \"30000\")\n  --json                    Output JSON (default: false)\n  --needs-screen-recording  Require screen recording permission\n  --node <idOrNameOrIp>     Node id, name, or IP\n  --raw <command>           Run a raw shell command string (sh -lc / cmd.exe /c)\n  --security <mode>         Exec security mode (deny|allowlist|full)\n  --timeout <ms>            Timeout in ms (default: \"35000\")\n  --token <token>           Gateway token (if required)\n  --url <url>               Gateway WebSocket URL (defaults to\n                            gateway.remote.url when configured)\n",
+          "hasSubcommands": false
+        },
+        "screen": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw nodes screen [options] [command]\n\nCapture screen recordings from a paired node\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  record      Capture a short screen recording from a node (prints MEDIA:<path>)\n",
+          "hasSubcommands": false
+        },
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw nodes status [options]\n\nList known nodes with connection status and capabilities\n\nOptions:\n  --connected                  Only show connected nodes\n  -h, --help                   Display help for command\n  --json                       Output JSON (default: false)\n  --last-connected <duration>  Only show nodes connected within duration (e.g.\n                               24h)\n  --timeout <ms>               Timeout in ms (default: \"10000\")\n  --token <token>              Gateway token (if required)\n  --url <url>                  Gateway WebSocket URL (defaults to\n                               gateway.remote.url when configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "onboard": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw onboard [options]\n\nInteractive wizard to set up the gateway, workspace, and skills\n\nOptions:\n  --accept-risk                            Acknowledge that agents are powerful and full system access is risky (required for --non-interactive) (default: false)\n  --ai-gateway-api-key <key>               Vercel AI Gateway API key\n  --anthropic-api-key <key>                Anthropic API key\n  --auth-choice <choice>                   Auth: token|openai-codex|chutes|vllm|apiKey|openai-api-key|mistral-api-key|openrouter-api-key|kilocode-api-key|ai-gateway-api-key|cloudflare-ai-gateway-api-key|moonshot-api-key|kimi-code-api-key|gemini-api-key|zai-api-key|xiaomi-api-key|minimax-api|synthetic-api-key|venice-api-key|together-api-key|huggingface-api-key|opencode-zen|xai-api-key|litellm-api-key|qianfan-api-key|volcengine-api-key|byteplus-api-key|moonshot-api-key-cn|github-copilot|gemini-api-key|google-gemini-cli|zai-api-key|zai-coding-global|zai-coding-cn|zai-global|zai-cn|xiaomi-api-key|minimax-portal|qwen-portal|copilot-proxy|apiKey|opencode-zen|minimax-api|minimax-api-key-cn|minimax-api-lightning|custom-api-key|skip|setup-token|oauth|claude-cli|codex-cli|minimax-cloud|minimax\n  --byteplus-api-key <key>                 BytePlus API key\n  --cloudflare-ai-gateway-account-id <id>  Cloudflare Account ID\n  --cloudflare-ai-gateway-api-key <key>    Cloudflare AI Gateway API key\n  --cloudflare-ai-gateway-gateway-id <id>  Cloudflare AI Gateway ID\n  --custom-api-key <key>                   Custom provider API key (optional)\n  --custom-base-url <url>                  Custom provider base URL\n  --custom-compatibility <mode>            Custom provider API compatibility: openai|anthropic (default: openai)\n  --custom-model-id <id>                   Custom provider model ID\n  --custom-provider-id <id>                Custom provider ID (optional; auto-derived by default)\n  --daemon-runtime <runtime>               Daemon runtime: node|bun\n  --flow <flow>                            Wizard flow: quickstart|advanced|manual\n  --gateway-auth <mode>                    Gateway auth: token|password\n  --gateway-bind <mode>                    Gateway bind: loopback|tailnet|lan|auto|custom\n  --gateway-password <password>            Gateway password (password auth)\n  --gateway-port <port>                    Gateway port\n  --gateway-token <token>                  Gateway token (token auth)\n  --gemini-api-key <key>                   Gemini API key\n  -h, --help                               Display help for command\n  --huggingface-api-key <key>              Hugging Face API key (HF token)\n  --install-daemon                         Install gateway service\n  --json                                   Output JSON summary (default: false)\n  --kilocode-api-key <key>                 Kilo Gateway API key\n  --kimi-code-api-key <key>                Kimi Coding API key\n  --litellm-api-key <key>                  LiteLLM API key\n  --minimax-api-key <key>                  MiniMax API key\n  --mistral-api-key <key>                  Mistral API key\n  --mode <mode>                            Wizard mode: local|remote\n  --moonshot-api-key <key>                 Moonshot API key\n  --no-install-daemon                      Skip gateway service install\n  --node-manager <name>                    Node manager for skills: npm|pnpm|bun\n  --non-interactive                        Run without prompts (default: false)\n  --openai-api-key <key>                   OpenAI API key\n  --opencode-zen-api-key <key>             OpenCode Zen API key\n  --openrouter-api-key <key>               OpenRouter API key\n  --qianfan-api-key <key>                  QIANFAN API key\n  --remote-token <token>                   Remote Gateway token (optional)\n  --remote-url <url>                       Remote Gateway WebSocket URL\n  --reset                                  Reset config + credentials + sessions before running wizard (workspace only with --reset-scope full)\n  --reset-scope <scope>                    Reset scope: config|config+creds+sessions|full\n  --secret-input-mode <mode>               API key persistence mode: plaintext|ref (default: plaintext)\n  --skip-channels                          Skip channel setup\n  --skip-daemon                            Skip gateway service install\n  --skip-health                            Skip health check\n  --skip-skills                            Skip skills setup\n  --skip-ui                                Skip Control UI/TUI prompts\n  --synthetic-api-key <key>                Synthetic API key\n  --tailscale <mode>                       Tailscale: off|serve|funnel\n  --tailscale-reset-on-exit                Reset tailscale serve/funnel on exit\n  --together-api-key <key>                 Together AI API key\n  --token <token>                          Token value (non-interactive; used with --auth-choice token)\n  --token-expires-in <duration>            Optional token expiry duration (e.g. 365d, 12h)\n  --token-profile-id <id>                  Auth profile id (non-interactive; default: <provider>:manual)\n  --token-provider <id>                    Token provider id (non-interactive; used with --auth-choice token)\n  --venice-api-key <key>                   Venice API key\n  --volcengine-api-key <key>               Volcano Engine API key\n  --workspace <dir>                        Agent workspace directory (default: ~/.openclaw/workspace)\n  --xai-api-key <key>                      xAI API key\n  --xiaomi-api-key <key>                   Xiaomi API key\n  --zai-api-key <key>                      Z.AI API key\n\nDocs: https://docs.openclaw.ai/cli/onboard\n\n",
+      "hasSubcommands": false
+    },
+    "pairing": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw pairing [options] [command]\n\nSecure DM pairing (approve inbound requests)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pairing code and allow that sender\n  help        Display help for command\n  list        List pending pairing requests\n\nDocs: https://docs.openclaw.ai/cli/pairing\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "approve": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw pairing approve [options] <codeOrChannel> [code]\n\nApprove a pairing code and allow that sender\n\nArguments:\n  codeOrChannel          Pairing code (or channel when using 2 args)\n  code                   Pairing code (when channel is passed as the 1st arg)\n\nOptions:\n  --account <accountId>  Account id (for multi-account channels)\n  --channel <channel>    Channel (telegram)\n  -h, --help             Display help for command\n  --notify               Notify the requester on the same channel (default:\n                         false)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw pairing [options] [command]\n\nSecure DM pairing (approve inbound requests)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  approve     Approve a pairing code and allow that sender\n  help        Display help for command\n  list        List pending pairing requests\n\nDocs: https://docs.openclaw.ai/cli/pairing\n\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw pairing list [options] [channel]\n\nList pending pairing requests\n\nArguments:\n  channel                Channel (telegram)\n\nOptions:\n  --account <accountId>  Account id (for multi-account channels)\n  --channel <channel>    Channel (telegram)\n  -h, --help             Display help for command\n  --json                 Print JSON (default: false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "plugins": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins [options] [command]\n\nManage OpenClaw plugins and extensions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  disable     Disable a plugin in config\n  doctor      Report plugin load issues\n  enable      Enable a plugin in config\n  help        Display help for command\n  info        Show plugin details\n  install     Install a plugin (path, archive, or npm spec)\n  list        List discovered plugins\n  uninstall   Uninstall a plugin\n  update      Update installed plugins (npm installs only)\n\nDocs: https://docs.openclaw.ai/cli/plugins\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "disable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins disable [options] <id>\n\nDisable a plugin in config\n\nArguments:\n  id          Plugin id\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "doctor": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins doctor [options]\n\nReport plugin load issues\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "enable": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins enable [options] <id>\n\nEnable a plugin in config\n\nArguments:\n  id          Plugin id\n\nOptions:\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins [options] [command]\n\nManage OpenClaw plugins and extensions\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  disable     Disable a plugin in config\n  doctor      Report plugin load issues\n  enable      Enable a plugin in config\n  help        Display help for command\n  info        Show plugin details\n  install     Install a plugin (path, archive, or npm spec)\n  list        List discovered plugins\n  uninstall   Uninstall a plugin\n  update      Update installed plugins (npm installs only)\n\nDocs: https://docs.openclaw.ai/cli/plugins\n\n",
+          "hasSubcommands": false
+        },
+        "info": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins info [options] <id>\n\nShow plugin details\n\nArguments:\n  id          Plugin id\n\nOptions:\n  -h, --help  Display help for command\n  --json      Print JSON\n",
+          "hasSubcommands": false
+        },
+        "install": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins install [options] <path-or-spec>\n\nInstall a plugin (path, archive, or npm spec)\n\nArguments:\n  path-or-spec  Path (.ts/.js/.zip/.tgz/.tar.gz) or an npm package spec\n\nOptions:\n  -h, --help    Display help for command\n  -l, --link    Link a local path instead of copying (default: false)\n  --pin         Record npm installs as exact resolved <name>@<version> (default:\n                false)\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins list [options]\n\nList discovered plugins\n\nOptions:\n  --enabled   Only show enabled plugins (default: false)\n  -h, --help  Display help for command\n  --json      Print JSON\n  --verbose   Show detailed entries (default: false)\n",
+          "hasSubcommands": false
+        },
+        "uninstall": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins uninstall [options] <id>\n\nUninstall a plugin\n\nArguments:\n  id             Plugin id\n\nOptions:\n  --dry-run      Show what would be removed without making changes (default:\n                 false)\n  --force        Skip confirmation prompt (default: false)\n  -h, --help     Display help for command\n  --keep-config  Deprecated alias for --keep-files (default: false)\n  --keep-files   Keep installed files on disk (default: false)\n",
+          "hasSubcommands": false
+        },
+        "update": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw plugins update [options] [id]\n\nUpdate installed plugins (npm installs only)\n\nArguments:\n  id          Plugin id (omit with --all)\n\nOptions:\n  --all       Update all tracked plugins (default: false)\n  --dry-run   Show what would change without writing (default: false)\n  -h, --help  Display help for command\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "qr": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw qr [options]\n\nGenerate an iOS pairing QR code and setup code\n\nOptions:\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --no-ascii             Skip ASCII QR rendering\n  --password <password>  Override gateway password for setup payload\n  --public-url <url>     Override gateway public URL used in the setup payload\n  --remote               Use gateway.remote.url and gateway.remote\n                         token/password (ignores device-pair publicUrl)\n                         (default: false)\n  --setup-code-only      Print only the setup code (default: false)\n  --token <token>        Override gateway token for setup payload\n  --url <url>            Override gateway URL used in the setup payload\n\nDocs: https://docs.openclaw.ai/cli/qr\n\n",
+      "hasSubcommands": false
+    },
+    "reset": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw reset [options]\n\nReset local config/state (keeps the CLI installed)\n\nOptions:\n  --dry-run          Print actions without removing files (default: false)\n  -h, --help         Display help for command\n  --non-interactive  Disable prompts (requires --scope + --yes) (default: false)\n  --scope <scope>    config|config+creds+sessions|full (default: interactive\n                     prompt)\n  --yes              Skip confirmation prompts (default: false)\n\nDocs: https://docs.openclaw.ai/cli/reset\n\n",
+      "hasSubcommands": false
+    },
+    "sandbox": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sandbox [options] [command]\n\nManage sandbox containers (Docker-based agent isolation)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  explain     Explain effective sandbox/tool policy for a session/agent\n  list        List sandbox containers and their status\n  recreate    Remove containers to force recreation with updated config\n\nExamples:\n  openclaw sandbox list\n    List all sandbox containers.\n  openclaw sandbox list --browser\n    List only browser containers.\n  openclaw sandbox recreate --all\n    Recreate all containers.\n  openclaw sandbox recreate --session main\n    Recreate a specific session.\n  openclaw sandbox recreate --agent mybot\n    Recreate agent containers.\n  openclaw sandbox explain\n    Explain effective sandbox config.\n\n\nDocs: https://docs.openclaw.ai/cli/sandbox\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "explain": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sandbox explain [options]\n\nExplain effective sandbox/tool policy for a session/agent\n\nOptions:\n  --agent <id>     Agent id to inspect (defaults to derived agent)\n  -h, --help       Display help for command\n  --json           Output result as JSON (default: false)\n  --session <key>  Session key to inspect (defaults to agent main)\n\nExamples:\n  openclaw sandbox explain\n    Show effective sandbox config.\n  openclaw sandbox explain --session agent:main:main\n    Explain a specific session.\n  openclaw sandbox explain --agent work\n    Explain an agent sandbox.\n  openclaw sandbox explain --json\n    JSON output.\n\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sandbox list [options]\n\nList sandbox containers and their status\n\nOptions:\n  --browser   List browser containers only (default: false)\n  -h, --help  Display help for command\n  --json      Output result as JSON (default: false)\n\nExamples:\n  openclaw sandbox list\n    List all sandbox containers.\n  openclaw sandbox list --browser\n    List only browser containers.\n  openclaw sandbox list --json\n    JSON output.\n\nOutput includes:\n- Container name and status (running/stopped)\n- Docker image and whether it matches current config\n- Age (time since creation)\n- Idle time (time since last use)\n- Associated session/agent ID\n",
+          "hasSubcommands": false
+        },
+        "recreate": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sandbox recreate [options]\n\nRemove containers to force recreation with updated config\n\nOptions:\n  --agent <id>     Recreate containers for specific agent\n  --all            Recreate all sandbox containers (default: false)\n  --browser        Only recreate browser containers (default: false)\n  --force          Skip confirmation prompt (default: false)\n  -h, --help       Display help for command\n  --session <key>  Recreate container for specific session\n\nExamples:\n  openclaw sandbox recreate --all\n    Recreate all containers.\n  openclaw sandbox recreate --session main\n    Recreate a specific session.\n  openclaw sandbox recreate --agent mybot\n    Recreate a specific agent (includes sub-agents).\n  openclaw sandbox recreate --browser --all\n    Recreate only browser containers.\n  openclaw sandbox recreate --all --force\n    Skip confirmation.\n\nWhy use this?\nAfter updating Docker images or sandbox configuration, existing containers continue running with old settings.\nThis command removes them so they'll be recreated automatically with current config when next needed.\n\nFilter options:\n  --all          Remove all sandbox containers\n  --session      Remove container for specific session key\n  --agent        Remove containers for agent (includes agent:id:* variants)\n\nModifiers:\n  --browser      Only affect browser containers (not regular sandbox)\n  --force        Skip confirmation prompt\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "secrets": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets [options] [command]\n\nSecrets runtime controls\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  apply       Apply a previously generated secrets plan\n  audit       Audit plaintext secrets, unresolved refs, and precedence drift\n  configure   Interactive secrets helper (provider setup + SecretRef mapping +\n              preflight)\n  help        Display help for command\n  reload      Re-resolve secret references and atomically swap runtime snapshot\n\nDocs: https://docs.openclaw.ai/gateway/security\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "apply": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets apply [options]\n\nApply a previously generated secrets plan\n\nOptions:\n  --dry-run      Validate/preflight only (default: false)\n  --from <path>  Path to plan JSON\n  -h, --help     Display help for command\n  --json         Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "audit": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets audit [options]\n\nAudit plaintext secrets, unresolved refs, and precedence drift\n\nOptions:\n  --check     Exit non-zero when findings are present (default: false)\n  -h, --help  Display help for command\n  --json      Output JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "configure": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets configure [options]\n\nInteractive secrets helper (provider setup + SecretRef mapping + preflight)\n\nOptions:\n  --apply                Apply changes immediately after preflight (default:\n                         false)\n  -h, --help             Display help for command\n  --json                 Output JSON (default: false)\n  --plan-out <path>      Write generated plan JSON to a file\n  --providers-only       Configure secrets.providers only, skip credential\n                         mapping (default: false)\n  --skip-provider-setup  Skip provider setup and only map credential fields to\n                         existing providers (default: false)\n  --yes                  Skip apply confirmation prompt (default: false)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets [options] [command]\n\nSecrets runtime controls\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  apply       Apply a previously generated secrets plan\n  audit       Audit plaintext secrets, unresolved refs, and precedence drift\n  configure   Interactive secrets helper (provider setup + SecretRef mapping +\n              preflight)\n  help        Display help for command\n  reload      Re-resolve secret references and atomically swap runtime snapshot\n\nDocs: https://docs.openclaw.ai/gateway/security\n\n",
+          "hasSubcommands": false
+        },
+        "reload": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw secrets reload [options]\n\nRe-resolve secret references and atomically swap runtime snapshot\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "security": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw security [options] [command]\n\nAudit local config and state for common security foot-guns\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  audit       Audit config + local state for common security foot-guns\n  help        Display help for command\n\nExamples:\n  openclaw security audit\n    Run a local security audit.\n  openclaw security audit --deep\n    Include best-effort live Gateway probe checks.\n  openclaw security audit --fix\n    Apply safe remediations and file-permission fixes.\n  openclaw security audit --json\n    Output machine-readable JSON.\n\nDocs: https://docs.openclaw.ai/cli/security\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "audit": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw security audit [options]\n\nAudit config + local state for common security foot-guns\n\nOptions:\n  --deep      Attempt live Gateway probe (best-effort) (default: false)\n  --fix       Apply safe fixes (tighten defaults + chmod state/config) (default:\n              false)\n  -h, --help  Display help for command\n  --json      Print JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw security [options] [command]\n\nAudit local config and state for common security foot-guns\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  audit       Audit config + local state for common security foot-guns\n  help        Display help for command\n\nExamples:\n  openclaw security audit\n    Run a local security audit.\n  openclaw security audit --deep\n    Include best-effort live Gateway probe checks.\n  openclaw security audit --fix\n    Apply safe remediations and file-permission fixes.\n  openclaw security audit --json\n    Output machine-readable JSON.\n\nDocs: https://docs.openclaw.ai/cli/security\n\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "sessions": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sessions [options] [command]\n\nList stored conversation sessions\n\nOptions:\n  --active <minutes>  Only show sessions updated within the past N minutes\n  --agent <id>        Agent id to inspect (default: configured default agent)\n  --all-agents        Aggregate sessions across all configured agents (default:\n                      false)\n  -h, --help          Display help for command\n  --json              Output as JSON (default: false)\n  --store <path>      Path to session store (default: resolved from config)\n  --verbose           Verbose logging (default: false)\n\nCommands:\n  cleanup             Run session-store maintenance now\n\nExamples:\n  openclaw sessions\n    List all sessions.\n  openclaw sessions --agent work\n    List sessions for one agent.\n  openclaw sessions --all-agents\n    Aggregate sessions across agents.\n  openclaw sessions --active 120\n    Only last 2 hours.\n  openclaw sessions --json\n    Machine-readable output.\n  openclaw sessions --store ./tmp/sessions.json\n    Use a specific session store.\n\nShows token usage per session when the agent reports it; set agents.defaults.contextTokens to cap the window and show %.\n\nDocs: https://docs.openclaw.ai/cli/sessions\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "cleanup": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw sessions cleanup [options]\n\nRun session-store maintenance now\n\nOptions:\n  --active-key <key>  Protect this session key from budget-eviction\n  --agent <id>        Agent id to maintain (default: configured default agent)\n  --all-agents        Run maintenance across all configured agents (default:\n                      false)\n  --dry-run           Preview maintenance actions without writing (default:\n                      false)\n  --enforce           Apply maintenance even when configured mode is warn\n                      (default: false)\n  --fix-missing       Remove store entries whose transcript files are missing\n                      (bypasses age/count retention) (default: false)\n  -h, --help          Display help for command\n  --json              Output JSON (default: false)\n  --store <path>      Path to session store (default: resolved from config)\n\nExamples:\n  openclaw sessions cleanup --dry-run\n    Preview stale/cap cleanup.\n  openclaw sessions cleanup --dry-run --fix-missing\n    Also preview pruning entries with missing transcript files.\n  openclaw sessions cleanup --enforce\n    Apply maintenance now.\n  openclaw sessions cleanup --agent work --dry-run\n    Preview one agent store.\n  openclaw sessions cleanup --all-agents --dry-run\n    Preview all agent stores.\n  openclaw sessions cleanup --enforce --store ./tmp/sessions.json\n    Use a specific store.\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "setup": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw setup [options]\n\nInitialize ~/.openclaw/openclaw.json and the agent workspace\n\nOptions:\n  -h, --help              Display help for command\n  --mode <mode>           Wizard mode: local|remote\n  --non-interactive       Run the wizard without prompts (default: false)\n  --remote-token <token>  Remote Gateway token (optional)\n  --remote-url <url>      Remote Gateway WebSocket URL\n  --wizard                Run the interactive onboarding wizard (default: false)\n  --workspace <dir>       Agent workspace directory (default:\n                          ~/.openclaw/workspace; stored as\n                          agents.defaults.workspace)\n\nDocs: https://docs.openclaw.ai/cli/setup\n\n",
+      "hasSubcommands": false
+    },
+    "skills": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw skills [options] [command]\n\nList and inspect available skills\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  check       Check which skills are ready vs missing requirements\n  info        Show detailed information about a skill\n  list        List all available skills\n\nDocs: https://docs.openclaw.ai/cli/skills\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "check": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw skills check [options]\n\nCheck which skills are ready vs missing requirements\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output as JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "info": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw skills info [options] <name>\n\nShow detailed information about a skill\n\nArguments:\n  name        Skill name\n\nOptions:\n  -h, --help  Display help for command\n  --json      Output as JSON (default: false)\n",
+          "hasSubcommands": false
+        },
+        "list": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw skills list [options]\n\nList all available skills\n\nOptions:\n  --eligible     Show only eligible (ready to use) skills (default: false)\n  -h, --help     Display help for command\n  --json         Output as JSON (default: false)\n  -v, --verbose  Show more details including missing requirements (default:\n                 false)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "status": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw status [options]\n\nShow channel health and recent session recipients\n\nOptions:\n  --all           Full diagnosis (read-only, pasteable) (default: false)\n  --debug         Alias for --verbose (default: false)\n  --deep          Probe channels (WhatsApp Web + Telegram + Discord + Slack +\n                  Signal) (default: false)\n  -h, --help      Display help for command\n  --json          Output JSON instead of text (default: false)\n  --timeout <ms>  Probe timeout in milliseconds (default: \"10000\")\n  --usage         Show model provider usage/quota snapshots (default: false)\n  --verbose       Verbose logging (default: false)\n\nExamples:\n  openclaw status\n    Show channel health + session summary.\n  openclaw status --all\n    Full diagnosis (read-only).\n  openclaw status --json\n    Machine-readable output.\n  openclaw status --usage\n    Show model provider usage/quota snapshots.\n  openclaw status --deep\n    Run channel probes (WA + Telegram + Discord + Slack + Signal).\n  openclaw status --deep --timeout 5000\n    Tighten probe timeout.\n\nDocs: https://docs.openclaw.ai/cli/status\n\n",
+      "hasSubcommands": false
+    },
+    "system": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw system [options] [command]\n\nSystem tools (events, heartbeat, presence)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  event       Enqueue a system event and optionally trigger a heartbeat\n  heartbeat   Heartbeat controls\n  help        Display help for command\n  presence    List system presence entries\n\nDocs: https://docs.openclaw.ai/cli/system\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "event": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw system event [options]\n\nEnqueue a system event and optionally trigger a heartbeat\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --mode <mode>    Wake mode (now|next-heartbeat) (default: \"next-heartbeat\")\n  --text <text>    System event text\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        },
+        "heartbeat": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw system heartbeat [options] [command]\n\nHeartbeat controls\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  disable     Disable heartbeats\n  enable      Enable heartbeats\n  help        Display help for command\n  last        Show the last heartbeat event\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw system [options] [command]\n\nSystem tools (events, heartbeat, presence)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  event       Enqueue a system event and optionally trigger a heartbeat\n  heartbeat   Heartbeat controls\n  help        Display help for command\n  presence    List system presence entries\n\nDocs: https://docs.openclaw.ai/cli/system\n\n",
+          "hasSubcommands": false
+        },
+        "presence": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw system presence [options]\n\nList system presence entries\n\nOptions:\n  --expect-final   Wait for final response (agent) (default: false)\n  -h, --help       Display help for command\n  --json           Output JSON (default: false)\n  --timeout <ms>   Timeout in ms (default: \"30000\")\n  --token <token>  Gateway token (if required)\n  --url <url>      Gateway WebSocket URL (defaults to gateway.remote.url when\n                   configured)\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "tui": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n   If it's repetitive, I'll automate it; if it's hard, I'll bring jokes and a rollback plan.\n\nUsage: openclaw tui [options]\n\nOpen a terminal UI connected to the Gateway\n\nOptions:\n  --deliver              Deliver assistant replies (default: false)\n  -h, --help             Display help for command\n  --history-limit <n>    History entries to load (default: \"200\")\n  --message <text>       Send an initial message after connecting\n  --password <password>  Gateway password (if required)\n  --session <key>        Session key (default: \"main\", or \"global\" when scope is\n                         global)\n  --thinking <level>     Thinking level override\n  --timeout-ms <ms>      Agent timeout in ms (defaults to\n                         agents.defaults.timeoutSeconds)\n  --token <token>        Gateway token (if required)\n  --url <url>            Gateway WebSocket URL (defaults to gateway.remote.url\n                         when configured)\n\nDocs: https://docs.openclaw.ai/cli/tui\n\n",
+      "hasSubcommands": false
+    },
+    "uninstall": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw uninstall [options]\n\nUninstall the gateway service + local data (CLI remains)\n\nOptions:\n  --all              Remove service + state + workspace + app (default: false)\n  --app              Remove the macOS app (default: false)\n  --dry-run          Print actions without removing files (default: false)\n  -h, --help         Display help for command\n  --non-interactive  Disable prompts (requires --yes) (default: false)\n  --service          Remove the gateway service (default: false)\n  --state            Remove state + config (default: false)\n  --workspace        Remove workspace dirs (default: false)\n  --yes              Skip confirmation prompts (default: false)\n\nDocs: https://docs.openclaw.ai/cli/uninstall\n\n",
+      "hasSubcommands": false
+    },
+    "update": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw update [options] [command]\n\nUpdate OpenClaw and inspect update channel status\n\nOptions:\n  --channel <stable|beta|dev>  Persist update channel (git + npm)\n  --dry-run                    Preview update actions without making changes\n                               (default: false)\n  -h, --help                   Display help for command\n  --json                       Output result as JSON (default: false)\n  --no-restart                 Skip restarting the gateway service after a\n                               successful update\n  --tag <dist-tag|version>     Override npm dist-tag or version for this update\n  --timeout <seconds>          Timeout for each update step in seconds (default:\n                               1200)\n  --yes                        Skip confirmation prompts (non-interactive)\n                               (default: false)\n\nCommands:\n  status                       Show update channel and version status\n  wizard                       Interactive update wizard\n\nWhat this does:\n  - Git checkouts: fetches, rebases, installs deps, builds, and runs doctor\n  - npm installs: updates via detected package manager\n\nSwitch channels:\n  - Use --channel stable|beta|dev to persist the update channel in config\n  - Run openclaw update status to see the active channel and source\n  - Use --tag <dist-tag|version> for a one-off npm update without persisting\n\nNon-interactive:\n  - Use --yes to accept downgrade prompts\n  - Combine with --channel/--tag/--restart/--json/--timeout as needed\n  - Use --dry-run to preview actions without writing config/installing/restarting\n\nExamples:\n  openclaw update # Update a source checkout (git)\n  openclaw update --channel beta # Switch to beta channel (git + npm)\n  openclaw update --channel dev # Switch to dev channel (git + npm)\n  openclaw update --tag beta # One-off update to a dist-tag or version\n  openclaw update --dry-run # Preview actions without changing anything\n  openclaw update --no-restart # Update without restarting the service\n  openclaw update --json # Output result as JSON\n  openclaw update --yes # Non-interactive (accept downgrade prompts)\n  openclaw update wizard # Interactive update wizard\n  openclaw --update # Shorthand for openclaw update\n\nNotes:\n  - Switch channels with --channel stable|beta|dev\n  - For global installs: auto-updates via detected package manager when possible (see docs/install/updating.md)\n  - Downgrades require confirmation (can break configuration)\n  - Skips update if the working directory has uncommitted changes\n\nDocs: https://docs.openclaw.ai/cli/update\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "status": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw update status [options]\n\nShow update channel and version status\n\nOptions:\n  -h, --help           Display help for command\n  --json               Output result as JSON (default: false)\n  --timeout <seconds>  Timeout for update checks in seconds (default: 3)\n\nExamples:\n  openclaw update status\n    Show channel + version status.\n  openclaw update status --json\n    JSON output.\n  openclaw update status --timeout 10\n    Custom timeout.\n\nNotes:\n- Shows current update channel (stable/beta/dev) and source\n- Includes git tag/branch/SHA for source checkouts\n\nDocs: https://docs.openclaw.ai/cli/update\n",
+          "hasSubcommands": false
+        },
+        "wizard": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw update wizard [options]\n\nInteractive update wizard\n\nOptions:\n  -h, --help           Display help for command\n  --timeout <seconds>  Timeout for each update step in seconds (default: 1200)\n\nDocs: https://docs.openclaw.ai/cli/update\n\n",
+          "hasSubcommands": false
+        }
+      }
+    },
+    "webhooks": {
+      "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw webhooks [options] [command]\n\nWebhook helpers and integrations\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  gmail       Gmail Pub/Sub hooks (via gogcli)\n  help        Display help for command\n\nDocs: https://docs.openclaw.ai/cli/webhooks\n\n",
+      "hasSubcommands": true,
+      "subcommands": {
+        "gmail": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw webhooks gmail [options] [command]\n\nGmail Pub/Sub hooks (via gogcli)\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  help        Display help for command\n  run         Run gog watch serve + auto-renew loop\n  setup       Configure Gmail watch + Pub/Sub + OpenClaw hooks\n",
+          "hasSubcommands": false
+        },
+        "help": {
+          "help": "\n🦞 OpenClaw 2026.3.1 (2a8ac97)\n\nUsage: openclaw webhooks [options] [command]\n\nWebhook helpers and integrations\n\nOptions:\n  -h, --help  Display help for command\n\nCommands:\n  gmail       Gmail Pub/Sub hooks (via gogcli)\n  help        Display help for command\n\nDocs: https://docs.openclaw.ai/cli/webhooks\n\n",
+          "hasSubcommands": false
+        }
+      }
+    }
+  }
+}

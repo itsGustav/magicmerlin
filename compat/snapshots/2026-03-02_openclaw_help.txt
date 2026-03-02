@@ -1,9 +1,8 @@
 # Snapshot: openclaw --help
-# captured_at: 2026-03-02T11:59:24-05:00
 # command: openclaw --help
 # ---
 
-🦞 OpenClaw 2026.3.1 (2a8ac97) — I run on caffeine, JSON5, and the audacity of "it worked on my machine."
+🦞 OpenClaw 2026.3.1 (2a8ac97)
 
 Usage: openclaw [options] [command]
 
