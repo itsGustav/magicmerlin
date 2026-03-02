@@ -1,12 +1,21 @@
 {
-  "capturedAt": "2026-02-24T04:00:00-05:00",
-  "openclawVersion": "(see 2026-02-24_openclaw_version.txt)",
+  "capturedAt": "2026-03-02T11:59:24-05:00",
+  "openclawVersion": "2026.3.1",
+  "fingerprint": "350b8c6481f8c5ba4dfeca0b35ec917f89ee219d399aad01c60df13a4737107f",
+  "snapshotHashes": {
+    "openclawHelp": "44e0a9cc26af51dd73ea7adb15ed1a3bdbe6ee490058e17738575d305906e735",
+    "openclawCronHelp": "cef5b44557290fb704e24db1684a531b119b4a5d84ff50c8c08b889f5c4cbfdb",
+    "openclawStatusJson": "47c3eba26cdb0ae8b727405f750711e53cba0c8c28598ecdb9fc6edb00d708e8",
+    "openclawStatusHeader": "600716b8e77a7e8397612df47d44cbb23d5e3d008d722d6a463cdb64e090a3ba",
+    "openclawVersionTxt": "2221636fdd5922091922e993f72461a21ca6ebbfb408416bc151aa37c8dae67b",
+    "runtimeToolSurfaceMd": "ab9576162dbcc8d634bbd9eb08cd0df23ade4a05449239674261dbb28ddd95ba"
+  },
   "files": {
-    "openclawHelp": "2026-02-24_openclaw_help.txt",
-    "openclawCronHelp": "2026-02-24_openclaw_cron_help.txt",
-    "openclawStatusJson": "2026-02-24_openclaw_status.json",
-    "openclawStatusHeader": "2026-02-24_openclaw_status.header.txt",
-    "openclawVersionTxt": "2026-02-24_openclaw_version.txt",
+    "openclawHelp": "2026-03-02_openclaw_help.txt",
+    "openclawCronHelp": "2026-03-02_openclaw_cron_help.txt",
+    "openclawStatusJson": "2026-03-02_openclaw_status.json",
+    "openclawStatusHeader": "2026-03-02_openclaw_status.header.txt",
+    "openclawVersionTxt": "2026-03-02_openclaw_version.txt",
     "runtimeToolSurfaceMd": "2026-02-24_runtime_tools_surface.md"
   }
 }

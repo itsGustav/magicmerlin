@@ -22,6 +22,13 @@ pub const SNAPSHOT_DIR: &str = "magicmerlin/compat/snapshots";
 pub struct SnapshotManifest {
     pub captured_at: String,
     pub openclaw_version: String,
+
+    /// Optional: stable fingerprint (sha256 over sorted "name sha256\n" entries).
+    pub fingerprint: Option<String>,
+
+    /// Optional: sha256 hex by logical snapshot name (e.g. "openclawHelp").
+    pub snapshot_hashes: Option<BTreeMap<String, String>>,
+
     pub files: SnapshotFiles,
 }
 
