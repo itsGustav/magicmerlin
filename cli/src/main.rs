@@ -21,6 +21,60 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum CommandGroup {
+    /// ACP controls
+    Acp {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Single-agent controls
+    Agent {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Multi-agent controls
+    Agents {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Approval queue controls
+    Approvals {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Browser automation controls
+    Browser {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Channel controls
+    Channels {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Config controls
+    Config {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Cron controls
+    Cron {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Diagnostic checks
+    Doctor {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
     /// Run the onboarding wizard (config + optional daemon setup)
     Onboard {
         /// Install a user daemon (macOS LaunchAgent). Prints the bootstrap command.
@@ -42,6 +96,18 @@ enum CommandGroup {
         command: GatewayCommand,
     },
 
+    /// Log controls
+    Logs {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Memory controls
+    Memory {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
     /// Open the Control UI in a browser
     Dashboard {
         #[arg(long)]
@@ -55,6 +121,66 @@ enum CommandGroup {
     Message {
         #[command(subcommand)]
         command: MessageCommand,
+    },
+
+    /// Model controls
+    Models {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Pairing controls
+    Pairing {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Plugin controls
+    Plugins {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Secret controls
+    Secrets {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Security controls
+    Security {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Session controls
+    Sessions {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Skill controls
+    Skills {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Status inspection
+    Status {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// System controls
+    System {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
+    },
+
+    /// Update controls
+    Update {
+        #[command(subcommand)]
+        command: ScaffoldCommand,
     },
 }
 
@@ -87,6 +213,20 @@ enum MessageCommand {
 
         #[arg(long)]
         message: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ScaffoldCommand {
+    /// List resources
+    List,
+    /// Show status
+    Status,
+    /// Get details
+    Get {
+        /// Optional key/id to fetch
+        #[arg(long)]
+        key: Option<String>,
     },
 }
 
@@ -292,10 +432,32 @@ fn codex_login_status() -> Result<String> {
     Ok(s)
 }
 
+fn scaffold_not_implemented(group: &str, command: ScaffoldCommand) -> Result<()> {
+    let cmd = match command {
+        ScaffoldCommand::List => "list".to_string(),
+        ScaffoldCommand::Status => "status".to_string(),
+        ScaffoldCommand::Get { key } => match key {
+            Some(key) => format!("get --key {key}"),
+            None => "get".to_string(),
+        },
+    };
+    println!("{group} {cmd}: not implemented yet");
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
+        CommandGroup::Acp { command } => scaffold_not_implemented("acp", command),
+        CommandGroup::Agent { command } => scaffold_not_implemented("agent", command),
+        CommandGroup::Agents { command } => scaffold_not_implemented("agents", command),
+        CommandGroup::Approvals { command } => scaffold_not_implemented("approvals", command),
+        CommandGroup::Browser { command } => scaffold_not_implemented("browser", command),
+        CommandGroup::Channels { command } => scaffold_not_implemented("channels", command),
+        CommandGroup::Config { command } => scaffold_not_implemented("config", command),
+        CommandGroup::Cron { command } => scaffold_not_implemented("cron", command),
+        CommandGroup::Doctor { command } => scaffold_not_implemented("doctor", command),
         CommandGroup::Onboard {
             install_daemon,
             port,
@@ -370,6 +532,8 @@ fn main() -> Result<()> {
             }
         }
 
+        CommandGroup::Logs { command } => scaffold_not_implemented("logs", command),
+        CommandGroup::Memory { command } => scaffold_not_implemented("memory", command),
         CommandGroup::Dashboard { port, bind } => {
             let mut cfg = load_or_default_config()?;
             if let Some(p) = port {
@@ -440,5 +604,15 @@ fn main() -> Result<()> {
                 ))
             }
         },
+        CommandGroup::Models { command } => scaffold_not_implemented("models", command),
+        CommandGroup::Pairing { command } => scaffold_not_implemented("pairing", command),
+        CommandGroup::Plugins { command } => scaffold_not_implemented("plugins", command),
+        CommandGroup::Secrets { command } => scaffold_not_implemented("secrets", command),
+        CommandGroup::Security { command } => scaffold_not_implemented("security", command),
+        CommandGroup::Sessions { command } => scaffold_not_implemented("sessions", command),
+        CommandGroup::Skills { command } => scaffold_not_implemented("skills", command),
+        CommandGroup::Status { command } => scaffold_not_implemented("status", command),
+        CommandGroup::System { command } => scaffold_not_implemented("system", command),
+        CommandGroup::Update { command } => scaffold_not_implemented("update", command),
     }
 }
