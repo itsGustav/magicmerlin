@@ -155,22 +155,59 @@ fn gateway_health(cfg: &MagicMerlinConfig) -> Result<()> {
     Ok(())
 }
 
-fn spawn_gateway_background(cfg: &MagicMerlinConfig, daemon: bool) -> Result<()> {
-    let mut cmd = Command::new("magicmerlin-gateway");
-    cmd.arg("--serve")
+fn is_port_free(bind: &str, port: u16) -> bool {
+    let addr = format!("{bind}:{port}");
+    std::net::TcpListener::bind(addr).is_ok()
+}
+
+fn pick_free_port(bind: &str, preferred: u16) -> u16 {
+    for p in preferred..=(preferred + 200) {
+        if is_port_free(bind, p) {
+            return p;
+        }
+    }
+    preferred
+}
+
+fn gateway_spawn_command(cfg: &MagicMerlinConfig, daemon: bool) -> Command {
+    // Prefer the standalone gateway binary if installed.
+    if find_in_path("magicmerlin-gateway").is_some() {
+        let mut cmd = Command::new("magicmerlin-gateway");
+        cmd.arg("--serve")
+            .arg(cfg.port.to_string())
+            .arg("--bind")
+            .arg(&cfg.bind);
+        if daemon {
+            cmd.arg("--daemon");
+        }
+        return cmd;
+    }
+
+    // Dev fallback: run via cargo.
+    let mut cmd = Command::new("cargo");
+    cmd.arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("magicmerlin-gateway")
+        .arg("--")
+        .arg("--serve")
         .arg(cfg.port.to_string())
         .arg("--bind")
         .arg(&cfg.bind);
-
     if daemon {
         cmd.arg("--daemon");
     }
+    cmd
+}
+
+fn spawn_gateway_background(cfg: &MagicMerlinConfig, daemon: bool) -> Result<()> {
+    let mut cmd = gateway_spawn_command(cfg, daemon);
 
     cmd.stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
 
-    cmd.spawn().context("spawn magicmerlin-gateway")?;
+    cmd.spawn().context("spawn magicmerlin gateway")?;
 
     // Give it a moment.
     thread::sleep(Duration::from_millis(900));
@@ -267,9 +304,15 @@ fn main() -> Result<()> {
             let sd = state_dir();
             fs::create_dir_all(&sd).ok();
 
+            let bind_s = bind.to_string();
+            let picked_port = pick_free_port(&bind_s, port);
+            if picked_port != port {
+                eprintln!("Port {port} is busy on {bind_s}; using {picked_port} instead.");
+            }
+
             let cfg = MagicMerlinConfig {
-                port,
-                bind: bind.to_string(),
+                port: picked_port,
+                bind: bind_s,
             };
             write_config(&cfg)?;
 
@@ -286,7 +329,7 @@ fn main() -> Result<()> {
 
             if install_daemon {
                 if cfg!(target_os = "macos") {
-                    let plist = write_launch_agent(port, &bind)?;
+                    let plist = write_launch_agent(cfg.port, &bind)?;
                     eprintln!("Wrote LaunchAgent: {}", plist.display());
                     eprintln!(
                         "Enable it with: launchctl bootstrap gui/$UID {}",
@@ -313,15 +356,12 @@ fn main() -> Result<()> {
                     }),
 
                 GatewayCommand::Run { port, bind, daemon } => {
-                    let mut cmd = Command::new("magicmerlin-gateway");
-                    cmd.arg("--serve")
-                        .arg(port.to_string())
-                        .arg("--bind")
-                        .arg(bind.to_string());
-                    if daemon {
-                        cmd.arg("--daemon");
-                    }
-                    let status = cmd.status().context("run magicmerlin-gateway")?;
+                    let cfg = MagicMerlinConfig {
+                        port,
+                        bind: bind.to_string(),
+                    };
+                    let mut cmd = gateway_spawn_command(&cfg, daemon);
+                    let status = cmd.status().context("run magicmerlin gateway")?;
                     if !status.success() {
                         return Err(anyhow!("gateway exited non-zero: {status}"));
                     }
@@ -337,6 +377,17 @@ fn main() -> Result<()> {
             }
             if let Some(b) = bind {
                 cfg.bind = b.to_string();
+            }
+
+            // If configured port is occupied, pick a free one and persist it.
+            let picked = pick_free_port(&cfg.bind, cfg.port);
+            if picked != cfg.port {
+                eprintln!(
+                    "Port {} is busy on {}; using {} instead.",
+                    cfg.port, cfg.bind, picked
+                );
+                cfg.port = picked;
+                let _ = write_config(&cfg);
             }
 
             // Ensure running.
