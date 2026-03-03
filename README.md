@@ -9,6 +9,10 @@ MagicMerlin is a **Rust-first, OpenClaw-shaped** runtime.
 - **Not affiliated with OpenClaw** (separate project)
 - **Not affiliated with PayLobster**
 
+## Brand
+
+![MagicMerlin logo](assets/logo.png)
+
 ## What it is (today)
 - Snapshot-backed compatibility layer (`magicmerlin-compat`)
 - Gateway + scheduler wedge (`magicmerlin-gateway`) with:
