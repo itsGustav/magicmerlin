@@ -48,7 +48,10 @@ MAGICMERLIN_CAPTURE_HELP_TREE=1 bash scripts/recapture_openclaw_snapshots.sh
 cargo run -p magicmerlin-sentinel -- methods-diff --openclaw-src ../tmp/openclaw-src
 cargo run -p magicmerlin-sentinel -- cli-diff --openclaw-help-tree compat/snapshots/2026-03-02_openclaw_help_tree.json
 cargo run -p magicmerlin-sentinel -- docs-diff --index parity/openclaw_docs_index.json --coverage parity/docs_coverage.json
+cargo run -p magicmerlin-sentinel -- docs-coverage-summary --index parity/openclaw_docs_index.json --coverage parity/docs_coverage.json --out parity/docs_coverage_summary.json
 ```
+
+See `parity/README.md` for the docs parity workflow.
 
 ## License
 MIT — see `LICENSE`.

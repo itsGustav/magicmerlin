@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeSet,
     fs,
     net::IpAddr,
     path::PathBuf,
@@ -8,7 +9,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
 #[derive(Parser, Debug)]
@@ -21,6 +22,14 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum CommandGroup {
+    /// Internal command tree introspection (for sentinel parity checks)
+    #[command(name = "_introspect", hide = true)]
+    #[command(hide = true)]
+    Introspect {
+        #[command(subcommand)]
+        command: IntrospectCommand,
+    },
+
     /// ACP controls
     Acp {
         #[command(subcommand)]
@@ -181,6 +190,16 @@ enum CommandGroup {
     Update {
         #[command(subcommand)]
         command: ScaffoldCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum IntrospectCommand {
+    /// Print CLI command paths
+    Commands {
+        /// Emit JSON as {"commands":[...]}
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -445,10 +464,48 @@ fn scaffold_not_implemented(group: &str, command: ScaffoldCommand) -> Result<()>
     Ok(())
 }
 
+#[derive(Debug, Serialize)]
+struct CommandPathsJson {
+    commands: Vec<String>,
+}
+
+fn command_paths() -> BTreeSet<String> {
+    fn walk(cmd: &clap::Command, prefix: &[String], out: &mut BTreeSet<String>) {
+        for sub in cmd.get_subcommands() {
+            let mut path = prefix.to_vec();
+            path.push(sub.get_name().to_string());
+            out.insert(path.join(" "));
+            walk(sub, &path, out);
+        }
+    }
+
+    let root = Args::command();
+    let mut out = BTreeSet::new();
+    walk(&root, &[], &mut out);
+    out
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
+        CommandGroup::Introspect { command } => match command {
+            IntrospectCommand::Commands { json } => {
+                let commands = command_paths().into_iter().collect::<Vec<_>>();
+                if json {
+                    println!(
+                        "{}",
+                        serde_json::to_string(&CommandPathsJson { commands })
+                            .context("serialize")?
+                    );
+                } else {
+                    for cmd in commands {
+                        println!("{cmd}");
+                    }
+                }
+                Ok(())
+            }
+        },
         CommandGroup::Acp { command } => scaffold_not_implemented("acp", command),
         CommandGroup::Agent { command } => scaffold_not_implemented("agent", command),
         CommandGroup::Agents { command } => scaffold_not_implemented("agents", command),
