@@ -5,6 +5,7 @@ members = [
   "compat",
   "tools",
   "sentinel",
+  "cli",
 ]
 
 [workspace.package]

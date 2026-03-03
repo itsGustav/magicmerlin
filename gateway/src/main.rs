@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
-    response::IntoResponse,
+    response::{Html, IntoResponse},
     routing::{get, post},
     Json, Router,
 };
@@ -19,7 +19,7 @@ use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 mod approvals;
 mod plugins;
@@ -998,6 +998,9 @@ async fn serve_http_with_daemon(
 
 fn build_router(state: AppState) -> Router {
     Router::new()
+        // Control UI
+        .route("/", get(http_index))
+        .route("/chat", post(http_chat))
         .route(
             "/health",
             get({
@@ -1072,6 +1075,199 @@ fn is_authorized(headers: &HeaderMap) -> bool {
         .unwrap_or("");
 
     provided == required
+}
+
+const CONTROL_UI_HTML: &str = r#"<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>MagicMerlin Control UI</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    .row { display: flex; gap: 12px; }
+    textarea { width: 100%; min-height: 90px; }
+    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; white-space: pre-wrap; }
+    button { padding: 10px 14px; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>MagicMerlin Control UI</h1>
+  <p class=\"muted\">Local-only. Chat calls <code>POST /chat</code>. If <code>MAGICMERLIN_API_KEY</code> is set, include <code>x-magicmerlin-api-key</code> in requests.</p>
+
+  <div class=\"row\">
+    <textarea id=\"msg\" placeholder=\"Say something...\"></textarea>
+  </div>
+  <div class=\"row\" style=\"margin-top: 8px; align-items: center;\">
+    <button id=\"send\">Send</button>
+    <span class=\"muted\">sessionId: <span id=\"sid\">(new)</span></span>
+  </div>
+
+  <h3>Reply</h3>
+  <pre id=\"out\">(no reply yet)</pre>
+
+<script>
+  let sessionId = null;
+  const out = document.getElementById('out');
+  const sid = document.getElementById('sid');
+
+  async function send() {
+    const message = document.getElementById('msg').value;
+    out.textContent = '...';
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message, sessionId })
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      out.textContent = JSON.stringify(json, null, 2);
+      return;
+    }
+    sessionId = json.sessionId;
+    sid.textContent = sessionId;
+    out.textContent = json.reply;
+  }
+
+  document.getElementById('send').addEventListener('click', send);
+</script>
+</body>
+</html>"#;
+
+async fn http_index() -> Html<&'static str> {
+    Html(CONTROL_UI_HTML)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChatRequest {
+    message: String,
+    session_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ChatResponse {
+    reply: String,
+    session_id: String,
+    provider: String,
+    model: String,
+}
+
+async fn http_chat(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<ChatRequest>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let session_id = req
+        .session_id
+        .unwrap_or_else(|| format!("chat:{}", uuid::Uuid::new_v4()));
+
+    // Persist session metadata best-effort.
+    let _ = sessions::upsert_session(
+        &state.db_path,
+        &session_id,
+        Some("control_ui"),
+        "active",
+        Some(&serde_json::json!({"provider":"codex-cli"})),
+    )
+    .await;
+
+    let model =
+        std::env::var("MAGICMERLIN_CHAT_MODEL").unwrap_or_else(|_| "gpt-5.3-codex".to_string());
+    let timeout_secs: u64 = std::env::var("MAGICMERLIN_CHAT_TIMEOUT_SECONDS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(60);
+
+    let tmp = match tempfile::TempDir::new() {
+        Ok(d) => d,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": format!("tempdir: {e:#}")})),
+            );
+        }
+    };
+
+    let out_file = tmp.path().join("last.txt");
+
+    let mut cmd = tokio::process::Command::new("codex");
+    cmd.arg("exec")
+        .arg("--ephemeral")
+        .arg("--skip-git-repo-check")
+        .arg("-C")
+        .arg(tmp.path())
+        .arg("-s")
+        .arg("read-only")
+        .arg("-m")
+        .arg(&model)
+        .arg("--output-last-message")
+        .arg(&out_file)
+        .arg(&req.message);
+
+    let output = match tokio::time::timeout(
+        std::time::Duration::from_secs(timeout_secs),
+        cmd.output(),
+    )
+    .await
+    {
+        Ok(Ok(o)) => o,
+        Ok(Err(e)) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": format!("codex exec failed: {e:#}")})),
+            );
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(
+                    serde_json::json!({"error": format!("codex exec timed out after {timeout_secs}s")}),
+                ),
+            );
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return (
+            StatusCode::BAD_GATEWAY,
+            Json(serde_json::json!({
+                "error": "codex exec returned non-zero",
+                "stderr": stderr,
+            })),
+        );
+    }
+
+    let reply = match std::fs::read_to_string(&out_file) {
+        Ok(s) if !s.trim().is_empty() => s.trim().to_string(),
+        _ => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            stdout.lines().last().unwrap_or("").to_string()
+        }
+    };
+
+    (
+        StatusCode::OK,
+        Json(
+            serde_json::to_value(ChatResponse {
+                reply,
+                session_id,
+                provider: "codex-cli".to_string(),
+                model,
+            })
+            .unwrap_or_else(|_| serde_json::json!({"error":"serialize ChatResponse"})),
+        ),
+    )
 }
 
 async fn http_cron_list(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {

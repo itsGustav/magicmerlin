@@ -534,9 +534,28 @@ pub struct DeadLetter {
 }
 
 pub fn default_db_path() -> PathBuf {
-    std::env::var("MAGICMERLIN_DB_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("./magicmerlin.db"))
+    if let Ok(p) = std::env::var("MAGICMERLIN_DB_PATH") {
+        return PathBuf::from(p);
+    }
+
+    // Resolve state directory.
+    let state_dir = if let Ok(p) = std::env::var("MAGICMERLIN_STATE_DIR") {
+        PathBuf::from(p)
+    } else if let Ok(p) = std::env::var("MAGICMERLIN_HOME") {
+        PathBuf::from(p)
+    } else {
+        // Default: ~/.magicmerlin
+        let home = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("."));
+        home.join(".magicmerlin")
+    };
+
+    // Best-effort create.
+    let _ = std::fs::create_dir_all(&state_dir);
+
+    state_dir.join("magicmerlin.db")
 }
 
 // ---------------------------------------------------------------------------
