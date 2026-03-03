@@ -21,7 +21,11 @@ use magicmerlin_compat::{
 };
 use serde::Serialize;
 
+mod approvals;
+mod plugins;
 mod scheduler;
+mod sessions;
+
 use scheduler::{default_db_path, DeadLetter, Scheduler};
 
 #[derive(Parser, Debug)]
@@ -73,6 +77,24 @@ enum Command {
     Cron {
         #[command(subcommand)]
         command: CronCommand,
+    },
+
+    /// Manage sessions
+    Sessions {
+        #[command(subcommand)]
+        command: SessionsCommand,
+    },
+
+    /// Manage approvals
+    Approvals {
+        #[command(subcommand)]
+        command: ApprovalsCommand,
+    },
+
+    /// Manage plugins
+    Plugins {
+        #[command(subcommand)]
+        command: PluginsCommand,
     },
 }
 
@@ -208,6 +230,77 @@ enum CronCommand {
         /// Read from stdin
         #[arg(long)]
         stdin: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum SessionsCommand {
+    /// List sessions
+    List {
+        #[arg(long)]
+        json: bool,
+
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+    },
+
+    /// Show a single session
+    Show {
+        id: String,
+
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ApprovalsCommand {
+    /// Get current approvals and allowlist
+    Get {
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Set approvals from a JSON file
+    Set {
+        #[arg(long)]
+        file: PathBuf,
+    },
+
+    /// Manage the approval allowlist
+    Allowlist {
+        #[command(subcommand)]
+        command: AllowlistCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum AllowlistCommand {
+    /// Add a pattern to the allowlist
+    Add {
+        pattern: String,
+
+        /// Agent scope (default: '*')
+        #[arg(long)]
+        agent: Option<String>,
+    },
+
+    /// Remove a pattern from the allowlist
+    Remove {
+        pattern: String,
+
+        /// Agent scope (default: '*')
+        #[arg(long)]
+        agent: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum PluginsCommand {
+    /// List registered plugins
+    List {
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -419,6 +512,125 @@ async fn main() -> Result<()> {
                     println!("fingerprint={}", info.fingerprint);
                     println!("jobs={}", state.job_count);
                     println!("nextRunAt={:?}", state.next_run_at);
+                }
+                return Ok(());
+            }
+
+            Command::Sessions { command } => {
+                // Ensure sessions table exists.
+                sessions::migrate_sessions(&db_path).await?;
+
+                match command {
+                    SessionsCommand::List { json, limit } => {
+                        let rows = sessions::list_sessions(&db_path, limit).await?;
+                        if json {
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(
+                                    &serde_json::json!({"sessions": rows})
+                                )?
+                            );
+                        } else {
+                            for s in rows {
+                                println!(
+                                    "{}\t{}\t{}\t{}\t{}",
+                                    s.id,
+                                    s.status,
+                                    s.agent.as_deref().unwrap_or("-"),
+                                    s.started_at,
+                                    s.updated_at
+                                );
+                            }
+                        }
+                    }
+                    SessionsCommand::Show { id, json } => {
+                        let session = sessions::get_session(&db_path, &id).await?;
+                        match session {
+                            Some(s) => {
+                                if json {
+                                    println!("{}", serde_json::to_string_pretty(&s)?);
+                                } else {
+                                    println!("id={}", s.id);
+                                    println!("status={}", s.status);
+                                    println!("agent={}", s.agent.as_deref().unwrap_or("-"));
+                                    println!("startedAt={}", s.started_at);
+                                    println!("updatedAt={}", s.updated_at);
+                                }
+                            }
+                            None => {
+                                eprintln!("session not found: {id}");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                }
+                return Ok(());
+            }
+
+            Command::Approvals { command } => {
+                // Ensure approvals tables exist.
+                approvals::migrate_approvals(&db_path).await?;
+
+                match command {
+                    ApprovalsCommand::Get { json } => {
+                        let state = approvals::get_approvals(&db_path).await?;
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&state)?);
+                        } else {
+                            if state.approvals.is_empty() && state.allowlist.is_empty() {
+                                println!("(no approvals configured)");
+                            }
+                            for a in &state.approvals {
+                                println!("approval\tagent={}\t{}={}", a.agent, a.key, a.value);
+                            }
+                            for e in &state.allowlist {
+                                println!("allowlist\tagent={}\t{}", e.agent, e.pattern);
+                            }
+                        }
+                    }
+                    ApprovalsCommand::Set { file } => {
+                        let count = approvals::set_approvals_from_file(&db_path, &file).await?;
+                        println!("{count}");
+                    }
+                    ApprovalsCommand::Allowlist { command: al_cmd } => match al_cmd {
+                        AllowlistCommand::Add { pattern, agent } => {
+                            approvals::allowlist_add(&db_path, &pattern, agent.as_deref()).await?;
+                            println!("ok");
+                        }
+                        AllowlistCommand::Remove { pattern, agent } => {
+                            approvals::allowlist_remove(&db_path, &pattern, agent.as_deref())
+                                .await?;
+                            println!("ok");
+                        }
+                    },
+                }
+                return Ok(());
+            }
+
+            Command::Plugins { command } => {
+                match command {
+                    PluginsCommand::List { json } => {
+                        let reg = plugins::load_registry()?;
+                        if json {
+                            println!("{}", serde_json::to_string_pretty(&reg)?);
+                        } else {
+                            if reg.plugins.is_empty() {
+                                println!("(no plugins registered)");
+                            }
+                            for p in &reg.plugins {
+                                println!(
+                                    "{}\t{}\t{}",
+                                    p.name,
+                                    p.version.as_deref().unwrap_or("-"),
+                                    if p.enabled.unwrap_or(true) {
+                                        "enabled"
+                                    } else {
+                                        "disabled"
+                                    }
+                                );
+                            }
+                        }
+                    }
                 }
                 return Ok(());
             }
@@ -712,7 +924,7 @@ async fn main() -> Result<()> {
 
     // Default behavior: be explicit (no silent daemon).
     eprintln!(
-        "No action provided. Try: status --json, cron list --json, --print-compat, or --serve 8080"
+        "No action provided. Try: status, cron list, sessions list, approvals get, plugins list, --print-compat, or --serve 8080"
     );
     Ok(())
 }
@@ -722,6 +934,7 @@ struct AppState {
     providers: SnapshotBackedProviders,
     info: CompatInfo,
     scheduler: Arc<Scheduler>,
+    db_path: PathBuf,
 }
 
 async fn serve_http(
@@ -731,11 +944,14 @@ async fn serve_http(
     info: CompatInfo,
     db_path: PathBuf,
 ) -> Result<()> {
-    let scheduler = Arc::new(Scheduler::new(db_path).await?);
+    let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
+    sessions::migrate_sessions(&db_path).await?;
+    approvals::migrate_approvals(&db_path).await?;
     let state = AppState {
         providers,
         info,
         scheduler,
+        db_path,
     };
 
     let app = build_router(state);
@@ -754,13 +970,16 @@ async fn serve_http_with_daemon(
     info: CompatInfo,
     db_path: PathBuf,
 ) -> Result<()> {
-    let scheduler = Arc::new(Scheduler::new(db_path).await?);
+    let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
+    sessions::migrate_sessions(&db_path).await?;
+    approvals::migrate_approvals(&db_path).await?;
     let daemon_handle = scheduler.clone().spawn_daemon();
 
     let state = AppState {
         providers,
         info,
         scheduler,
+        db_path,
     };
 
     let app = build_router(state);
@@ -833,6 +1052,11 @@ fn build_router(state: AppState) -> Router {
         .route("/cron/pause/:id", post(http_cron_pause))
         .route("/cron/resume/:id", post(http_cron_resume))
         .route("/cron/dead-letters", get(http_dead_letters))
+        // Sessions / Approvals / Plugins API
+        .route("/sessions", get(http_sessions_list))
+        .route("/sessions/:id", get(http_sessions_show))
+        .route("/approvals", get(http_approvals_get))
+        .route("/plugins", get(http_plugins_list))
         .with_state(state)
 }
 
@@ -944,6 +1168,106 @@ async fn http_dead_letters(State(state): State<AppState>, headers: HeaderMap) ->
             StatusCode::OK,
             Json(serde_json::json!({ "deadLetters": dead_letters })),
         ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sessions HTTP handlers
+// ---------------------------------------------------------------------------
+
+async fn http_sessions_list(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match sessions::list_sessions(&state.db_path, 100).await {
+        Ok(rows) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "sessions": rows })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_sessions_show(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match sessions::get_session(&state.db_path, &id).await {
+        Ok(Some(session)) => (StatusCode::OK, Json(serde_json::json!(session))),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "session not found"})),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Approvals HTTP handler
+// ---------------------------------------------------------------------------
+
+async fn http_approvals_get(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match approvals::get_approvals(&state.db_path).await {
+        Ok(approvals_state) => (StatusCode::OK, Json(serde_json::json!(approvals_state))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Plugins HTTP handler
+// ---------------------------------------------------------------------------
+
+async fn http_plugins_list(
+    State(_state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match plugins::load_registry() {
+        Ok(reg) => (StatusCode::OK, Json(serde_json::json!(reg))),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": format!("{e:#}") })),

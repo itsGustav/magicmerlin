@@ -60,6 +60,9 @@ pub struct Scheduler {
 impl Scheduler {
     pub async fn new(db_path: PathBuf) -> Result<Self> {
         migrate(&db_path).await?;
+        // Ensure session + approval tables exist for the scheduler to write to.
+        crate::sessions::migrate_sessions(&db_path).await?;
+        crate::approvals::migrate_approvals(&db_path).await?;
         // Ensure all enabled jobs have next_run_at.
         normalize_next_run_at(&db_path).await?;
         Ok(Self {
@@ -188,6 +191,19 @@ impl Scheduler {
     async fn run_job(&self, job: &Job) -> Result<()> {
         let started_at = Utc::now().timestamp();
 
+        // For agent_turn jobs, upsert a session record.
+        if job.kind == "agent_turn" {
+            let session_id = format!("job:{}", job.id);
+            let _ = crate::sessions::upsert_session(
+                &self.db_path,
+                &session_id,
+                Some("agent_turn"),
+                "running",
+                Some(&serde_json::json!({"jobName": job.name})),
+            )
+            .await;
+        }
+
         // Execute.
         let run_res: Result<Option<Value>> = match job.kind.as_str() {
             "discord_webhook" => self.run_discord_webhook(job).await.map(|_| None),
@@ -199,6 +215,24 @@ impl Scheduler {
 
         let ended_at = Utc::now().timestamp();
         let now = ended_at;
+
+        // Update session status for agent_turn jobs.
+        if job.kind == "agent_turn" {
+            let session_id = format!("job:{}", job.id);
+            let status = if run_res.is_ok() {
+                "completed"
+            } else {
+                "failed"
+            };
+            let _ = crate::sessions::upsert_session(
+                &self.db_path,
+                &session_id,
+                Some("agent_turn"),
+                status,
+                None,
+            )
+            .await;
+        }
 
         match run_res {
             Ok(metadata) => {
