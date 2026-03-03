@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use chrono::Utc;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +28,14 @@ pub struct AllowlistEntry {
 pub struct ApprovalsState {
     pub approvals: Vec<Approval>,
     pub allowlist: Vec<AllowlistEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ApprovalFileEntry {
+    pub agent: Option<String>,
+    pub key: String,
+    pub value: String,
 }
 
 pub async fn migrate_approvals(db_path: &Path) -> Result<()> {
@@ -105,6 +113,10 @@ pub async fn set_approvals_from_file(db_path: &Path, file_path: &Path) -> Result
     let entries: Vec<ApprovalFileEntry> =
         serde_json::from_str(&raw).map_err(|e| anyhow::anyhow!("parse JSON: {e}"))?;
 
+    set_approvals(db_path, entries).await
+}
+
+pub async fn set_approvals(db_path: &Path, entries: Vec<ApprovalFileEntry>) -> Result<usize> {
     let path = db_path.to_owned();
     let now = Utc::now().timestamp();
     let count = entries.len();
@@ -124,13 +136,6 @@ pub async fn set_approvals_from_file(db_path: &Path, file_path: &Path) -> Result
     .await??;
 
     Ok(count)
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct ApprovalFileEntry {
-    agent: Option<String>,
-    key: String,
-    value: String,
 }
 
 pub async fn allowlist_add(db_path: &Path, pattern: &str, agent: Option<&str>) -> Result<()> {

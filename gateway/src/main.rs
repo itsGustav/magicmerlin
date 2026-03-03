@@ -1074,22 +1074,106 @@ struct MethodCallRequest {
     params: Value,
 }
 
-fn parse_params<T: DeserializeOwned>(params: Value, method: &str) -> std::result::Result<T, Value> {
+fn call_error_response(
+    status: StatusCode,
+    code: &str,
+    message: impl Into<String>,
+    method: &str,
+    details: Option<Value>,
+) -> (StatusCode, Json<Value>) {
+    let mut error = serde_json::Map::new();
+    error.insert("code".to_string(), Value::String(code.to_string()));
+    error.insert("message".to_string(), Value::String(message.into()));
+    error.insert("method".to_string(), Value::String(method.to_string()));
+    if let Some(details) = details {
+        error.insert("details".to_string(), details);
+    }
+    (
+        status,
+        Json(serde_json::json!({
+            "error": Value::Object(error),
+        })),
+    )
+}
+
+fn parse_params<T: DeserializeOwned>(
+    params: Value,
+    method: &str,
+) -> std::result::Result<T, (StatusCode, Json<Value>)> {
     let normalized = if params.is_null() {
         serde_json::json!({})
     } else {
         params
     };
     serde_json::from_value(normalized).map_err(|err| {
-        serde_json::json!({
-            "error": {
-                "code": "invalid_params",
-                "message": "invalid params",
-                "method": method,
-                "details": err.to_string(),
-            }
-        })
+        call_error_response(
+            StatusCode::BAD_REQUEST,
+            "invalid_params",
+            "invalid params",
+            method,
+            Some(Value::String(err.to_string())),
+        )
     })
+}
+
+fn parse_approvals_entries(
+    params: Value,
+) -> std::result::Result<Vec<approvals::ApprovalFileEntry>, String> {
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct Params {
+        #[serde(default)]
+        approvals: Option<Vec<approvals::ApprovalFileEntry>>,
+        #[serde(default)]
+        entries: Option<Vec<approvals::ApprovalFileEntry>>,
+        #[serde(default)]
+        json: Option<Value>,
+    }
+
+    let normalized = if params.is_null() {
+        serde_json::json!({})
+    } else {
+        params
+    };
+    let parsed: Params =
+        serde_json::from_value(normalized).map_err(|e| format!("invalid params: {e}"))?;
+
+    let provided = usize::from(parsed.approvals.is_some())
+        + usize::from(parsed.entries.is_some())
+        + usize::from(parsed.json.is_some());
+    if provided == 0 {
+        return Err(
+            "missing approvals payload: provide one of approvals, entries, or json".to_string(),
+        );
+    }
+    if provided > 1 {
+        return Err(
+            "ambiguous approvals payload: provide only one of approvals, entries, or json"
+                .to_string(),
+        );
+    }
+
+    if let Some(v) = parsed.approvals {
+        return Ok(v);
+    }
+    if let Some(v) = parsed.entries {
+        return Ok(v);
+    }
+
+    let json = parsed.json.expect("checked above");
+    match json {
+        Value::Array(_) => serde_json::from_value(json).map_err(|e| format!("invalid json: {e}")),
+        Value::Object(mut obj) => {
+            if let Some(v) = obj.remove("approvals") {
+                serde_json::from_value(v).map_err(|e| format!("invalid json.approvals: {e}"))
+            } else if let Some(v) = obj.remove("entries") {
+                serde_json::from_value(v).map_err(|e| format!("invalid json.entries: {e}"))
+            } else {
+                Err("invalid json: expected array or object with approvals/entries".to_string())
+            }
+        }
+        _ => Err("invalid json: expected array or object".to_string()),
+    }
 }
 
 async fn http_methods() -> impl IntoResponse {
@@ -1101,14 +1185,19 @@ async fn http_call(
     headers: HeaderMap,
     Json(req): Json<MethodCallRequest>,
 ) -> impl IntoResponse {
+    let method_name = req.method.clone();
+
     if !is_authorized(&headers) {
-        return (
+        return call_error_response(
             StatusCode::UNAUTHORIZED,
-            Json(serde_json::json!({"error":"unauthorized"})),
+            "unauthorized",
+            "unauthorized",
+            method_name.as_str(),
+            None,
         );
     }
 
-    match req.method.as_str() {
+    match method_name.as_str() {
         "health" => (
             StatusCode::OK,
             Json(serde_json::json!({
@@ -1133,65 +1222,171 @@ async fn http_call(
         }
         "cron.list" => match state.scheduler.list_jobs().await {
             Ok(jobs) => (StatusCode::OK, Json(serde_json::json!({ "jobs": jobs }))),
-            Err(e) => (
+            Err(e) => call_error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({ "error": format!("{e:#}") })),
+                "internal_error",
+                "failed to list cron jobs",
+                "cron.list",
+                Some(Value::String(format!("{e:#}"))),
             ),
         },
+        "cron.add" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase", deny_unknown_fields)]
+            struct Params {
+                name: String,
+                schedule: String,
+                kind: String,
+                payload: Value,
+                #[serde(default)]
+                max_attempts: Option<i64>,
+                #[serde(default)]
+                backoff_seconds: Option<i64>,
+                #[serde(default)]
+                enabled: Option<bool>,
+            }
+            let params: Params = match parse_params(req.params, "cron.add") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match state
+                .scheduler
+                .add_job(
+                    params.name,
+                    params.schedule,
+                    params.kind,
+                    params.payload,
+                    params.max_attempts,
+                    params.backoff_seconds,
+                )
+                .await
+            {
+                Ok(id) => {
+                    if matches!(params.enabled, Some(false)) {
+                        if let Err(e) = state.scheduler.pause_job(id).await {
+                            return call_error_response(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                "internal_error",
+                                "job added but failed to disable",
+                                "cron.add",
+                                Some(Value::String(format!("{e:#}"))),
+                            );
+                        }
+                    }
+                    (
+                        StatusCode::OK,
+                        Json(serde_json::json!({ "ok": true, "id": id })),
+                    )
+                }
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to add cron job",
+                    "cron.add",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "cron.remove" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Params {
+                id: i64,
+            }
+            let params: Params = match parse_params(req.params, "cron.remove") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match state.scheduler.remove_job(params.id).await {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to remove cron job",
+                    "cron.remove",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
         "cron.run" => {
             #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
             struct Params {
                 id: i64,
             }
             let params: Params = match parse_params(req.params, "cron.run") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match state.scheduler.run_job_now(params.id).await {
                 Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to run cron job",
+                    "cron.run",
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
         "cron.pause" => {
             #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
             struct Params {
                 id: i64,
             }
             let params: Params = match parse_params(req.params, "cron.pause") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match state.scheduler.pause_job(params.id).await {
                 Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to pause cron job",
+                    "cron.pause",
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
         "cron.resume" => {
             #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
             struct Params {
                 id: i64,
             }
             let params: Params = match parse_params(req.params, "cron.resume") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match state.scheduler.resume_job(params.id).await {
                 Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to resume cron job",
+                    "cron.resume",
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
+        "cron.status" => match state.scheduler.state().await {
+            Ok(scheduler) => (
+                StatusCode::OK,
+                Json(serde_json::json!({ "scheduler": scheduler })),
+            ),
+            Err(e) => call_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal_error",
+                "failed to read scheduler status",
+                "cron.status",
+                Some(Value::String(format!("{e:#}"))),
+            ),
+        },
         "cron.runs" => {
             #[derive(Deserialize)]
-            #[serde(rename_all = "camelCase")]
+            #[serde(rename_all = "camelCase", deny_unknown_fields)]
             struct Params {
                 #[serde(default)]
                 job_id: Option<i64>,
@@ -1203,18 +1398,50 @@ async fn http_call(
             }
             let params: Params = match parse_params(req.params, "cron.runs") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match state.scheduler.list_runs(params.job_id, params.limit).await {
                 Ok(runs) => (StatusCode::OK, Json(serde_json::json!({ "runs": runs }))),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to list cron runs",
+                    "cron.runs",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "cron.deadLetters" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Params {
+                #[serde(default = "default_dead_letters_limit")]
+                limit: usize,
+            }
+            fn default_dead_letters_limit() -> usize {
+                50
+            }
+            let params: Params = match parse_params(req.params, "cron.deadLetters") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match state.scheduler.list_dead_letters(params.limit).await {
+                Ok(dead_letters) => (
+                    StatusCode::OK,
+                    Json(serde_json::json!({ "deadLetters": dead_letters })),
+                ),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to list dead letters",
+                    "cron.deadLetters",
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
         "sessions.list" => {
             #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase", deny_unknown_fields)]
             struct Params {
                 #[serde(default = "default_sessions_limit")]
                 limit: usize,
@@ -1224,76 +1451,181 @@ async fn http_call(
             }
             let params: Params = match parse_params(req.params, "sessions.list") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match sessions::list_sessions(&state.db_path, params.limit).await {
                 Ok(rows) => (
                     StatusCode::OK,
                     Json(serde_json::json!({ "sessions": rows })),
                 ),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to list sessions",
+                    "sessions.list",
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
-        "sessions.preview" => {
+        "sessions.preview" | "sessions.show" => {
             #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
             struct Params {
                 id: String,
             }
-            let params: Params = match parse_params(req.params, "sessions.preview") {
+            let params: Params = match parse_params(req.params, method_name.as_str()) {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             match sessions::get_session(&state.db_path, &params.id).await {
                 Ok(Some(session)) => (StatusCode::OK, Json(serde_json::json!(session))),
-                Ok(None) => (
+                Ok(None) => call_error_response(
                     StatusCode::NOT_FOUND,
-                    Json(serde_json::json!({"error": "session not found"})),
+                    "not_found",
+                    "session not found",
+                    method_name.as_str(),
+                    None,
                 ),
-                Err(e) => (
+                Err(e) => call_error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                    "internal_error",
+                    "failed to read session",
+                    method_name.as_str(),
+                    Some(Value::String(format!("{e:#}"))),
                 ),
             }
         }
         "approvals.get" => match approvals::get_approvals(&state.db_path).await {
             Ok(approvals_state) => (StatusCode::OK, Json(serde_json::json!(approvals_state))),
-            Err(e) => (
+            Err(e) => call_error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({ "error": format!("{e:#}") })),
+                "internal_error",
+                "failed to get approvals",
+                "approvals.get",
+                Some(Value::String(format!("{e:#}"))),
             ),
         },
-        "plugins.list" => match plugins::load_registry() {
-            Ok(reg) => (StatusCode::OK, Json(serde_json::json!(reg))),
-            Err(e) => (
+        "approvals.set" => {
+            let entries = match parse_approvals_entries(req.params) {
+                Ok(v) => v,
+                Err(e) => {
+                    return call_error_response(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_params",
+                        "invalid params",
+                        "approvals.set",
+                        Some(Value::String(e)),
+                    );
+                }
+            };
+            match approvals::set_approvals(&state.db_path, entries).await {
+                Ok(count) => (
+                    StatusCode::OK,
+                    Json(serde_json::json!({ "ok": true, "count": count })),
+                ),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to set approvals",
+                    "approvals.set",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "approvals.allowlist.add" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Params {
+                pattern: String,
+                #[serde(default)]
+                agent: Option<String>,
+            }
+            let params: Params = match parse_params(req.params, "approvals.allowlist.add") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match approvals::allowlist_add(&state.db_path, &params.pattern, params.agent.as_deref())
+                .await
+            {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to add allowlist entry",
+                    "approvals.allowlist.add",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "approvals.allowlist.remove" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Params {
+                pattern: String,
+                #[serde(default)]
+                agent: Option<String>,
+            }
+            let params: Params = match parse_params(req.params, "approvals.allowlist.remove") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match approvals::allowlist_remove(
+                &state.db_path,
+                &params.pattern,
+                params.agent.as_deref(),
+            )
+            .await
+            {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to remove allowlist entry",
+                    "approvals.allowlist.remove",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "approvals.allowlist.list" => match approvals::get_approvals(&state.db_path).await {
+            Ok(approvals_state) => (
+                StatusCode::OK,
+                Json(serde_json::json!({ "allowlist": approvals_state.allowlist })),
+            ),
+            Err(e) => call_error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({ "error": format!("{e:#}") })),
+                "internal_error",
+                "failed to list allowlist",
+                "approvals.allowlist.list",
+                Some(Value::String(format!("{e:#}"))),
+            ),
+        },
+        "plugins.get" | "plugins.list" => match plugins::load_registry() {
+            Ok(reg) => (StatusCode::OK, Json(serde_json::json!(reg))),
+            Err(e) => call_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal_error",
+                "failed to load plugin registry",
+                method_name.as_str(),
+                Some(Value::String(format!("{e:#}"))),
             ),
         },
         "chat.send" => {
             let params: ChatRequest = match parse_params(req.params, "chat.send") {
                 Ok(v) => v,
-                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+                Err(e) => return e,
             };
             let (status, body) = run_chat_flow(state, params).await;
             (status, Json(body))
         }
-        _ => (
+        _ => call_error_response(
             StatusCode::NOT_FOUND,
-            Json(serde_json::json!({
-                "error": {
-                    "code": "unknown_method",
-                    "message": format!("unsupported method: {}", req.method),
-                    "method": req.method,
-                    "supportedMethods": SUPPORTED_METHODS,
-                }
-            })),
+            "unknown_method",
+            format!("unsupported method: {}", method_name),
+            method_name.as_str(),
+            Some(serde_json::json!({ "supportedMethods": SUPPORTED_METHODS })),
         ),
     }
 }
-
 fn is_authorized(headers: &HeaderMap) -> bool {
     let required = std::env::var("MAGICMERLIN_API_KEY").ok();
     let Some(required) = required.filter(|s| !s.trim().is_empty()) else {
