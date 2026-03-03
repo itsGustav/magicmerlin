@@ -1,0 +1,5 @@
+# Snapshot of https://docs.openclaw.ai/llms.txt
+# capturedAt: 2026-03-02T23:30:00-05:00
+
+# NOTE: This is an external snapshot. Update via `curl -fsSL https://docs.openclaw.ai/llms.txt -o ...`
+
