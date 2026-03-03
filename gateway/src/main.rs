@@ -19,7 +19,9 @@ use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
 };
-use serde::{Deserialize, Serialize};
+use magicmerlin_gateway::methods::SUPPORTED_METHODS;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_json::Value;
 
 mod approvals;
 mod plugins;
@@ -1001,6 +1003,8 @@ fn build_router(state: AppState) -> Router {
         // Control UI
         .route("/", get(http_index))
         .route("/chat", post(http_chat))
+        .route("/methods", get(http_methods))
+        .route("/call", post(http_call))
         .route(
             "/health",
             get({
@@ -1061,6 +1065,233 @@ fn build_router(state: AppState) -> Router {
         .route("/approvals", get(http_approvals_get))
         .route("/plugins", get(http_plugins_list))
         .with_state(state)
+}
+
+#[derive(Debug, Deserialize)]
+struct MethodCallRequest {
+    method: String,
+    #[serde(default)]
+    params: Value,
+}
+
+fn parse_params<T: DeserializeOwned>(params: Value, method: &str) -> std::result::Result<T, Value> {
+    let normalized = if params.is_null() {
+        serde_json::json!({})
+    } else {
+        params
+    };
+    serde_json::from_value(normalized).map_err(|err| {
+        serde_json::json!({
+            "error": {
+                "code": "invalid_params",
+                "message": "invalid params",
+                "method": method,
+                "details": err.to_string(),
+            }
+        })
+    })
+}
+
+async fn http_methods() -> impl IntoResponse {
+    Json(serde_json::json!(SUPPORTED_METHODS))
+}
+
+async fn http_call(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<MethodCallRequest>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    match req.method.as_str() {
+        "health" => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+              "status": "ok",
+              "compatVersion": state.info.compat_version,
+              "fingerprint": state.info.fingerprint,
+            })),
+        ),
+        "status" => {
+            let sched = state.scheduler.state().await.ok();
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                  "compat": {
+                    "compatVersion": state.info.compat_version,
+                    "fingerprint": state.info.fingerprint,
+                  },
+                  "scheduler": sched,
+                  "openclawStatus": state.providers.openclaw_status_json(),
+                })),
+            )
+        }
+        "cron.list" => match state.scheduler.list_jobs().await {
+            Ok(jobs) => (StatusCode::OK, Json(serde_json::json!({ "jobs": jobs }))),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("{e:#}") })),
+            ),
+        },
+        "cron.run" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let params: Params = match parse_params(req.params, "cron.run") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match state.scheduler.run_job_now(params.id).await {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "cron.pause" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let params: Params = match parse_params(req.params, "cron.pause") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match state.scheduler.pause_job(params.id).await {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "cron.resume" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let params: Params = match parse_params(req.params, "cron.resume") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match state.scheduler.resume_job(params.id).await {
+                Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true }))),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "cron.runs" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                #[serde(default)]
+                job_id: Option<i64>,
+                #[serde(default = "default_runs_limit")]
+                limit: usize,
+            }
+            fn default_runs_limit() -> usize {
+                50
+            }
+            let params: Params = match parse_params(req.params, "cron.runs") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match state.scheduler.list_runs(params.job_id, params.limit).await {
+                Ok(runs) => (StatusCode::OK, Json(serde_json::json!({ "runs": runs }))),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "sessions.list" => {
+            #[derive(Deserialize)]
+            struct Params {
+                #[serde(default = "default_sessions_limit")]
+                limit: usize,
+            }
+            fn default_sessions_limit() -> usize {
+                100
+            }
+            let params: Params = match parse_params(req.params, "sessions.list") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match sessions::list_sessions(&state.db_path, params.limit).await {
+                Ok(rows) => (
+                    StatusCode::OK,
+                    Json(serde_json::json!({ "sessions": rows })),
+                ),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "sessions.preview" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: String,
+            }
+            let params: Params = match parse_params(req.params, "sessions.preview") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            match sessions::get_session(&state.db_path, &params.id).await {
+                Ok(Some(session)) => (StatusCode::OK, Json(serde_json::json!(session))),
+                Ok(None) => (
+                    StatusCode::NOT_FOUND,
+                    Json(serde_json::json!({"error": "session not found"})),
+                ),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:#}") })),
+                ),
+            }
+        }
+        "approvals.get" => match approvals::get_approvals(&state.db_path).await {
+            Ok(approvals_state) => (StatusCode::OK, Json(serde_json::json!(approvals_state))),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("{e:#}") })),
+            ),
+        },
+        "plugins.list" => match plugins::load_registry() {
+            Ok(reg) => (StatusCode::OK, Json(serde_json::json!(reg))),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("{e:#}") })),
+            ),
+        },
+        "chat.send" => {
+            let params: ChatRequest = match parse_params(req.params, "chat.send") {
+                Ok(v) => v,
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
+            };
+            let (status, body) = run_chat_flow(state, params).await;
+            (status, Json(body))
+        }
+        _ => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": {
+                    "code": "unknown_method",
+                    "message": format!("unsupported method: {}", req.method),
+                    "method": req.method,
+                    "supportedMethods": SUPPORTED_METHODS,
+                }
+            })),
+        ),
+    }
 }
 
 fn is_authorized(headers: &HeaderMap) -> bool {
@@ -1167,6 +1398,11 @@ async fn http_chat(
         );
     }
 
+    let (status, body) = run_chat_flow(state, req).await;
+    (status, Json(body))
+}
+
+async fn run_chat_flow(state: AppState, req: ChatRequest) -> (StatusCode, Value) {
     let session_id = req
         .session_id
         .unwrap_or_else(|| format!("chat:{}", uuid::Uuid::new_v4()));
@@ -1193,7 +1429,7 @@ async fn http_chat(
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": format!("tempdir: {e:#}")})),
+                serde_json::json!({"error": format!("tempdir: {e:#}")}),
             );
         }
     };
@@ -1224,15 +1460,13 @@ async fn http_chat(
         Ok(Err(e)) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": format!("codex exec failed: {e:#}")})),
+                serde_json::json!({"error": format!("codex exec failed: {e:#}")}),
             );
         }
         Err(_) => {
             return (
                 StatusCode::GATEWAY_TIMEOUT,
-                Json(
-                    serde_json::json!({"error": format!("codex exec timed out after {timeout_secs}s")}),
-                ),
+                serde_json::json!({"error": format!("codex exec timed out after {timeout_secs}s")}),
             );
         }
     };
@@ -1241,10 +1475,10 @@ async fn http_chat(
         let stderr = String::from_utf8_lossy(&output.stderr);
         return (
             StatusCode::BAD_GATEWAY,
-            Json(serde_json::json!({
+            serde_json::json!({
                 "error": "codex exec returned non-zero",
                 "stderr": stderr,
-            })),
+            }),
         );
     }
 
@@ -1258,15 +1492,13 @@ async fn http_chat(
 
     (
         StatusCode::OK,
-        Json(
-            serde_json::to_value(ChatResponse {
-                reply,
-                session_id,
-                provider: "codex-cli".to_string(),
-                model,
-            })
-            .unwrap_or_else(|_| serde_json::json!({"error":"serialize ChatResponse"})),
-        ),
+        serde_json::to_value(ChatResponse {
+            reply,
+            session_id,
+            provider: "codex-cli".to_string(),
+            model,
+        })
+        .unwrap_or_else(|_| serde_json::json!({"error":"serialize ChatResponse"})),
     )
 }
 

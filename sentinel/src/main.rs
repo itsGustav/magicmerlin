@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
+use magicmerlin_gateway::methods::SUPPORTED_METHODS;
 use regex::Regex;
 use serde::Serialize;
 
@@ -125,23 +126,10 @@ fn extract_openclaw_gateway_methods(openclaw_src: &Path) -> Result<BTreeSet<Stri
 }
 
 fn magicmerlin_gateway_methods_current() -> BTreeSet<String> {
-    // As of now, MagicMerlin does NOT have an OpenClaw-style /call RPC surface.
-    // We track parity by mapping existing HTTP endpoints to method names.
-    // This list will be replaced by real method routing once implemented.
-    BTreeSet::from([
-        "health".to_string(),
-        "status".to_string(),
-        "cron.list".to_string(),
-        "cron.run".to_string(),
-        "cron.pause".to_string(),
-        "cron.resume".to_string(),
-        "cron.deadLetters".to_string(),
-        "sessions.list".to_string(),
-        "sessions.get".to_string(),
-        "approvals.get".to_string(),
-        "plugins.list".to_string(),
-        "chat".to_string(),
-    ])
+    SUPPORTED_METHODS
+        .iter()
+        .map(|method| (*method).to_string())
+        .collect()
 }
 
 fn load_openclaw_docs_index(path: &Path) -> Result<BTreeSet<String>> {
@@ -241,8 +229,8 @@ fn main() -> Result<()> {
                 missing,
                 extra,
                 notes: vec![
-                    "MagicMerlin currently exposes HTTP endpoints, not OpenClaw's /call RPC method surface.".to_string(),
-                    "Next step: implement /call {method, params} to route methods and make this diff meaningful.".to_string(),
+                    "MagicMerlin method list is sourced from gateway::methods::SUPPORTED_METHODS.".to_string(),
+                    "This diff is only accurate when /call routing and SUPPORTED_METHODS stay in sync.".to_string(),
                 ],
             };
 
