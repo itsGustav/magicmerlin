@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse},
     routing::{get, post},
@@ -19,7 +19,7 @@ use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
 };
-use magicmerlin_gateway::methods::SUPPORTED_METHODS;
+use magicmerlin_gateway::{methods::SUPPORTED_METHODS, pairing};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
@@ -949,6 +949,7 @@ async fn serve_http(
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
     approvals::migrate_approvals(&db_path).await?;
+    pairing::migrate_pairing(&db_path).await?;
     let state = AppState {
         providers,
         info,
@@ -975,6 +976,7 @@ async fn serve_http_with_daemon(
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
     approvals::migrate_approvals(&db_path).await?;
+    pairing::migrate_pairing(&db_path).await?;
     let daemon_handle = scheduler.clone().spawn_daemon();
 
     let state = AppState {
@@ -1063,6 +1065,10 @@ fn build_router(state: AppState) -> Router {
         .route("/sessions", get(http_sessions_list))
         .route("/sessions/:id", get(http_sessions_show))
         .route("/approvals", get(http_approvals_get))
+        .route("/pairing", get(http_pairing_list))
+        .route("/pairing/approve", post(http_pairing_approve))
+        .route("/pairing/reject", post(http_pairing_reject))
+        .route("/pairing/state", get(http_pairing_state))
         .route("/plugins", get(http_plugins_list))
         .with_state(state)
 }
@@ -1599,6 +1605,100 @@ async fn http_call(
                 Some(Value::String(format!("{e:#}"))),
             ),
         },
+        "pairing.list" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase", deny_unknown_fields)]
+            struct Params {
+                #[serde(default)]
+                channel: Option<String>,
+                #[serde(default, alias = "account_id")]
+                account_id: Option<String>,
+                #[serde(default)]
+                status: Option<String>,
+                #[serde(default = "default_pairing_limit")]
+                limit: usize,
+            }
+            fn default_pairing_limit() -> usize {
+                100
+            }
+            let params: Params = match parse_params(req.params, "pairing.list") {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            match pairing::list_pairing_requests(
+                &state.db_path,
+                params.channel.as_deref(),
+                params.account_id.as_deref(),
+                params.status.as_deref(),
+                params.limit,
+            )
+            .await
+            {
+                Ok(rows) => (
+                    StatusCode::OK,
+                    Json(serde_json::json!({ "requests": rows })),
+                ),
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to list pairing requests",
+                    "pairing.list",
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
+        "pairing.approve" | "pairing.reject" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase", deny_unknown_fields)]
+            struct Params {
+                id: i64,
+                #[serde(default)]
+                actor: Option<String>,
+                #[serde(default)]
+                approved_by: Option<String>,
+            }
+            let params: Params = match parse_params(req.params, method_name.as_str()) {
+                Ok(v) => v,
+                Err(e) => return e,
+            };
+            let actor = params.actor.or(params.approved_by);
+            let action = if method_name == "pairing.approve" {
+                pairing::PairingAction::Approve
+            } else {
+                pairing::PairingAction::Reject
+            };
+            match pairing::apply_pairing_action(&state.db_path, params.id, action, actor.as_deref())
+                .await
+            {
+                Ok(pairing::PairingActionOutcome::Updated(request)) => (
+                    StatusCode::OK,
+                    Json(serde_json::json!({ "ok": true, "request": request })),
+                ),
+                Ok(pairing::PairingActionOutcome::NotFound) => call_error_response(
+                    StatusCode::NOT_FOUND,
+                    "not_found",
+                    "pairing request not found",
+                    method_name.as_str(),
+                    None,
+                ),
+                Ok(pairing::PairingActionOutcome::InvalidState { current_status }) => {
+                    call_error_response(
+                        StatusCode::CONFLICT,
+                        "invalid_state",
+                        format!("pairing request is already {}", current_status),
+                        method_name.as_str(),
+                        Some(serde_json::json!({ "status": current_status })),
+                    )
+                }
+                Err(e) => call_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "failed to apply pairing action",
+                    method_name.as_str(),
+                    Some(Value::String(format!("{e:#}"))),
+                ),
+            }
+        }
         "plugins.get" | "plugins.list" => match plugins::load_registry() {
             Ok(reg) => (StatusCode::OK, Json(serde_json::json!(reg))),
             Err(e) => call_error_response(
@@ -1707,6 +1807,12 @@ async fn http_index() -> Html<&'static str> {
 struct ChatRequest {
     message: String,
     session_id: Option<String>,
+    #[serde(default)]
+    channel: Option<String>,
+    #[serde(default)]
+    peer_id: Option<String>,
+    #[serde(default)]
+    account_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1737,6 +1843,19 @@ async fn http_chat(
 async fn run_chat_flow(state: AppState, req: ChatRequest) -> (StatusCode, Value) {
     let session_id = req
         .session_id
+        .or_else(|| {
+            if let (Some(channel), Some(peer_id)) = (req.channel.as_deref(), req.peer_id.as_deref())
+            {
+                Some(pairing::resolve_dm_session_key(
+                    pairing::DmScope::from_env(),
+                    channel,
+                    peer_id,
+                    req.account_id.as_deref(),
+                ))
+            } else {
+                None
+            }
+        })
         .unwrap_or_else(|| format!("chat:{}", uuid::Uuid::new_v4()));
 
     // Persist session metadata best-effort.
@@ -2004,6 +2123,164 @@ async fn http_approvals_get(
 
     match approvals::get_approvals(&state.db_path).await {
         Ok(approvals_state) => (StatusCode::OK, Json(serde_json::json!(approvals_state))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Pairing HTTP handlers
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PairingListQuery {
+    channel: Option<String>,
+    #[serde(alias = "account_id")]
+    account_id: Option<String>,
+    status: Option<String>,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PairingStateQuery {
+    channel: Option<String>,
+    peer_id: Option<String>,
+    #[serde(alias = "account_id")]
+    account_id: Option<String>,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PairingDecisionRequest {
+    id: i64,
+    #[serde(default)]
+    actor: Option<String>,
+    #[serde(default)]
+    approved_by: Option<String>,
+}
+
+async fn http_pairing_list(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<PairingListQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let limit = query.limit.unwrap_or(100);
+    match pairing::list_pairing_requests(
+        &state.db_path,
+        query.channel.as_deref(),
+        query.account_id.as_deref(),
+        query.status.as_deref(),
+        limit,
+    )
+    .await
+    {
+        Ok(rows) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "requests": rows })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_pairing_action(
+    state: AppState,
+    request: PairingDecisionRequest,
+    action: pairing::PairingAction,
+) -> (StatusCode, Json<Value>) {
+    let actor = request.actor.or(request.approved_by);
+    match pairing::apply_pairing_action(&state.db_path, request.id, action, actor.as_deref()).await
+    {
+        Ok(pairing::PairingActionOutcome::Updated(updated)) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "ok": true, "request": updated })),
+        ),
+        Ok(pairing::PairingActionOutcome::NotFound) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "ok": false, "error": "pairing request not found" })),
+        ),
+        Ok(pairing::PairingActionOutcome::InvalidState { current_status }) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "ok": false,
+                "error": "pairing request is not pending",
+                "status": current_status,
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "ok": false, "error": format!("{e:#}") })),
+        ),
+    }
+}
+
+async fn http_pairing_approve(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<PairingDecisionRequest>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    http_pairing_action(state, req, pairing::PairingAction::Approve).await
+}
+
+async fn http_pairing_reject(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<PairingDecisionRequest>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    http_pairing_action(state, req, pairing::PairingAction::Reject).await
+}
+
+async fn http_pairing_state(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<PairingStateQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let limit = query.limit.unwrap_or(100);
+    match pairing::list_pairing_state(
+        &state.db_path,
+        query.channel.as_deref(),
+        query.peer_id.as_deref(),
+        query.account_id.as_deref(),
+        limit,
+    )
+    .await
+    {
+        Ok(rows) => (StatusCode::OK, Json(serde_json::json!({ "state": rows }))),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": format!("{e:#}") })),
