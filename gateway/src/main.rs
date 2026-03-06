@@ -3,6 +3,7 @@ use std::{
     io::Read as _,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
+    str::FromStr,
     sync::Arc,
 };
 
@@ -19,9 +20,12 @@ use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
 };
+use magicmerlin_config::{ConfigManager, ConfigOptions};
 use magicmerlin_gateway::{methods::SUPPORTED_METHODS, pairing};
+use magicmerlin_logging::{init_with as init_logging, LogLevel};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
+use tracing::info;
 
 mod approvals;
 mod plugins;
@@ -61,6 +65,22 @@ struct Args {
     /// Emit JSON output for --print-compat.
     #[arg(long)]
     json: bool,
+
+    /// Logging level: silent|fatal|error|warn|info|debug|trace.
+    #[arg(long, default_value = "info")]
+    log_level: String,
+
+    /// Disable ANSI colors in console logs.
+    #[arg(long)]
+    no_color: bool,
+
+    /// OpenClaw profile name (`~/.openclaw-<profile>`).
+    #[arg(long)]
+    profile: Option<String>,
+
+    /// Use development profile (`~/.openclaw-dev`).
+    #[arg(long)]
+    dev: bool,
 
     #[command(subcommand)]
     command: Option<Command>,
@@ -466,6 +486,21 @@ fn convert_openclaw_job(oc: OpenClawJob, index: usize) -> Result<PortableJob> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+    let config = ConfigManager::load(ConfigOptions {
+        profile: args.profile.clone(),
+        dev: args.dev,
+    })?;
+    let log_level = LogLevel::from_str(&args.log_level).unwrap_or(LogLevel::Info);
+    init_logging(
+        log_level,
+        !args.no_color,
+        Some(&config.state_paths().logs_dir),
+    )?;
+    info!(
+        state_dir = %config.state_paths().state_dir.display(),
+        config_path = %config.config_path().display(),
+        "initialized gateway runtime"
+    );
 
     // Always load snapshots early; if this fails, we are not compatible.
     let providers = SnapshotBackedProviders::load()?;
