@@ -63,7 +63,10 @@ impl DiscordChannel {
 
     /// Creates a thread in a channel.
     pub async fn create_thread(&self, _channel_id: &str, _name: &str) -> Result<String> {
-        Ok(format!("thread-{}", self.next_id.fetch_add(1, Ordering::Relaxed)))
+        Ok(format!(
+            "thread-{}",
+            self.next_id.fetch_add(1, Ordering::Relaxed)
+        ))
     }
 
     /// Simulates per-route rate-limit handling.

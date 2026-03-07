@@ -25,7 +25,10 @@ pub fn format_for_platform(platform: Platform, message: &OutboundMessage) -> Str
 
 /// Splits outbound text into chunks according to platform limits.
 pub fn split_for_platform(platform: Platform, message: &OutboundMessage) -> Vec<String> {
-    split_text_by_limit(&format_for_platform(platform, message), platform_message_limit(platform))
+    split_text_by_limit(
+        &format_for_platform(platform, message),
+        platform_message_limit(platform),
+    )
 }
 
 /// Splits text without exceeding provided byte-length limit.
@@ -90,8 +93,8 @@ fn escape_markdown_v2(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     for c in input.chars() {
         match c {
-            '_' | '*' | '[' | ']' | '(' | ')' | '~' | '`' | '>' | '#' | '+' | '-' | '=' | '|' | '{'
-            | '}' | '.' | '!' => {
+            '_' | '*' | '[' | ']' | '(' | ')' | '~' | '`' | '>' | '#' | '+' | '-' | '=' | '|'
+            | '{' | '}' | '.' | '!' => {
                 out.push('\\');
                 out.push(c);
             }

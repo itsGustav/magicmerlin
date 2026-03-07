@@ -1609,8 +1609,8 @@ async fn dispatch_ws_method(
             struct Params {
                 session_id: String,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let aborted = state.run_queue.abort_session(&parsed.session_id).await;
             Ok(serde_json::json!({ "ok": true, "aborted": aborted }))
         }
@@ -1625,8 +1625,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: String,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let session = sessions::get_session(&state.db_path, &parsed.id)
                 .await
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -1639,8 +1639,8 @@ async fn dispatch_ws_method(
                 session_id: String,
                 message: String,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             sessions::upsert_session(
                 &state.db_path,
                 &parsed.session_id,
@@ -1660,11 +1660,11 @@ async fn dispatch_ws_method(
                 child_session_id: Option<String>,
                 agent: Option<String>,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let child_id = parsed
-                .child_session_id
-                .unwrap_or_else(|| format!("sub:{}:{}", parsed.parent_session_id, uuid::Uuid::new_v4()));
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let child_id = parsed.child_session_id.unwrap_or_else(|| {
+                format!("sub:{}:{}", parsed.parent_session_id, uuid::Uuid::new_v4())
+            });
             sessions::spawn_subsession(
                 &state.db_path,
                 &parsed.parent_session_id,
@@ -1680,8 +1680,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: String,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let compacted = sessions::compact_session(&state.db_path, &parsed.id)
                 .await
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -1692,8 +1692,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: String,
             }
-            let parsed: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let deleted = sessions::delete_session(&state.db_path, &parsed.id)
                 .await
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -1713,8 +1713,8 @@ async fn dispatch_ws_method(
                 max_attempts: Option<i64>,
                 backoff_seconds: Option<i64>,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let id = state
                 .scheduler
                 .add_job(
@@ -1741,8 +1741,8 @@ async fn dispatch_ws_method(
                 max_attempts: Option<i64>,
                 backoff_seconds: Option<i64>,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             state
                 .scheduler
                 .edit_job(
@@ -1763,8 +1763,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: i64,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             state
                 .scheduler
                 .remove_job(p.id)
@@ -1777,8 +1777,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: i64,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             state
                 .scheduler
                 .run_job_now(p.id)
@@ -1791,8 +1791,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: i64,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             state
                 .scheduler
                 .resume_job(p.id)
@@ -1805,8 +1805,8 @@ async fn dispatch_ws_method(
             struct Params {
                 id: i64,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             state
                 .scheduler
                 .pause_job(p.id)
@@ -1819,8 +1819,8 @@ async fn dispatch_ws_method(
             struct Params {
                 path: String,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
             Ok(serde_json::json!({ "value": cfg.get(&p.path) }))
         }
@@ -1830,8 +1830,8 @@ async fn dispatch_ws_method(
                 path: String,
                 value: String,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
             cfg.set(&p.path, &p.value)
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -1843,8 +1843,8 @@ async fn dispatch_ws_method(
             struct Params {
                 path: String,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
             cfg.unset(&p.path)
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -1868,8 +1868,8 @@ async fn dispatch_ws_method(
             struct Params {
                 name: String,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let changed = plugins::set_plugin_enabled(&p.name, true)
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({ "ok": changed }))
@@ -1879,8 +1879,8 @@ async fn dispatch_ws_method(
             struct Params {
                 name: String,
             }
-            let p: Params =
-                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let changed = plugins::set_plugin_enabled(&p.name, false)
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({ "ok": changed }))
@@ -1911,14 +1911,15 @@ async fn run_agent_turn(
             SlashCommand::Status => "session is active".to_string(),
             SlashCommand::Compact => "session compaction requested".to_string(),
             SlashCommand::Reasoning(mode) => format!("reasoning mode: {:?}", mode),
-            SlashCommand::Model(model) => format!(
-                "model {}",
-                model.unwrap_or_else(|| "unchanged".to_string())
-            ),
+            SlashCommand::Model(model) => {
+                format!("model {}", model.unwrap_or_else(|| "unchanged".to_string()))
+            }
             SlashCommand::Reset => "session reset requested".to_string(),
             SlashCommand::Help => "/status /compact /reasoning /model /reset /help".to_string(),
         };
-        return Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id, "kind":"command"}));
+        return Ok(
+            serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id, "kind":"command"}),
+        );
     }
     let timeout = Duration::from_secs(parsed.timeout_seconds.unwrap_or(60));
 
@@ -3126,7 +3127,8 @@ mod tests {
     use super::*;
 
     async fn build_test_state() -> AppState {
-        let state_root = std::env::temp_dir().join(format!("magicmerlin-test-{}", uuid::Uuid::new_v4()));
+        let state_root =
+            std::env::temp_dir().join(format!("magicmerlin-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&state_root).expect("state dir");
         std::env::set_var("OPENCLAW_STATE_DIR", &state_root);
         let providers = SnapshotBackedProviders::load().expect("providers");

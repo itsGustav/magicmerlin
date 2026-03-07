@@ -45,7 +45,11 @@ impl WebChannel {
     }
 
     /// Handles inbound websocket JSON payload.
-    pub async fn handle_ws_message(&self, _session_id: &str, _payload: &serde_json::Value) -> Result<()> {
+    pub async fn handle_ws_message(
+        &self,
+        _session_id: &str,
+        _payload: &serde_json::Value,
+    ) -> Result<()> {
         Ok(())
     }
 

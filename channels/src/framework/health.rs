@@ -50,12 +50,14 @@ impl HealthMonitor {
 
     /// Marks a channel as disconnected with an optional error.
     pub async fn mark_disconnected(&self, platform: Platform, error: Option<String>) {
-        self.set(platform, ConnectionState::Disconnected, error).await;
+        self.set(platform, ConnectionState::Disconnected, error)
+            .await;
     }
 
     /// Marks a channel as reconnecting.
     pub async fn mark_reconnecting(&self, platform: Platform) {
-        self.set(platform, ConnectionState::Reconnecting, None).await;
+        self.set(platform, ConnectionState::Reconnecting, None)
+            .await;
     }
 
     /// Returns health details for a platform.

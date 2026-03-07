@@ -58,12 +58,21 @@ impl TelegramChannel {
     }
 
     /// Sends a poll with `sendPoll`.
-    pub async fn send_poll(&self, _chat_id: &str, _question: &str, _options: &[String]) -> Result<MessageId> {
+    pub async fn send_poll(
+        &self,
+        _chat_id: &str,
+        _question: &str,
+        _options: &[String],
+    ) -> Result<MessageId> {
         Ok(self.next_message_id())
     }
 
     /// Uploads media using API upload endpoints.
-    pub async fn upload_media(&self, _chat_id: &str, _message: &OutboundMessage) -> Result<MessageId> {
+    pub async fn upload_media(
+        &self,
+        _chat_id: &str,
+        _message: &OutboundMessage,
+    ) -> Result<MessageId> {
         Ok(self.next_message_id())
     }
 

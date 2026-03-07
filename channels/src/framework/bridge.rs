@@ -1,4 +1,6 @@
-use magicmerlin_auto_reply::{AutoReplyEngine, InboundMessage as PipelineInboundMessage, PipelineDecision};
+use magicmerlin_auto_reply::{
+    AutoReplyEngine, InboundMessage as PipelineInboundMessage, PipelineDecision,
+};
 
 use super::{ChatType, InboundMessage};
 

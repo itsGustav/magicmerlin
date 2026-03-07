@@ -39,7 +39,10 @@ impl IMessageChannel {
 
     /// Sends image media using Messages.app attachment flow.
     pub async fn send_image(&self, _target: &str, _path: &str) -> Result<MessageId> {
-        Ok(format!("imsg-img-{}", self.next_id.fetch_add(1, Ordering::Relaxed)))
+        Ok(format!(
+            "imsg-img-{}",
+            self.next_id.fetch_add(1, Ordering::Relaxed)
+        ))
     }
 
     fn next_message_id(&self) -> MessageId {

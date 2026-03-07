@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use tokio::sync::RwLock;
 
 use super::{
-    format_for_platform, split_for_platform, AutoReplyBridge, HealthMonitor, MessageId, OutboundMessage,
-    Platform, Result,
+    format_for_platform, split_for_platform, AutoReplyBridge, HealthMonitor, MessageId,
+    OutboundMessage, Platform, Result,
 };
 use crate::framework::types::ChannelError;
 
@@ -191,7 +191,12 @@ mod tests {
             Ok(format!("id:{}", message.text.len()))
         }
 
-        async fn edit(&self, _target: &str, _message_id: &str, _message: OutboundMessage) -> Result<()> {
+        async fn edit(
+            &self,
+            _target: &str,
+            _message_id: &str,
+            _message: OutboundMessage,
+        ) -> Result<()> {
             Ok(())
         }
 

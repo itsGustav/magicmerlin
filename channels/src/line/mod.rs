@@ -40,7 +40,11 @@ impl LineChannel {
     }
 
     /// Sends a reply message to a reply token.
-    pub async fn reply_message(&self, _reply_token: &str, _message: &OutboundMessage) -> Result<()> {
+    pub async fn reply_message(
+        &self,
+        _reply_token: &str,
+        _message: &OutboundMessage,
+    ) -> Result<()> {
         Ok(())
     }
 

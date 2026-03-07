@@ -168,7 +168,12 @@ impl DebounceCollector {
     }
 
     /// Adds a message to a session collect buffer and returns push behavior.
-    pub fn push(&mut self, now: Instant, session_key: &str, message: InboundMessage) -> CollectPushResult {
+    pub fn push(
+        &mut self,
+        now: Instant,
+        session_key: &str,
+        message: InboundMessage,
+    ) -> CollectPushResult {
         let state = self
             .states
             .entry(session_key.to_string())
@@ -184,7 +189,9 @@ impl DebounceCollector {
         }
         state.messages.push(message);
         state.deadline = now + self.window;
-        CollectPushResult { cancel_pending_turn }
+        CollectPushResult {
+            cancel_pending_turn,
+        }
     }
 
     /// Drains all session batches whose debounce deadline has elapsed.
@@ -193,7 +200,13 @@ impl DebounceCollector {
         let keys = self
             .states
             .iter()
-            .filter_map(|(k, v)| if v.deadline <= now { Some(k.clone()) } else { None })
+            .filter_map(|(k, v)| {
+                if v.deadline <= now {
+                    Some(k.clone())
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         for key in keys {

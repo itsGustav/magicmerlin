@@ -78,7 +78,11 @@ impl SessionEngine {
     }
 
     /// Loads existing state or creates a new session state for `session_id`.
-    pub fn load_or_create(&self, session_id: &str, parent_session_id: Option<&str>) -> Result<SessionState> {
+    pub fn load_or_create(
+        &self,
+        session_id: &str,
+        parent_session_id: Option<&str>,
+    ) -> Result<SessionState> {
         let now = Utc::now().timestamp();
         let conn = rusqlite::Connection::open(&self.db_path)?;
         conn.execute(
@@ -91,7 +95,9 @@ impl SessionEngine {
 
     /// Returns the transcript store bound to one session id.
     pub fn transcript_store(&self, session_id: &str) -> Result<TranscriptStore> {
-        let file = self.transcript_root.join(format!("{}.jsonl", sanitize_session_id(session_id)));
+        let file = self
+            .transcript_root
+            .join(format!("{}.jsonl", sanitize_session_id(session_id)));
         TranscriptStore::new(file).map_err(SessionsError::from)
     }
 
@@ -103,7 +109,12 @@ impl SessionEngine {
     }
 
     /// Compacts the transcript when token usage exceeds the threshold percentage.
-    pub fn compact_if_needed(&self, session_id: &str, context_window: u64, threshold_percent: u64) -> Result<bool> {
+    pub fn compact_if_needed(
+        &self,
+        session_id: &str,
+        context_window: u64,
+        threshold_percent: u64,
+    ) -> Result<bool> {
         if context_window == 0 {
             return Ok(false);
         }
@@ -137,7 +148,11 @@ impl SessionEngine {
     }
 
     /// Spawns and tracks one sub-agent session attached to a parent session.
-    pub fn spawn_sub_agent_session(&self, parent_session_id: &str, agent_name: &str) -> Result<String> {
+    pub fn spawn_sub_agent_session(
+        &self,
+        parent_session_id: &str,
+        agent_name: &str,
+    ) -> Result<String> {
         let child_id = format!("sub:{agent_name}:{}", uuid::Uuid::new_v4());
         self.load_or_create(&child_id, Some(parent_session_id))?;
         let conn = rusqlite::Connection::open(&self.db_path)?;
@@ -164,14 +179,25 @@ impl SessionEngine {
             .collect::<std::result::Result<Vec<_>, _>>()?;
 
         for child_id in &child_ids {
-            conn.execute("DELETE FROM session_state WHERE session_id = ?1", params![child_id])?;
-            conn.execute("DELETE FROM sub_agent_links WHERE child_session_id = ?1", params![child_id])?;
+            conn.execute(
+                "DELETE FROM session_state WHERE session_id = ?1",
+                params![child_id],
+            )?;
+            conn.execute(
+                "DELETE FROM sub_agent_links WHERE child_session_id = ?1",
+                params![child_id],
+            )?;
         }
         Ok(child_ids.len())
     }
 
     /// Appends an inter-session message envelope to both source and target sessions.
-    pub fn send_between_sessions(&self, from_session_id: &str, to_session_id: &str, content: &str) -> Result<()> {
+    pub fn send_between_sessions(
+        &self,
+        from_session_id: &str,
+        to_session_id: &str,
+        content: &str,
+    ) -> Result<()> {
         let envelope = serde_json::json!({
             "type": "inter_session",
             "from": from_session_id,
@@ -337,8 +363,11 @@ mod tests {
     #[test]
     fn repairs_transcript_tool_pairs() {
         let temp = tempfile::tempdir().expect("tempdir");
-        let engine = SessionEngine::new(temp.path().join("db.sqlite"), temp.path().join("transcripts"))
-            .expect("engine");
+        let engine = SessionEngine::new(
+            temp.path().join("db.sqlite"),
+            temp.path().join("transcripts"),
+        )
+        .expect("engine");
         engine.load_or_create("telegram:123", None).expect("create");
         let store = engine.transcript_store("telegram:123").expect("store");
         store

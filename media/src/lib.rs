@@ -10,27 +10,8 @@ pub mod tts;
 #[cfg(feature = "media-understanding")]
 pub mod understanding;
 
-use serde::{Deserialize, Serialize};
-
-/// High-level media input type.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum MediaType {
-    Image,
-    Audio,
-    Video,
-    Pdf,
-}
-
-/// Unified media analysis result.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct AnalysisResult {
-    pub media_type: MediaType,
-    pub provider: String,
-    pub text: String,
-    #[serde(default)]
-    pub metadata: serde_json::Value,
-}
+#[cfg(feature = "media-understanding")]
+pub use understanding::{AnalysisRequest, AnalysisResult, MediaSource, MediaType, VisionProvider};
 
 /// Common crate-level error for media operations.
 #[derive(Debug, thiserror::Error)]
