@@ -1,0 +1,13 @@
+[package]
+name = "magicmerlin-auto-reply"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+magicmerlin-sessions = { path = "../sessions" }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"

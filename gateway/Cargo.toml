@@ -11,7 +11,8 @@ axum = "0.7"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "time"] }
+thiserror = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "time", "sync", "signal", "net"] }
 
 tempfile = "3"
 uuid = { version = "1", features = ["v4"] }
@@ -26,5 +27,7 @@ rusqlite = { version = "0.32" }
 magicmerlin-compat = { path = "../compat" }
 magicmerlin-config = { path = "../config" }
 magicmerlin-logging = { path = "../logging" }
+magicmerlin-auto-reply = { path = "../auto-reply" }
+magicmerlin-sessions = { path = "../sessions" }
 magicmerlin-tools = { path = "../tools" }
 tracing = "0.1"

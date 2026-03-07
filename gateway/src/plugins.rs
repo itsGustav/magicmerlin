@@ -21,12 +21,10 @@ pub struct PluginRegistry {
 /// Resolve the path to plugins.json, relative to the gateway binary's directory
 /// or falling back to the current working directory.
 pub fn registry_path() -> PathBuf {
-    // Check env override first.
     if let Ok(p) = std::env::var("MAGICMERLIN_PLUGINS_FILE") {
         return PathBuf::from(p);
     }
 
-    // Try alongside the binary.
     if let Ok(exe) = std::env::current_exe() {
         let candidate = exe.parent().unwrap_or(Path::new(".")).join("plugins.json");
         if candidate.exists() {
@@ -34,7 +32,6 @@ pub fn registry_path() -> PathBuf {
         }
     }
 
-    // Fallback: cwd-relative (typical dev workflow).
     PathBuf::from("plugins.json")
 }
 
@@ -50,4 +47,27 @@ pub fn load_registry() -> Result<PluginRegistry> {
     let reg: PluginRegistry =
         serde_json::from_str(&raw).map_err(|e| anyhow::anyhow!("parse {}: {e}", path.display()))?;
     Ok(reg)
+}
+
+pub fn save_registry(registry: &PluginRegistry) -> Result<()> {
+    let path = registry_path();
+    let body = serde_json::to_string_pretty(registry)?;
+    std::fs::write(&path, format!("{body}\n"))
+        .map_err(|e| anyhow::anyhow!("write {}: {e}", path.display()))
+}
+
+pub fn set_plugin_enabled(name: &str, enabled: bool) -> Result<bool> {
+    let mut registry = load_registry()?;
+    let mut changed = false;
+    for plugin in &mut registry.plugins {
+        if plugin.name == name {
+            plugin.enabled = Some(enabled);
+            changed = true;
+            break;
+        }
+    }
+    if changed {
+        save_registry(&registry)?;
+    }
+    Ok(changed)
 }

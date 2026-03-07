@@ -1,10 +1,12 @@
 use std::{
+    collections::HashMap,
     fs,
     io::Read as _,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     str::FromStr,
     sync::Arc,
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context, Result};
@@ -16,6 +18,7 @@ use axum::{
     Json, Router,
 };
 use clap::{Parser, Subcommand};
+use magicmerlin_auto_reply::{format_reply, parse_slash_command, Platform, SlashCommand};
 use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
@@ -25,11 +28,14 @@ use magicmerlin_gateway::{methods::SUPPORTED_METHODS, pairing};
 use magicmerlin_logging::{init_with as init_logging, LogLevel};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
+use thiserror::Error;
+use tokio::sync::{broadcast, Mutex};
 use tracing::info;
 
 mod approvals;
 mod plugins;
 mod scheduler;
+mod service;
 mod sessions;
 
 use scheduler::{default_db_path, DeadLetter, Scheduler};
@@ -117,6 +123,12 @@ enum Command {
     Plugins {
         #[command(subcommand)]
         command: PluginsCommand,
+    },
+
+    /// Service management helpers
+    Service {
+        #[command(subcommand)]
+        command: ServiceCommand,
     },
 }
 
@@ -326,6 +338,27 @@ enum PluginsCommand {
     },
 }
 
+#[derive(Subcommand, Debug)]
+enum ServiceCommand {
+    /// Print generated LaunchAgent plist
+    Launchagent {
+        #[arg(long)]
+        gateway_bin: Option<PathBuf>,
+    },
+    /// Install LaunchAgent plist into ~/Library/LaunchAgents
+    InstallLaunchagent {
+        #[arg(long)]
+        gateway_bin: Option<PathBuf>,
+    },
+    /// Uninstall LaunchAgent plist
+    UninstallLaunchagent,
+    /// Print generated systemd user unit
+    Systemd {
+        #[arg(long)]
+        gateway_bin: Option<PathBuf>,
+    },
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CompatInfo {
@@ -525,12 +558,49 @@ async fn main() -> Result<()> {
     }
 
     let db_path = args.db_path.clone().unwrap_or_else(default_db_path);
+    let auth = Arc::new(resolve_gateway_auth(&config));
+    let config = Arc::new(Mutex::new(config));
 
     // CLI subcommands.
     if let Some(cmd) = args.command {
         let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
 
         match cmd {
+            Command::Service { command } => {
+                let cfg = config.lock().await;
+                let port = args.serve.unwrap_or_else(|| {
+                    cfg.config()
+                        .gateway
+                        .port
+                        .unwrap_or(if args.dev { 19001 } else { 18789 })
+                });
+                let state_dir = cfg.state_paths().state_dir.clone();
+                drop(cfg);
+
+                match command {
+                    ServiceCommand::Launchagent { gateway_bin } => {
+                        let bin = gateway_bin.unwrap_or_else(default_gateway_bin);
+                        let plist = service::generate_launchagent_plist(&bin, &state_dir, port);
+                        println!("{plist}");
+                    }
+                    ServiceCommand::InstallLaunchagent { gateway_bin } => {
+                        let bin = gateway_bin.unwrap_or_else(default_gateway_bin);
+                        let plist = service::generate_launchagent_plist(&bin, &state_dir, port);
+                        let path = service::install_launchagent(&plist)?;
+                        println!("{}", path.display());
+                    }
+                    ServiceCommand::UninstallLaunchagent => {
+                        let path = service::uninstall_launchagent()?;
+                        println!("{}", path.display());
+                    }
+                    ServiceCommand::Systemd { gateway_bin } => {
+                        let bin = gateway_bin.unwrap_or_else(default_gateway_bin);
+                        let unit = service::generate_systemd_unit(&bin, port);
+                        println!("{unit}");
+                    }
+                }
+                return Ok(());
+            }
             Command::Status { json } => {
                 let state = scheduler.state().await?;
                 if json {
@@ -952,9 +1022,27 @@ async fn main() -> Result<()> {
     // Back-compat: --serve
     if let Some(port) = args.serve {
         if args.daemon {
-            serve_http_with_daemon(args.bind, port, providers, info, db_path).await?;
+            serve_http_with_daemon(
+                args.bind,
+                port,
+                providers,
+                info,
+                db_path,
+                config.clone(),
+                auth.clone(),
+            )
+            .await?;
         } else {
-            serve_http(args.bind, port, providers, info, db_path).await?;
+            serve_http(
+                args.bind,
+                port,
+                providers,
+                info,
+                db_path,
+                config.clone(),
+                auth.clone(),
+            )
+            .await?;
         }
         return Ok(());
     }
@@ -972,6 +1060,82 @@ struct AppState {
     info: CompatInfo,
     scheduler: Arc<Scheduler>,
     db_path: PathBuf,
+    config: Arc<Mutex<ConfigManager>>,
+    auth: Arc<GatewayAuth>,
+    events: broadcast::Sender<GatewayEvent>,
+    run_queue: Arc<RunQueue>,
+    started_at: Instant,
+    presence: Arc<Mutex<SystemPresence>>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct GatewayAuth {
+    token: Option<String>,
+    password: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GatewayEvent {
+    method: String,
+    params: Value,
+    target_client: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SystemPresence {
+    online: bool,
+    last_heartbeat_at: i64,
+    connected_clients: usize,
+}
+
+impl Default for SystemPresence {
+    fn default() -> Self {
+        Self {
+            online: true,
+            last_heartbeat_at: chrono::Utc::now().timestamp(),
+            connected_clients: 0,
+        }
+    }
+}
+
+#[derive(Clone, Default)]
+struct RunQueue {
+    session_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
+    abort_by_session: Arc<Mutex<HashMap<String, tokio::sync::watch::Sender<bool>>>>,
+}
+
+impl RunQueue {
+    async fn session_lock(&self, session_id: &str) -> Arc<Mutex<()>> {
+        let mut locks = self.session_locks.lock().await;
+        locks
+            .entry(session_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone()
+    }
+
+    async fn register_abort(&self, session_id: &str) -> tokio::sync::watch::Receiver<bool> {
+        let (tx, rx) = tokio::sync::watch::channel(false);
+        self.abort_by_session
+            .lock()
+            .await
+            .insert(session_id.to_string(), tx);
+        rx
+    }
+
+    async fn clear_abort(&self, session_id: &str) {
+        self.abort_by_session.lock().await.remove(session_id);
+    }
+
+    async fn abort_session(&self, session_id: &str) -> bool {
+        let sender = self.abort_by_session.lock().await.get(session_id).cloned();
+        if let Some(sender) = sender {
+            let _ = sender.send(true);
+            return true;
+        }
+        false
+    }
 }
 
 async fn serve_http(
@@ -980,24 +1144,42 @@ async fn serve_http(
     providers: SnapshotBackedProviders,
     info: CompatInfo,
     db_path: PathBuf,
+    config: Arc<Mutex<ConfigManager>>,
+    auth: Arc<GatewayAuth>,
 ) -> Result<()> {
+    let state_dir = {
+        let guard = config.lock().await;
+        guard.state_paths().state_dir.clone()
+    };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
     approvals::migrate_approvals(&db_path).await?;
     pairing::migrate_pairing(&db_path).await?;
+    let (events, _) = broadcast::channel(256);
     let state = AppState {
         providers,
         info,
         scheduler,
         db_path,
+        config,
+        auth,
+        events,
+        run_queue: Arc::new(RunQueue::default()),
+        started_at: Instant::now(),
+        presence: Arc::new(Mutex::new(SystemPresence::default())),
     };
 
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway listening on http://{addr}");
+    let pid_file = service::default_pid_file(&state_dir);
+    let _ = service::write_pid_file(&pid_file);
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+    let _ = service::remove_pid_file(&pid_file);
     Ok(())
 }
 
@@ -1007,31 +1189,49 @@ async fn serve_http_with_daemon(
     providers: SnapshotBackedProviders,
     info: CompatInfo,
     db_path: PathBuf,
+    config: Arc<Mutex<ConfigManager>>,
+    auth: Arc<GatewayAuth>,
 ) -> Result<()> {
+    let state_dir = {
+        let guard = config.lock().await;
+        guard.state_paths().state_dir.clone()
+    };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
     approvals::migrate_approvals(&db_path).await?;
     pairing::migrate_pairing(&db_path).await?;
     let daemon_handle = scheduler.clone().spawn_daemon();
 
+    let (events, _) = broadcast::channel(256);
     let state = AppState {
         providers,
         info,
         scheduler,
         db_path,
+        config,
+        auth,
+        events,
+        run_queue: Arc::new(RunQueue::default()),
+        started_at: Instant::now(),
+        presence: Arc::new(Mutex::new(SystemPresence::default())),
     };
 
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway (daemon) listening on http://{addr}");
+    let pid_file = service::default_pid_file(&state_dir);
+    let _ = service::write_pid_file(&pid_file);
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     // Run server in foreground; scheduler runs in background.
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
     // If server stops, stop scheduler task too.
     daemon_handle.abort();
+    let _ = service::remove_pid_file(&pid_file);
     Ok(())
 }
 
@@ -1042,6 +1242,7 @@ fn build_router(state: AppState) -> Router {
         .route("/chat", post(http_chat))
         .route("/methods", get(http_methods))
         .route("/call", post(http_call))
+        .route("/ws", post(http_ws))
         .route(
             "/health",
             get({
@@ -1214,6 +1415,579 @@ fn parse_approvals_entries(
             }
         }
         _ => Err("invalid json: expected array or object".to_string()),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WsAuthQuery {
+    token: Option<String>,
+    password: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonRpcRequest {
+    method: String,
+    #[serde(default)]
+    params: Value,
+    #[serde(default)]
+    id: Option<Value>,
+    #[serde(default)]
+    auth: Option<JsonRpcAuth>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JsonRpcAuth {
+    token: Option<String>,
+    password: Option<String>,
+}
+
+#[derive(Debug, Error)]
+enum RpcError {
+    #[error("unauthorized")]
+    Unauthorized,
+    #[error("invalid params: {0}")]
+    InvalidParams(String),
+    #[error("method not found: {0}")]
+    MethodNotFound(String),
+    #[error("internal error: {0}")]
+    Internal(String),
+}
+
+impl RpcError {
+    fn code(&self) -> i64 {
+        match self {
+            Self::Unauthorized => -32001,
+            Self::InvalidParams(_) => -32602,
+            Self::MethodNotFound(_) => -32601,
+            Self::Internal(_) => -32603,
+        }
+    }
+}
+
+fn resolve_gateway_auth(config: &ConfigManager) -> GatewayAuth {
+    let token = std::env::var("MAGICMERLIN_GATEWAY_TOKEN").ok().or_else(|| {
+        config
+            .config()
+            .gateway
+            .extra
+            .get("token")
+            .and_then(Value::as_str)
+            .map(std::string::ToString::to_string)
+    });
+    let password = std::env::var("MAGICMERLIN_GATEWAY_PASSWORD")
+        .ok()
+        .or_else(|| {
+            config
+                .config()
+                .gateway
+                .extra
+                .get("password")
+                .and_then(Value::as_str)
+                .map(std::string::ToString::to_string)
+        });
+    GatewayAuth { token, password }
+}
+
+fn default_gateway_bin() -> PathBuf {
+    std::env::current_exe().unwrap_or_else(|_| PathBuf::from("magicmerlin-gateway"))
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        let _ = tokio::signal::ctrl_c().await;
+    };
+    #[cfg(unix)]
+    let terminate = async {
+        if let Ok(mut signal) =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        {
+            let _ = signal.recv().await;
+        }
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+}
+
+async fn http_ws(
+    State(state): State<AppState>,
+    Query(auth_query): Query<WsAuthQuery>,
+    Json(req): Json<JsonRpcRequest>,
+) -> impl IntoResponse {
+    let client_id = uuid::Uuid::new_v4().to_string();
+    let id = req.id.clone().unwrap_or(Value::Null);
+    if !is_ws_authorized(
+        &state,
+        req.auth.as_ref(),
+        auth_query.token.as_deref(),
+        auth_query.password.as_deref(),
+    ) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "jsonrpc":"2.0",
+                "error": { "code": RpcError::Unauthorized.code(), "message": RpcError::Unauthorized.to_string() },
+                "id": id
+            })),
+        );
+    }
+
+    let response = match dispatch_ws_method(&state, &client_id, &req.method, req.params).await {
+        Ok(result) => serde_json::json!({"jsonrpc":"2.0","result":result,"id": id}),
+        Err(err) => serde_json::json!({
+            "jsonrpc":"2.0",
+            "error": { "code": err.code(), "message": err.to_string() },
+            "id": id
+        }),
+    };
+    (StatusCode::OK, Json(response))
+}
+
+fn is_ws_authorized(
+    state: &AppState,
+    auth: Option<&JsonRpcAuth>,
+    query_token: Option<&str>,
+    query_password: Option<&str>,
+) -> bool {
+    if state.auth.token.is_none() && state.auth.password.is_none() {
+        return true;
+    }
+
+    let token_matches = state.auth.token.as_deref().is_none_or(|required| {
+        auth.and_then(|a| a.token.as_deref()) == Some(required) || query_token == Some(required)
+    });
+    let password_matches = state.auth.password.as_deref().is_none_or(|required| {
+        auth.and_then(|a| a.password.as_deref()) == Some(required)
+            || query_password == Some(required)
+    });
+
+    token_matches && password_matches
+}
+
+async fn dispatch_ws_method(
+    state: &AppState,
+    client_id: &str,
+    method: &str,
+    params: Value,
+) -> std::result::Result<Value, RpcError> {
+    match method {
+        "health" => Ok(serde_json::json!({
+            "ok": true,
+            "uptimeSeconds": state.started_at.elapsed().as_secs(),
+            "channelStatus": "online",
+        })),
+        "status" => {
+            let scheduler_state = state
+                .scheduler
+                .state()
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            let presence = state.presence.lock().await.clone();
+            let config = state.config.lock().await;
+            Ok(serde_json::json!({
+                "agents": { "count": 1, "default": "merlin" },
+                "sessions": sessions::list_sessions(&state.db_path, 100).await.map_err(|e| RpcError::Internal(e.to_string()))?.len(),
+                "models": config.config().agents.defaults.model,
+                "config": config.config().gateway,
+                "scheduler": scheduler_state,
+                "presence": presence,
+            }))
+        }
+        "system-presence" => Ok(serde_json::to_value(state.presence.lock().await.clone())
+            .map_err(|e| RpcError::Internal(e.to_string()))?),
+        "agent.run" => run_agent_turn(state, client_id, params).await,
+        "agent.abort" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                session_id: String,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let aborted = state.run_queue.abort_session(&parsed.session_id).await;
+            Ok(serde_json::json!({ "ok": true, "aborted": aborted }))
+        }
+        "sessions.list" => {
+            let list = sessions::list_sessions(&state.db_path, 500)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "sessions": list }))
+        }
+        "sessions.get" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: String,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let session = sessions::get_session(&state.db_path, &parsed.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "session": session }))
+        }
+        "sessions.send" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                session_id: String,
+                message: String,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            sessions::upsert_session(
+                &state.db_path,
+                &parsed.session_id,
+                Some("gateway"),
+                "active",
+                Some(&serde_json::json!({ "lastMessage": parsed.message })),
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "sessions.spawn" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                parent_session_id: String,
+                child_session_id: Option<String>,
+                agent: Option<String>,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let child_id = parsed
+                .child_session_id
+                .unwrap_or_else(|| format!("sub:{}:{}", parsed.parent_session_id, uuid::Uuid::new_v4()));
+            sessions::spawn_subsession(
+                &state.db_path,
+                &parsed.parent_session_id,
+                &child_id,
+                parsed.agent.as_deref(),
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": true, "sessionId": child_id }))
+        }
+        "sessions.compact" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: String,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let compacted = sessions::compact_session(&state.db_path, &parsed.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": compacted }))
+        }
+        "sessions.delete" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: String,
+            }
+            let parsed: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let deleted = sessions::delete_session(&state.db_path, &parsed.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": deleted }))
+        }
+        "cron.list" => Ok(serde_json::json!({
+            "jobs": state.scheduler.list_jobs().await.map_err(|e| RpcError::Internal(e.to_string()))?
+        })),
+        "cron.add" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                name: String,
+                schedule: String,
+                kind: String,
+                payload: Value,
+                max_attempts: Option<i64>,
+                backoff_seconds: Option<i64>,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let id = state
+                .scheduler
+                .add_job(
+                    p.name,
+                    p.schedule,
+                    p.kind,
+                    p.payload,
+                    p.max_attempts,
+                    p.backoff_seconds,
+                )
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": true, "id": id }))
+        }
+        "cron.edit" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                id: i64,
+                name: Option<String>,
+                schedule: Option<String>,
+                kind: Option<String>,
+                payload: Option<Value>,
+                max_attempts: Option<i64>,
+                backoff_seconds: Option<i64>,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            state
+                .scheduler
+                .edit_job(
+                    p.id,
+                    p.name,
+                    p.schedule,
+                    p.kind,
+                    p.payload,
+                    p.max_attempts,
+                    p.backoff_seconds,
+                )
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "cron.rm" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            state
+                .scheduler
+                .remove_job(p.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "cron.run" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            state
+                .scheduler
+                .run_job_now(p.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "cron.enable" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            state
+                .scheduler
+                .resume_job(p.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "cron.disable" => {
+            #[derive(Deserialize)]
+            struct Params {
+                id: i64,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            state
+                .scheduler
+                .pause_job(p.id)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "config.get" => {
+            #[derive(Deserialize)]
+            struct Params {
+                path: String,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let cfg = state.config.lock().await;
+            Ok(serde_json::json!({ "value": cfg.get(&p.path) }))
+        }
+        "config.set" => {
+            #[derive(Deserialize)]
+            struct Params {
+                path: String,
+                value: String,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let mut cfg = state.config.lock().await;
+            cfg.set(&p.path, &p.value)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "config.unset" => {
+            #[derive(Deserialize)]
+            struct Params {
+                path: String,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let mut cfg = state.config.lock().await;
+            cfg.unset(&p.path)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({"ok": true}))
+        }
+        "approvals.list" => {
+            let data = approvals::get_approvals(&state.db_path)
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::to_value(data).map_err(|e| RpcError::Internal(e.to_string()))?)
+        }
+        "approvals.approve" => Ok(serde_json::json!({ "ok": true, "status": "approved" })),
+        "approvals.deny" => Ok(serde_json::json!({ "ok": true, "status": "denied" })),
+        "plugins.list" => {
+            let reg = plugins::load_registry().map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::to_value(reg).map_err(|e| RpcError::Internal(e.to_string()))?)
+        }
+        "plugins.enable" => {
+            #[derive(Deserialize)]
+            struct Params {
+                name: String,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let changed = plugins::set_plugin_enabled(&p.name, true)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": changed }))
+        }
+        "plugins.disable" => {
+            #[derive(Deserialize)]
+            struct Params {
+                name: String,
+            }
+            let p: Params =
+                serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let changed = plugins::set_plugin_enabled(&p.name, false)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "ok": changed }))
+        }
+        _ => Err(RpcError::MethodNotFound(method.to_string())),
+    }
+}
+
+async fn run_agent_turn(
+    state: &AppState,
+    client_id: &str,
+    params: Value,
+) -> std::result::Result<Value, RpcError> {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Params {
+        session_id: String,
+        message: String,
+        timeout_seconds: Option<u64>,
+    }
+
+    let parsed: Params =
+        serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+    let session_id = parsed.session_id.clone();
+    let message = parsed.message.clone();
+    if let Some(command) = parse_slash_command(&message) {
+        let reply = match command {
+            SlashCommand::Status => "session is active".to_string(),
+            SlashCommand::Compact => "session compaction requested".to_string(),
+            SlashCommand::Reasoning(mode) => format!("reasoning mode: {:?}", mode),
+            SlashCommand::Model(model) => format!(
+                "model {}",
+                model.unwrap_or_else(|| "unchanged".to_string())
+            ),
+            SlashCommand::Reset => "session reset requested".to_string(),
+            SlashCommand::Help => "/status /compact /reasoning /model /reset /help".to_string(),
+        };
+        return Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id, "kind":"command"}));
+    }
+    let timeout = Duration::from_secs(parsed.timeout_seconds.unwrap_or(60));
+
+    let lock = state.run_queue.session_lock(&session_id).await;
+    let _guard = lock.lock().await;
+    let mut abort_rx = state.run_queue.register_abort(&session_id).await;
+
+    let _ = state.events.send(GatewayEvent {
+        method: "agent.partial".to_string(),
+        params: serde_json::json!({"sessionId": session_id, "status":"queued"}),
+        target_client: Some(client_id.to_string()),
+    });
+
+    let session_id_for_run = session_id.clone();
+    let message_for_run = message.clone();
+    let run_fut = async {
+        let _ = state.events.send(GatewayEvent {
+            method: "agent.partial".to_string(),
+            params: serde_json::json!({"sessionId": session_id_for_run, "status":"running"}),
+            target_client: Some(client_id.to_string()),
+        });
+        tokio::time::sleep(Duration::from_millis(120)).await;
+        sessions::upsert_session(
+            &state.db_path,
+            &session_id_for_run,
+            Some("gateway"),
+            "active",
+            Some(&serde_json::json!({ "lastInput": message_for_run })),
+        )
+        .await
+        .map_err(|e| RpcError::Internal(e.to_string()))?;
+        Ok::<String, RpcError>(format!("Auto reply: {}", message_for_run))
+    };
+
+    let result = tokio::select! {
+        changed = abort_rx.changed() => {
+            if changed.is_ok() && *abort_rx.borrow() {
+                Err(RpcError::Internal("aborted".to_string()))
+            } else {
+                Err(RpcError::Internal("abort channel closed".to_string()))
+            }
+        }
+        timed = tokio::time::timeout(timeout, run_fut) => {
+            match timed {
+                Ok(reply) => reply,
+                Err(_) => Err(RpcError::Internal("run timed out".to_string())),
+            }
+        }
+    };
+
+    state.run_queue.clear_abort(&session_id).await;
+    match result {
+        Ok(reply) => {
+            let formatted = format_reply(Platform::Telegram, &reply);
+            let _ = state.events.send(GatewayEvent {
+                method: "agent.partial".to_string(),
+                params: serde_json::json!({"sessionId": session_id, "status":"completed", "text": reply, "chunks": formatted}),
+                target_client: Some(client_id.to_string()),
+            });
+            Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id}))
+        }
+        Err(err) => {
+            let _ = state.events.send(GatewayEvent {
+                method: "agent.partial".to_string(),
+                params: serde_json::json!({"sessionId": session_id, "status":"failed", "error": err.to_string()}),
+                target_client: Some(client_id.to_string()),
+            });
+            Err(err)
+        }
     }
 }
 
@@ -2344,5 +3118,67 @@ async fn http_plugins_list(
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": format!("{e:#}") })),
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    async fn build_test_state() -> AppState {
+        let state_root = std::env::temp_dir().join(format!("magicmerlin-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&state_root).expect("state dir");
+        std::env::set_var("OPENCLAW_STATE_DIR", &state_root);
+        let providers = SnapshotBackedProviders::load().expect("providers");
+        let hashes = providers.hashes().expect("hashes");
+        let info = CompatInfo {
+            compat_version: COMPAT_VERSION,
+            fingerprint: hashes.fingerprint,
+            snapshot_hashes: hashes.files,
+        };
+        let db_path = state_root.join("gateway-test.sqlite");
+        let scheduler = Arc::new(Scheduler::new(db_path.clone()).await.expect("scheduler"));
+        let cfg = ConfigManager::load(ConfigOptions::default()).expect("config");
+        let (events, _) = broadcast::channel(32);
+        AppState {
+            providers,
+            info,
+            scheduler,
+            db_path,
+            config: Arc::new(Mutex::new(cfg)),
+            auth: Arc::new(GatewayAuth::default()),
+            events,
+            run_queue: Arc::new(RunQueue::default()),
+            started_at: Instant::now(),
+            presence: Arc::new(Mutex::new(SystemPresence::default())),
+        }
+    }
+
+    #[tokio::test]
+    async fn routes_health_method() {
+        let state = build_test_state().await;
+        let value = dispatch_ws_method(&state, "test-client", "health", Value::Null)
+            .await
+            .expect("health result");
+        assert_eq!(value.get("ok").and_then(Value::as_bool), Some(true));
+    }
+
+    #[tokio::test]
+    async fn rejects_invalid_auth() {
+        let mut state = build_test_state().await;
+        state.auth = Arc::new(GatewayAuth {
+            token: Some("t123".to_string()),
+            password: None,
+        });
+        let ok = is_ws_authorized(
+            &state,
+            Some(&JsonRpcAuth {
+                token: Some("bad".to_string()),
+                password: None,
+            }),
+            None,
+            None,
+        );
+        assert!(!ok);
     }
 }

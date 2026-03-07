@@ -15,12 +15,30 @@ pub struct SessionKey(pub String);
 impl SessionKey {
     /// Builds key for normal agent channel.
     pub fn agent_main(agent_name: &str) -> Self {
-        Self(format!("agent:{agent_name}:main"))
+        Self(magicmerlin_sessions::resolve_session_key(
+            &magicmerlin_sessions::ResolutionContext {
+                channel: "agent".to_string(),
+                agent_name: Some(agent_name.to_string()),
+                chat_id: None,
+                user_id: None,
+                slash_command: false,
+                custom_pattern: None,
+            },
+        ))
     }
 
     /// Builds key for telegram channel.
     pub fn telegram(chat_id: &str) -> Self {
-        Self(format!("telegram:{chat_id}"))
+        Self(magicmerlin_sessions::resolve_session_key(
+            &magicmerlin_sessions::ResolutionContext {
+                channel: "telegram".to_string(),
+                agent_name: None,
+                chat_id: Some(chat_id.to_string()),
+                user_id: None,
+                slash_command: false,
+                custom_pattern: None,
+            },
+        ))
     }
 }
 

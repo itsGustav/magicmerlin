@@ -939,6 +939,7 @@ dependencies = [
  "magicmerlin-config",
  "magicmerlin-infra",
  "magicmerlin-providers",
+ "magicmerlin-sessions",
  "magicmerlin-storage",
  "rusqlite",
  "serde",
@@ -966,6 +967,15 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
+]
+
+[[package]]
+name = "magicmerlin-auto-reply"
+version = "0.0.0"
+dependencies = [
+ "magicmerlin-sessions",
+ "serde",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -998,15 +1008,18 @@ dependencies = [
  "chrono-tz",
  "clap",
  "cron",
+ "magicmerlin-auto-reply",
  "magicmerlin-compat",
  "magicmerlin-config",
  "magicmerlin-logging",
+ "magicmerlin-sessions",
  "magicmerlin-tools",
  "reqwest",
  "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "uuid",
@@ -1064,6 +1077,21 @@ dependencies = [
  "serde",
  "serde_json",
  "url",
+]
+
+[[package]]
+name = "magicmerlin-sessions"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "magicmerlin-storage",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "uuid",
 ]
 
 [[package]]

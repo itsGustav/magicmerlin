@@ -47,7 +47,7 @@ pub async fn upsert_session(
 ) -> Result<()> {
     let path = db_path.to_owned();
     let id = id.to_string();
-    let agent = agent.map(|s| s.to_string());
+    let agent = agent.map(std::string::ToString::to_string);
     let status = status.to_string();
     let metadata_str = metadata.map(|v| serde_json::to_string(v).unwrap_or_default());
     let now = Utc::now().timestamp();
@@ -70,7 +70,7 @@ pub async fn upsert_session(
 
 pub async fn list_sessions(db_path: &Path, limit: usize) -> Result<Vec<Session>> {
     let path = db_path.to_owned();
-    let limit = limit.min(500).max(1) as i64;
+    let limit = limit.clamp(1, 500) as i64;
     tokio::task::spawn_blocking(move || -> Result<Vec<Session>> {
         let conn = rusqlite::Connection::open(path)?;
         let mut stmt = conn.prepare(
@@ -126,4 +126,43 @@ pub async fn get_session(db_path: &Path, id: &str) -> Result<Option<Session>> {
         Ok(None)
     })
     .await?
+}
+
+pub async fn delete_session(db_path: &Path, id: &str) -> Result<bool> {
+    let path = db_path.to_owned();
+    let id = id.to_string();
+    tokio::task::spawn_blocking(move || -> Result<bool> {
+        let conn = rusqlite::Connection::open(path)?;
+        let affected = conn.execute("DELETE FROM sessions WHERE id = ?1", rusqlite::params![id])?;
+        Ok(affected > 0)
+    })
+    .await?
+}
+
+pub async fn compact_session(db_path: &Path, id: &str) -> Result<bool> {
+    let path = db_path.to_owned();
+    let id = id.to_string();
+    let now = Utc::now().timestamp();
+    tokio::task::spawn_blocking(move || -> Result<bool> {
+        let conn = rusqlite::Connection::open(path)?;
+        let affected = conn.execute(
+            "UPDATE sessions
+             SET status = 'compacted', updated_at = ?2,
+                 metadata = json_set(COALESCE(metadata, '{}'), '$.lastCompactedAt', ?2)
+             WHERE id = ?1",
+            rusqlite::params![id, now],
+        )?;
+        Ok(affected > 0)
+    })
+    .await?
+}
+
+pub async fn spawn_subsession(
+    db_path: &Path,
+    parent_id: &str,
+    child_id: &str,
+    agent: Option<&str>,
+) -> Result<()> {
+    let metadata = serde_json::json!({ "parentSessionId": parent_id });
+    upsert_session(db_path, child_id, agent, "active", Some(&metadata)).await
 }
