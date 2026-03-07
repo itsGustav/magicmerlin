@@ -5,7 +5,7 @@ members = [
   "compat",
   "tools",
   "sentinel",
-  "cli", "config", "logging", "infra", "storage", "providers", "agent", "agent-tools", "sessions", "auto-reply",
+  "cli", "config", "logging", "infra", "storage", "providers", "agent", "agent-tools", "sessions", "auto-reply", "channels",
 ]
 
 [workspace.package]

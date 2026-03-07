@@ -979,6 +979,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "magicmerlin-channels"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "magicmerlin-auto-reply",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
 name = "magicmerlin-compat"
 version = "0.0.0"
 dependencies = [
