@@ -18,7 +18,12 @@ impl Display for SecretsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Read { path, source } => {
-                write!(f, "failed to read secrets file {}: {}", path.display(), source)
+                write!(
+                    f,
+                    "failed to read secrets file {}: {}",
+                    path.display(),
+                    source
+                )
             }
         }
     }

@@ -7,11 +7,20 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub enum ConfigError {
     /// Filesystem read failure.
-    ReadFile { path: PathBuf, source: std::io::Error },
+    ReadFile {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     /// Filesystem write failure.
-    WriteFile { path: PathBuf, source: std::io::Error },
+    WriteFile {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     /// Directory creation failure.
-    CreateDir { path: PathBuf, source: std::io::Error },
+    CreateDir {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     /// Config parse failure.
     ParseConfig {
         path: PathBuf,
@@ -36,10 +45,19 @@ pub enum ConfigError {
 impl Display for ConfigError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ReadFile { path, source } => write!(f, "failed to read {}: {}", path.display(), source),
-            Self::WriteFile { path, source } => write!(f, "failed to write {}: {}", path.display(), source),
+            Self::ReadFile { path, source } => {
+                write!(f, "failed to read {}: {}", path.display(), source)
+            }
+            Self::WriteFile { path, source } => {
+                write!(f, "failed to write {}: {}", path.display(), source)
+            }
             Self::CreateDir { path, source } => {
-                write!(f, "failed to create directory {}: {}", path.display(), source)
+                write!(
+                    f,
+                    "failed to create directory {}: {}",
+                    path.display(),
+                    source
+                )
             }
             Self::ParseConfig { path, source } => {
                 write!(f, "failed to parse config {}: {}", path.display(), source)

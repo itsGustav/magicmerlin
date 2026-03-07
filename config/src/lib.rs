@@ -131,11 +131,9 @@ impl ConfigManager {
         }
 
         let body = serde_json::to_string_pretty(&self.config).map_err(ConfigError::Serialize)?;
-        fs::write(&self.config_path, format!("{body}\n")).map_err(|source| {
-            ConfigError::WriteFile {
-                path: self.config_path.clone(),
-                source,
-            }
+        fs::write(&self.config_path, format!("{body}\n")).map_err(|source| ConfigError::WriteFile {
+            path: self.config_path.clone(),
+            source,
         })
     }
 }
@@ -284,7 +282,10 @@ mod tests {
     fn set_and_get_path() {
         let mut value = serde_json::json!({"a": {"b": 1}});
         set_at_path(&mut value, "a.c", Value::String("x".to_string())).unwrap();
-        assert_eq!(get_at_path(&value, "a.c"), Some(&Value::String("x".to_string())));
+        assert_eq!(
+            get_at_path(&value, "a.c"),
+            Some(&Value::String("x".to_string()))
+        );
     }
 
     #[test]

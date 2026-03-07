@@ -29,14 +29,20 @@ fn loads_with_env_overlay_and_dev_port() {
         dev: false,
     })
     .expect("load");
-    assert_eq!(mgr.get("gateway.port").and_then(|v| v.as_u64()), Some(18888));
+    assert_eq!(
+        mgr.get("gateway.port").and_then(|v| v.as_u64()),
+        Some(18888)
+    );
 
     let dev_mgr = ConfigManager::load(ConfigOptions {
         profile: None,
         dev: true,
     })
     .expect("dev load");
-    assert_eq!(dev_mgr.get("gateway.port").and_then(|v| v.as_u64()), Some(19001));
+    assert_eq!(
+        dev_mgr.get("gateway.port").and_then(|v| v.as_u64()),
+        Some(19001)
+    );
 
     std::env::remove_var("OPENCLAW_GATEWAY_PORT");
     std::env::remove_var("OPENCLAW_CONFIG_PATH");
