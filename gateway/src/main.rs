@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs,
     io::Read as _,
     net::{IpAddr, SocketAddr},
@@ -25,7 +24,12 @@ use magicmerlin_compat::{
     COMPAT_VERSION,
 };
 use magicmerlin_config::{run_security_audit, ConfigManager, ConfigOptions, SecurityAuditContext};
-use magicmerlin_gateway::{methods::SUPPORTED_METHODS, pairing};
+use magicmerlin_gateway::{
+    methods::SUPPORTED_METHODS,
+    pairing,
+    run_queue::{RunQueue, RunQueueConfig, RunStatus},
+    ws::{WsServerConfig, WsServerState},
+};
 use magicmerlin_logging::{init_with as init_logging, LogLevel};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
@@ -1066,6 +1070,7 @@ struct AppState {
     events: broadcast::Sender<GatewayEvent>,
     event_history: Arc<Mutex<Vec<GatewayEvent>>>,
     run_queue: Arc<RunQueue>,
+    ws_state: Arc<WsServerState>,
     started_at: Instant,
     presence: Arc<Mutex<SystemPresence>>,
     acp: Arc<AcpRuntime>,
@@ -1103,44 +1108,6 @@ impl Default for SystemPresence {
     }
 }
 
-#[derive(Clone, Default)]
-struct RunQueue {
-    session_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
-    abort_by_session: Arc<Mutex<HashMap<String, tokio::sync::watch::Sender<bool>>>>,
-}
-
-impl RunQueue {
-    async fn session_lock(&self, session_id: &str) -> Arc<Mutex<()>> {
-        let mut locks = self.session_locks.lock().await;
-        locks
-            .entry(session_id.to_string())
-            .or_insert_with(|| Arc::new(Mutex::new(())))
-            .clone()
-    }
-
-    async fn register_abort(&self, session_id: &str) -> tokio::sync::watch::Receiver<bool> {
-        let (tx, rx) = tokio::sync::watch::channel(false);
-        self.abort_by_session
-            .lock()
-            .await
-            .insert(session_id.to_string(), tx);
-        rx
-    }
-
-    async fn clear_abort(&self, session_id: &str) {
-        self.abort_by_session.lock().await.remove(session_id);
-    }
-
-    async fn abort_session(&self, session_id: &str) -> bool {
-        let sender = self.abort_by_session.lock().await.get(session_id).cloned();
-        if let Some(sender) = sender {
-            let _ = sender.send(true);
-            return true;
-        }
-        false
-    }
-}
-
 async fn serve_http(
     bind: IpAddr,
     port: u16,
@@ -1163,6 +1130,9 @@ async fn serve_http(
     pairing::migrate_pairing(&db_path).await?;
     let (events, _) = broadcast::channel(256);
     let acp = Arc::new(AcpRuntime::new(&state_dir.join("acp"), acp_config)?);
+    let ws_state = Arc::new(WsServerState::new(WsServerConfig {
+        auth_bearer_token: auth.token.clone(),
+    }));
     let state = AppState {
         providers,
         info,
@@ -1172,19 +1142,29 @@ async fn serve_http(
         auth,
         events,
         event_history: Arc::new(Mutex::new(Vec::new())),
-        run_queue: Arc::new(RunQueue::default()),
+        run_queue: Arc::new(RunQueue::new(RunQueueConfig {
+            max_depth_per_session: 5,
+            default_timeout: Duration::from_secs(60),
+        })),
+        ws_state,
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
     };
+    let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway listening on http://{addr}");
     let pid_file = service::default_pid_file(&state_dir);
+    let _ = service::remove_stale_pid_file(&pid_file);
     let _ = service::write_pid_file(&pid_file);
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(addr).await.map_err(|err| {
+        anyhow::anyhow!(
+            "failed to bind gateway to {addr}: {err}. If the port is in use, choose another with --serve <port>."
+        )
+    })?;
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
@@ -1216,6 +1196,9 @@ async fn serve_http_with_daemon(
 
     let (events, _) = broadcast::channel(256);
     let acp = Arc::new(AcpRuntime::new(&state_dir.join("acp"), acp_config)?);
+    let ws_state = Arc::new(WsServerState::new(WsServerConfig {
+        auth_bearer_token: auth.token.clone(),
+    }));
     let state = AppState {
         providers,
         info,
@@ -1225,19 +1208,29 @@ async fn serve_http_with_daemon(
         auth,
         events,
         event_history: Arc::new(Mutex::new(Vec::new())),
-        run_queue: Arc::new(RunQueue::default()),
+        run_queue: Arc::new(RunQueue::new(RunQueueConfig {
+            max_depth_per_session: 5,
+            default_timeout: Duration::from_secs(60),
+        })),
+        ws_state,
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
     };
+    let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
     eprintln!("magicmerlin-gateway (daemon) listening on http://{addr}");
     let pid_file = service::default_pid_file(&state_dir);
+    let _ = service::remove_stale_pid_file(&pid_file);
     let _ = service::write_pid_file(&pid_file);
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(addr).await.map_err(|err| {
+        anyhow::anyhow!(
+            "failed to bind gateway to {addr}: {err}. If the port is in use, choose another with --serve <port>."
+        )
+    })?;
 
     // Run server in foreground; scheduler runs in background.
     axum::serve(listener, app)
@@ -1254,6 +1247,7 @@ fn build_router(state: AppState) -> Router {
     Router::new()
         // Control UI
         .route("/", get(http_index))
+        .route("/ui", get(http_index))
         .route("/chat", post(http_chat))
         .route("/methods", get(http_methods))
         .route("/call", post(http_call))
@@ -1324,6 +1318,8 @@ fn build_router(state: AppState) -> Router {
         .route("/plugins", get(http_plugins_list))
         .route("/acp/sessions", get(http_acp_sessions))
         .route("/security/audit", get(http_security_audit))
+        .route("/api/v1/message", post(http_api_message))
+        .route("/api/v1/sessions", get(http_api_sessions))
         .with_state(state)
 }
 
@@ -1694,7 +1690,8 @@ async fn dispatch_ws_method(
                 .state()
                 .await
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            let presence = state.presence.lock().await.clone();
+            let mut presence = state.presence.lock().await.clone();
+            presence.connected_clients = state.ws_state.connected_clients().await.len();
             let config = state.config.lock().await;
             Ok(serde_json::json!({
                 "agents": { "count": 1, "default": "merlin" },
@@ -1705,8 +1702,52 @@ async fn dispatch_ws_method(
                 "presence": presence,
             }))
         }
-        "system-presence" => Ok(serde_json::to_value(state.presence.lock().await.clone())
-            .map_err(|e| RpcError::Internal(e.to_string()))?),
+        "system-presence" => {
+            let mut presence = state.presence.lock().await.clone();
+            presence.connected_clients = state.ws_state.connected_clients().await.len();
+            Ok(serde_json::to_value(presence).map_err(|e| RpcError::Internal(e.to_string()))?)
+        }
+        "system.event" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                name: String,
+                #[serde(default)]
+                payload: Value,
+                #[serde(default)]
+                target_client: Option<String>,
+            }
+            let parsed: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: parsed.name.clone(),
+                    params: parsed.payload,
+                    target_client: parsed.target_client,
+                },
+            )
+            .await;
+            Ok(serde_json::json!({"ok": true, "event": parsed.name}))
+        }
+        "system.heartbeat" => {
+            let mut presence = state.presence.lock().await;
+            presence.last_heartbeat_at = chrono::Utc::now().timestamp();
+            Ok(serde_json::json!({"ok": true, "lastHeartbeatAt": presence.last_heartbeat_at}))
+        }
+        "system.presence" => {
+            let presence = state.presence.lock().await.clone();
+            Ok(serde_json::to_value(presence).map_err(|e| RpcError::Internal(e.to_string()))?)
+        }
+        "system.restart" => Ok(serde_json::json!({
+            "ok": true,
+            "scheduled": true,
+            "message": "restart requested (manual supervisor restart expected)"
+        })),
         "agent.run" => run_agent_turn(state, client_id, params).await,
         "agent.abort" => {
             #[derive(Deserialize)]
@@ -1956,6 +1997,15 @@ async fn dispatch_ws_method(
             cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({"ok": true}))
         }
+        "config.validate" => {
+            let cfg = state.config.lock().await;
+            let ctx = build_security_context(&cfg, &state.auth);
+            let report = run_security_audit(&ctx);
+            Ok(serde_json::json!({
+                "ok": true,
+                "issues": report.issues,
+            }))
+        }
         "security.audit" => {
             let cfg = state.config.lock().await;
             let ctx = build_security_context(&cfg, &state.auth);
@@ -2084,6 +2134,18 @@ async fn run_agent_turn(
         );
     }
     let timeout = Duration::from_secs(parsed.timeout_seconds.unwrap_or(60));
+    let queue_timeout = Duration::from_secs(30);
+    let run_id = format!("run:{}:{}", session_id, uuid::Uuid::new_v4());
+    state
+        .run_queue
+        .enqueue(&session_id, &run_id, Some(timeout))
+        .await
+        .map_err(RpcError::InvalidParams)?;
+    state
+        .run_queue
+        .wait_turn(&session_id, &run_id, queue_timeout)
+        .await
+        .map_err(RpcError::Internal)?;
 
     let lock = state.run_queue.session_lock(&session_id).await;
     let _guard = lock.lock().await;
@@ -2143,6 +2205,10 @@ async fn run_agent_turn(
     state.run_queue.clear_abort(&session_id).await;
     match result {
         Ok(reply) => {
+            state
+                .run_queue
+                .complete(&session_id, &run_id, RunStatus::Completed, None)
+                .await;
             let formatted = format_reply(Platform::Telegram, &reply);
             emit_gateway_event(
                 state,
@@ -2156,6 +2222,17 @@ async fn run_agent_turn(
             Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id}))
         }
         Err(err) => {
+            let status = if err.to_string().contains("timed out") {
+                RunStatus::TimedOut
+            } else if err.to_string().contains("aborted") {
+                RunStatus::Aborted
+            } else {
+                RunStatus::Failed
+            };
+            state
+                .run_queue
+                .complete(&session_id, &run_id, status, Some(err.to_string()))
+                .await;
             emit_gateway_event(
                 state,
                 GatewayEvent {
@@ -2732,12 +2809,87 @@ fn is_authorized(headers: &HeaderMap) -> bool {
         return true;
     };
 
+    let bearer = headers
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|raw| raw.strip_prefix("Bearer ").or_else(|| raw.strip_prefix("bearer ")))
+        .map(str::trim)
+        .unwrap_or("");
+
     let provided = headers
         .get("x-magicmerlin-api-key")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
 
-    provided == required
+    provided == required || bearer == required
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ApiMessageRequest {
+    session_id: String,
+    message: String,
+    #[serde(default)]
+    timeout_seconds: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiSessionsQuery {
+    #[serde(default = "default_api_sessions_limit")]
+    limit: usize,
+}
+
+fn default_api_sessions_limit() -> usize {
+    100
+}
+
+async fn http_api_message(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<ApiMessageRequest>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error": "unauthorized"})),
+        );
+    }
+
+    let params = serde_json::json!({
+        "sessionId": req.session_id,
+        "message": req.message,
+        "timeoutSeconds": req.timeout_seconds,
+    });
+
+    match run_agent_turn(&state, "http-api", params).await {
+        Ok(result) => (StatusCode::OK, Json(result)),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": err.to_string(), "code": err.code()})),
+        ),
+    }
+}
+
+async fn http_api_sessions(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<ApiSessionsQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error": "unauthorized"})),
+        );
+    }
+
+    match sessions::list_sessions(&state.db_path, query.limit).await {
+        Ok(rows) => (StatusCode::OK, Json(serde_json::json!({ "sessions": rows }))),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("failed to list sessions: {err:#}")})),
+        ),
+    }
 }
 
 const CONTROL_UI_HTML: &str = r#"<!doctype html>
@@ -3609,6 +3761,7 @@ mod tests {
         let acp = Arc::new(
             AcpRuntime::new(&state_root.join("acp"), AgentHarnessConfig::default()).expect("acp"),
         );
+        let ws_state = Arc::new(WsServerState::new(WsServerConfig::default()));
         AppState {
             providers,
             info,
@@ -3619,6 +3772,7 @@ mod tests {
             events,
             event_history: Arc::new(Mutex::new(Vec::new())),
             run_queue: Arc::new(RunQueue::default()),
+            ws_state,
             started_at: Instant::now(),
             presence: Arc::new(Mutex::new(SystemPresence::default())),
             acp,

@@ -22,6 +22,54 @@ pub fn remove_pid_file(path: &Path) -> Result<()> {
     }
 }
 
+/// Reads a pid file and parses the process id.
+pub fn read_pid_file(path: &Path) -> Result<Option<u32>> {
+    let body = match fs::read_to_string(path) {
+        Ok(data) => data,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(err) => return Err(err).with_context(|| format!("read pid file: {}", path.display())),
+    };
+
+    let pid = body
+        .trim()
+        .parse::<u32>()
+        .with_context(|| format!("invalid pid file content: {}", path.display()))?;
+    Ok(Some(pid))
+}
+
+/// Returns true if a pid appears to be alive.
+pub fn is_process_running(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        let status = std::process::Command::new("kill")
+            .arg("-0")
+            .arg(pid.to_string())
+            .status();
+        return status.map(|s| s.success()).unwrap_or(false);
+    }
+
+    #[cfg(not(unix))]
+    {
+        // Conservative fallback on non-unix systems in this workspace.
+        let _ = pid;
+        false
+    }
+}
+
+/// Removes stale pid file (non-running process), returning true if removed.
+pub fn remove_stale_pid_file(path: &Path) -> Result<bool> {
+    let Some(pid) = read_pid_file(path)? else {
+        return Ok(false);
+    };
+
+    if is_process_running(pid) {
+        return Ok(false);
+    }
+
+    remove_pid_file(path)?;
+    Ok(true)
+}
+
 /// Returns the default gateway PID file location under the state directory.
 pub fn default_pid_file(state_dir: &Path) -> PathBuf {
     state_dir.join("gateway").join("gateway.pid")
@@ -73,4 +121,72 @@ pub fn generate_systemd_unit(gateway_bin: &Path, port: u16) -> String {
         gateway_bin.display(),
         port,
     )
+}
+
+/// Build launchctl load command arguments.
+pub fn launchctl_load_args(plist_path: &Path) -> Vec<String> {
+    vec![
+        "bootstrap".to_string(),
+        format!("gui/{}", nix_uid()),
+        plist_path.display().to_string(),
+    ]
+}
+
+/// Build launchctl unload command arguments.
+pub fn launchctl_unload_args(plist_path: &Path) -> Vec<String> {
+    vec![
+        "bootout".to_string(),
+        format!("gui/{}", nix_uid()),
+        plist_path.display().to_string(),
+    ]
+}
+
+/// Build systemctl args for user-service operations.
+pub fn systemctl_user_args(action: &str, unit_name: &str) -> Vec<String> {
+    vec!["--user".to_string(), action.to_string(), unit_name.to_string()]
+}
+
+fn nix_uid() -> u32 {
+    #[cfg(unix)]
+    {
+        // Portable enough for this crate without extra deps.
+        if let Ok(output) = std::process::Command::new("id").arg("-u").output() {
+            if output.status.success() {
+                if let Ok(uid) = String::from_utf8_lossy(&output.stdout).trim().parse::<u32>() {
+                    return uid;
+                }
+            }
+        }
+    }
+    0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn systemd_unit_has_execstart() {
+        let body = generate_systemd_unit(Path::new("/usr/bin/gateway"), 18789);
+        assert!(body.contains("ExecStart=/usr/bin/gateway --serve 18789 --daemon"));
+    }
+
+    #[test]
+    fn launchctl_args_include_plist_path() {
+        let path = Path::new("/tmp/test.plist");
+        let args = launchctl_load_args(path);
+        assert_eq!(args[0], "bootstrap");
+        assert_eq!(args[2], "/tmp/test.plist");
+    }
+
+    #[test]
+    fn stale_pid_is_removed() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let pid_path = temp.path().join("gateway.pid");
+        fs::write(&pid_path, "999999\n").expect("write pid");
+
+        let removed = remove_stale_pid_file(&pid_path).expect("remove stale");
+        assert!(removed);
+        assert!(!pid_path.exists());
+    }
 }
