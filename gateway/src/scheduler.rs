@@ -103,6 +103,7 @@ impl Scheduler {
         .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn edit_job(
         &self,
         id: i64,
@@ -739,7 +740,7 @@ async fn migrate(db_path: &Path) -> Result<()> {
 fn ensure_job_columns(conn: &rusqlite::Connection) -> Result<()> {
     let mut stmt = conn.prepare("PRAGMA table_info(jobs)")?;
     let cols = stmt
-        .query_map([], |row| Ok(row.get::<_, String>(1)?))?
+        .query_map([], |row| row.get::<_, String>(1))?
         .collect::<std::result::Result<Vec<_>, _>>()?;
 
     let has = |name: &str| cols.iter().any(|c| c == name);
@@ -914,6 +915,7 @@ async fn add_job(
     .await?
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn edit_job_db(
     db_path: &Path,
     id: i64,
@@ -1041,6 +1043,7 @@ async fn due_jobs(db_path: &Path, now_ts: i64) -> Result<Vec<Job>> {
     .await?
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn update_job_after_run(
     db_path: &Path,
     id: i64,
@@ -1109,7 +1112,7 @@ async fn insert_run(
 
 async fn list_runs_db(db_path: &Path, job_id: Option<i64>, limit: usize) -> Result<Vec<Run>> {
     let path = db_path.to_owned();
-    let limit = limit.min(500).max(1) as i64;
+    let limit = limit.clamp(1, 500) as i64;
     tokio::task::spawn_blocking(move || -> Result<Vec<Run>> {
         let conn = rusqlite::Connection::open(path)?;
         let (sql, params): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = match job_id {
@@ -1151,7 +1154,7 @@ async fn list_runs_db(db_path: &Path, job_id: Option<i64>, limit: usize) -> Resu
 
 async fn list_dead_letters(db_path: &Path, limit: usize) -> Result<Vec<DeadLetter>> {
     let path = db_path.to_owned();
-    let limit = limit.min(500).max(1) as i64;
+    let limit = limit.clamp(1, 500) as i64;
     tokio::task::spawn_blocking(move || -> Result<Vec<DeadLetter>> {
         let conn = rusqlite::Connection::open(path)?;
         let mut stmt = conn.prepare(

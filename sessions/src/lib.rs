@@ -275,13 +275,11 @@ pub fn resolve_session_key(context: &ResolutionContext) -> String {
             .replace("{user_id}", context.user_id.as_deref().unwrap_or(""));
     }
 
-    if context.slash_command {
-        if context.channel == "telegram" {
-            return format!(
-                "telegram:slash:{}",
-                context.user_id.as_deref().unwrap_or("unknown")
-            );
-        }
+    if context.slash_command && context.channel == "telegram" {
+        return format!(
+            "telegram:slash:{}",
+            context.user_id.as_deref().unwrap_or("unknown")
+        );
     }
 
     if let Some(chat_id) = &context.chat_id {

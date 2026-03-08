@@ -1001,11 +1001,8 @@ async fn main() -> Result<()> {
 
         Command::Security { command } => match command {
             SecurityCommand::Audit => {
-                let result = json!({
-                    "openPorts": [{"port": 18789, "open": is_gateway_port_open()}],
-                    "configIssues": [],
-                    "permissionIssues": []
-                });
+                app.ensure_gateway_running().await?;
+                let result = app.call_gateway("security.audit", Value::Null).await?;
                 app.output(result.clone(), || result.to_string())?;
             }
         },

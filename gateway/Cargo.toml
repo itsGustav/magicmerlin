@@ -30,4 +30,6 @@ magicmerlin-logging = { path = "../logging" }
 magicmerlin-auto-reply = { path = "../auto-reply" }
 magicmerlin-sessions = { path = "../sessions" }
 magicmerlin-tools = { path = "../tools" }
+magicmerlin-plugins = { path = "../plugins" }
+magicmerlin-acp = { path = "../acp" }
 tracing = "0.1"

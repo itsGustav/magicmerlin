@@ -18,12 +18,13 @@ use axum::{
     Json, Router,
 };
 use clap::{Parser, Subcommand};
+use magicmerlin_acp::{AcpRuntime, AcpxRequest, AgentHarnessConfig, AgentId};
 use magicmerlin_auto_reply::{format_reply, parse_slash_command, Platform, SlashCommand};
 use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
 };
-use magicmerlin_config::{ConfigManager, ConfigOptions};
+use magicmerlin_config::{run_security_audit, ConfigManager, ConfigOptions, SecurityAuditContext};
 use magicmerlin_gateway::{methods::SUPPORTED_METHODS, pairing};
 use magicmerlin_logging::{init_with as init_logging, LogLevel};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -728,8 +729,8 @@ async fn main() -> Result<()> {
                                 println!(
                                     "{}\t{}\t{}",
                                     p.name,
-                                    p.version.as_deref().unwrap_or("-"),
-                                    if p.enabled.unwrap_or(true) {
+                                    p.version.as_str(),
+                                    if p.enabled {
                                         "enabled"
                                     } else {
                                         "disabled"
@@ -1063,9 +1064,11 @@ struct AppState {
     config: Arc<Mutex<ConfigManager>>,
     auth: Arc<GatewayAuth>,
     events: broadcast::Sender<GatewayEvent>,
+    event_history: Arc<Mutex<Vec<GatewayEvent>>>,
     run_queue: Arc<RunQueue>,
     started_at: Instant,
     presence: Arc<Mutex<SystemPresence>>,
+    acp: Arc<AcpRuntime>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1147,15 +1150,19 @@ async fn serve_http(
     config: Arc<Mutex<ConfigManager>>,
     auth: Arc<GatewayAuth>,
 ) -> Result<()> {
-    let state_dir = {
+    let (state_dir, acp_config) = {
         let guard = config.lock().await;
-        guard.state_paths().state_dir.clone()
+        (
+            guard.state_paths().state_dir.clone(),
+            resolve_acp_harness_config(guard.config()),
+        )
     };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
     approvals::migrate_approvals(&db_path).await?;
     pairing::migrate_pairing(&db_path).await?;
     let (events, _) = broadcast::channel(256);
+    let acp = Arc::new(AcpRuntime::new(&state_dir.join("acp"), acp_config)?);
     let state = AppState {
         providers,
         info,
@@ -1164,9 +1171,11 @@ async fn serve_http(
         config,
         auth,
         events,
+        event_history: Arc::new(Mutex::new(Vec::new())),
         run_queue: Arc::new(RunQueue::default()),
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
+        acp,
     };
 
     let app = build_router(state);
@@ -1192,9 +1201,12 @@ async fn serve_http_with_daemon(
     config: Arc<Mutex<ConfigManager>>,
     auth: Arc<GatewayAuth>,
 ) -> Result<()> {
-    let state_dir = {
+    let (state_dir, acp_config) = {
         let guard = config.lock().await;
-        guard.state_paths().state_dir.clone()
+        (
+            guard.state_paths().state_dir.clone(),
+            resolve_acp_harness_config(guard.config()),
+        )
     };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
     sessions::migrate_sessions(&db_path).await?;
@@ -1203,6 +1215,7 @@ async fn serve_http_with_daemon(
     let daemon_handle = scheduler.clone().spawn_daemon();
 
     let (events, _) = broadcast::channel(256);
+    let acp = Arc::new(AcpRuntime::new(&state_dir.join("acp"), acp_config)?);
     let state = AppState {
         providers,
         info,
@@ -1211,9 +1224,11 @@ async fn serve_http_with_daemon(
         config,
         auth,
         events,
+        event_history: Arc::new(Mutex::new(Vec::new())),
         run_queue: Arc::new(RunQueue::default()),
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
+        acp,
     };
 
     let app = build_router(state);
@@ -1243,6 +1258,7 @@ fn build_router(state: AppState) -> Router {
         .route("/methods", get(http_methods))
         .route("/call", post(http_call))
         .route("/ws", post(http_ws))
+        .route("/events", get(http_events))
         .route(
             "/health",
             get({
@@ -1306,6 +1322,8 @@ fn build_router(state: AppState) -> Router {
         .route("/pairing/reject", post(http_pairing_reject))
         .route("/pairing/state", get(http_pairing_state))
         .route("/plugins", get(http_plugins_list))
+        .route("/acp/sessions", get(http_acp_sessions))
+        .route("/security/audit", get(http_security_audit))
         .with_state(state)
 }
 
@@ -1491,6 +1509,93 @@ fn resolve_gateway_auth(config: &ConfigManager) -> GatewayAuth {
     GatewayAuth { token, password }
 }
 
+fn resolve_acp_harness_config(config: &magicmerlin_config::Config) -> AgentHarnessConfig {
+    let mut harness = AgentHarnessConfig::default();
+    let values = &config.acp.values;
+
+    if let Some(max) = values
+        .get("maxConcurrentSessions")
+        .and_then(Value::as_u64)
+        .and_then(|v| usize::try_from(v).ok())
+    {
+        harness.max_concurrent_sessions = max.max(1);
+    }
+    if let Some(ttl) = values.get("ttlSeconds").and_then(Value::as_u64) {
+        harness.ttl_seconds = ttl.max(1);
+    }
+    if let Some(agents) = values.get("allowedAgents").and_then(Value::as_array) {
+        let mut parsed = std::collections::BTreeSet::new();
+        for agent in agents.iter().filter_map(Value::as_str) {
+            parsed.insert(parse_agent_id(agent));
+        }
+        if !parsed.is_empty() {
+            harness.allowed_agents = parsed;
+        }
+    }
+    harness
+}
+
+fn parse_agent_id(value: &str) -> AgentId {
+    match value {
+        "claude-code" => AgentId::ClaudeCode,
+        "codex" => AgentId::Codex,
+        "opencode" => AgentId::OpenCode,
+        "gemini" => AgentId::Gemini,
+        "pi" => AgentId::Pi,
+        other => AgentId::Custom(other.to_string()),
+    }
+}
+
+fn build_security_context(config: &ConfigManager, auth: &GatewayAuth) -> SecurityAuditContext {
+    let channels = &config.config().channels.values;
+    let tools = &config.config().tools.values;
+    let gateway = &config.config().gateway;
+
+    let open_dm_policy = channels
+        .get("dmPolicy")
+        .and_then(Value::as_str)
+        .is_some_and(|v| v.eq_ignore_ascii_case("open"));
+    let public_bot = channels
+        .get("publicBot")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let sandbox_configured = tools
+        .get("sandbox")
+        .and_then(Value::as_str)
+        .is_some_and(|v| !v.trim().is_empty());
+
+    let deny_lists = tools
+        .get("denyLists")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    let trusted_proxies = gateway
+        .extra
+        .get("trustedProxies")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(std::string::ToString::to_string)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    SecurityAuditContext {
+        public_bot,
+        open_dm_policy,
+        sandbox_configured,
+        gateway_token: auth.token.clone(),
+        gateway_bind: gateway.bind.clone(),
+        gateway_port: gateway.port,
+        stale_high_token_sessions: 0,
+        workspace_root: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+        tool_deny_lists: deny_lists,
+        trusted_proxies,
+    }
+}
+
 fn default_gateway_bin() -> PathBuf {
     std::env::current_exe().unwrap_or_else(|_| PathBuf::from("magicmerlin-gateway"))
 }
@@ -1560,10 +1665,10 @@ fn is_ws_authorized(
         return true;
     }
 
-    let token_matches = state.auth.token.as_deref().is_none_or(|required| {
+    let token_matches = state.auth.token.as_deref().map_or(true, |required| {
         auth.and_then(|a| a.token.as_deref()) == Some(required) || query_token == Some(required)
     });
-    let password_matches = state.auth.password.as_deref().is_none_or(|required| {
+    let password_matches = state.auth.password.as_deref().map_or(true, |required| {
         auth.and_then(|a| a.password.as_deref()) == Some(required)
             || query_password == Some(required)
     });
@@ -1851,6 +1956,12 @@ async fn dispatch_ws_method(
             cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({"ok": true}))
         }
+        "security.audit" => {
+            let cfg = state.config.lock().await;
+            let ctx = build_security_context(&cfg, &state.auth);
+            let report = run_security_audit(&ctx);
+            Ok(serde_json::to_value(report).map_err(|e| RpcError::Internal(e.to_string()))?)
+        }
         "approvals.list" => {
             let data = approvals::get_approvals(&state.db_path)
                 .await
@@ -1884,6 +1995,57 @@ async fn dispatch_ws_method(
             let changed = plugins::set_plugin_enabled(&p.name, false)
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({ "ok": changed }))
+        }
+        "acp.sessions.list" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                thread_id: Option<String>,
+            }
+            let parsed: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let sessions = if let Some(thread_id) = parsed.thread_id {
+                state.acp.sessions_for_thread(&thread_id).await
+            } else {
+                state.acp.list_sessions().await
+            };
+            Ok(serde_json::json!({ "sessions": sessions }))
+        }
+        "acp.spawn" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Params {
+                thread_id: String,
+                agent: String,
+                command: String,
+                #[serde(default)]
+                args: Vec<String>,
+            }
+            let parsed: Params = serde_json::from_value(params)
+                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let session = state
+                .acp
+                .dispatch_acpx(AcpxRequest {
+                    thread_id: parsed.thread_id,
+                    agent: parse_agent_id(&parsed.agent),
+                    command: parsed.command,
+                    args: parsed.args,
+                })
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "session": session }))
+        }
+        "acp.cleanup" => {
+            let removed = state
+                .acp
+                .cleanup_expired()
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(serde_json::json!({ "removed": removed }))
         }
         _ => Err(RpcError::MethodNotFound(method.to_string())),
     }
@@ -1927,20 +2089,28 @@ async fn run_agent_turn(
     let _guard = lock.lock().await;
     let mut abort_rx = state.run_queue.register_abort(&session_id).await;
 
-    let _ = state.events.send(GatewayEvent {
+    emit_gateway_event(
+        state,
+        GatewayEvent {
         method: "agent.partial".to_string(),
         params: serde_json::json!({"sessionId": session_id, "status":"queued"}),
         target_client: Some(client_id.to_string()),
-    });
+    },
+    )
+    .await;
 
     let session_id_for_run = session_id.clone();
     let message_for_run = message.clone();
     let run_fut = async {
-        let _ = state.events.send(GatewayEvent {
+        emit_gateway_event(
+            state,
+            GatewayEvent {
             method: "agent.partial".to_string(),
             params: serde_json::json!({"sessionId": session_id_for_run, "status":"running"}),
             target_client: Some(client_id.to_string()),
-        });
+        },
+        )
+        .await;
         tokio::time::sleep(Duration::from_millis(120)).await;
         sessions::upsert_session(
             &state.db_path,
@@ -1974,21 +2144,41 @@ async fn run_agent_turn(
     match result {
         Ok(reply) => {
             let formatted = format_reply(Platform::Telegram, &reply);
-            let _ = state.events.send(GatewayEvent {
+            emit_gateway_event(
+                state,
+                GatewayEvent {
                 method: "agent.partial".to_string(),
                 params: serde_json::json!({"sessionId": session_id, "status":"completed", "text": reply, "chunks": formatted}),
                 target_client: Some(client_id.to_string()),
-            });
+            },
+            )
+            .await;
             Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id}))
         }
         Err(err) => {
-            let _ = state.events.send(GatewayEvent {
+            emit_gateway_event(
+                state,
+                GatewayEvent {
                 method: "agent.partial".to_string(),
                 params: serde_json::json!({"sessionId": session_id, "status":"failed", "error": err.to_string()}),
                 target_client: Some(client_id.to_string()),
-            });
+            },
+            )
+            .await;
             Err(err)
         }
+    }
+}
+
+const EVENT_HISTORY_LIMIT: usize = 500;
+
+async fn emit_gateway_event(state: &AppState, event: GatewayEvent) {
+    let _ = state.events.send(event.clone());
+    let mut history = state.event_history.lock().await;
+    history.push(event);
+    if history.len() > EVENT_HISTORY_LIMIT {
+        let overflow = history.len() - EVENT_HISTORY_LIMIT;
+        history.drain(0..overflow);
     }
 }
 
@@ -2551,59 +2741,268 @@ fn is_authorized(headers: &HeaderMap) -> bool {
 }
 
 const CONTROL_UI_HTML: &str = r#"<!doctype html>
-<html lang=\"en\">
+<html lang="en">
 <head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>MagicMerlin Control UI</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MagicMerlin Control</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
-    .row { display: flex; gap: 12px; }
-    textarea { width: 100%; min-height: 90px; }
-    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; white-space: pre-wrap; }
-    button { padding: 10px 14px; }
-    .muted { color: #666; font-size: 12px; }
+    :root {
+      --bg: #0f1320;
+      --panel: #171d30;
+      --panel-soft: #1f2840;
+      --text: #e8ecf8;
+      --muted: #99a5c6;
+      --accent: #38d6a8;
+      --danger: #ff6b6b;
+      --border: #2b3551;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(circle at 10% 0%, #253052 0%, var(--bg) 42%);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .shell { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .tab { border: 1px solid var(--border); background: var(--panel); color: var(--text); padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+    .tab.active { background: var(--accent); color: #112421; border-color: transparent; font-weight: 700; }
+    .panel { margin-top: 14px; border: 1px solid var(--border); border-radius: 14px; background: rgba(23, 29, 48, 0.9); padding: 14px; }
+    .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--panel-soft); }
+    .muted { color: var(--muted); font-size: 12px; }
+    input, textarea, select {
+      width: 100%; border-radius: 10px; border: 1px solid var(--border);
+      background: #0f1525; color: var(--text); padding: 9px 10px;
+    }
+    textarea { min-height: 120px; }
+    button { border-radius: 10px; border: 0; padding: 9px 12px; cursor: pointer; font-weight: 600; background: var(--accent); color: #0c221b; }
+    button.danger { background: var(--danger); color: #2d0f0f; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    pre { margin: 0; border-radius: 10px; padding: 10px; background: #0f1525; max-height: 350px; overflow: auto; white-space: pre-wrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 6px; text-align: left; }
+    .hidden { display: none; }
+    @media (max-width: 700px) { .shell { padding: 12px; } }
   </style>
 </head>
 <body>
-  <h1>MagicMerlin Control UI</h1>
-  <p class=\"muted\">Local-only. Chat calls <code>POST /chat</code>. If <code>MAGICMERLIN_API_KEY</code> is set, include <code>x-magicmerlin-api-key</code> in requests.</p>
+  <div class="shell">
+    <div class="top">
+      <h1 style="margin:0;">MagicMerlin Control</h1>
+      <div style="min-width:280px;">
+        <div class="muted">Optional API key header</div>
+        <input id="apiKey" placeholder="x-magicmerlin-api-key" />
+      </div>
+    </div>
 
-  <div class=\"row\">
-    <textarea id=\"msg\" placeholder=\"Say something...\"></textarea>
-  </div>
-  <div class=\"row\" style=\"margin-top: 8px; align-items: center;\">
-    <button id=\"send\">Send</button>
-    <span class=\"muted\">sessionId: <span id=\"sid\">(new)</span></span>
-  </div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="sessions">Sessions</button>
+      <button class="tab" data-tab="cron">Cron</button>
+      <button class="tab" data-tab="config">Config</button>
+      <button class="tab" data-tab="logs">Logs</button>
+    </div>
 
-  <h3>Reply</h3>
-  <pre id=\"out\">(no reply yet)</pre>
+    <section class="panel" data-page="overview">
+      <div class="row"><button id="refreshOverview">Refresh</button></div>
+      <div class="grid" id="overviewCards"></div>
+    </section>
+
+    <section class="panel hidden" data-page="sessions">
+      <div class="row"><button id="refreshSessions">Refresh Sessions</button></div>
+      <div style="overflow:auto;">
+        <table><thead><tr><th>ID</th><th>Status</th><th>Agent</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="sessionsBody"></tbody></table>
+      </div>
+      <h3>Session Details</h3>
+      <pre id="sessionDetails">(select a session)</pre>
+    </section>
+
+    <section class="panel hidden" data-page="cron">
+      <div class="row">
+        <button id="refreshCron">Refresh Jobs</button>
+        <button id="refreshCronRuns">Recent Runs</button>
+      </div>
+      <div style="overflow:auto;">
+        <table><thead><tr><th>ID</th><th>Name</th><th>Enabled</th><th>Next</th><th>Actions</th></tr></thead><tbody id="cronBody"></tbody></table>
+      </div>
+      <h3>Run History</h3>
+      <pre id="cronRuns">(no runs loaded)</pre>
+    </section>
+
+    <section class="panel hidden" data-page="config">
+      <div class="row">
+        <input id="configPath" placeholder="gateway.port" />
+        <button id="configGet">Get</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <textarea id="configValue" placeholder='\"19001\" or 19001'></textarea>
+      </div>
+      <div class="row">
+        <button id="configSet">Set</button>
+        <button id="configUnset" class="danger">Unset</button>
+      </div>
+      <h3>Response</h3>
+      <pre id="configOut">(no request yet)</pre>
+    </section>
+
+    <section class="panel hidden" data-page="logs">
+      <div class="row">
+        <button id="connectLogs">Start Live Poll</button>
+        <button id="clearLogs" class="danger">Clear</button>
+      </div>
+      <pre id="logsOut">(live polling stopped)</pre>
+    </section>
+  </div>
 
 <script>
-  let sessionId = null;
-  const out = document.getElementById('out');
-  const sid = document.getElementById('sid');
+const pages = [...document.querySelectorAll('[data-page]')];
+const tabs = [...document.querySelectorAll('.tab')];
+let logsTimer = null;
+let logsCursor = 0;
 
-  async function send() {
-    const message = document.getElementById('msg').value;
-    out.textContent = '...';
-    const res = await fetch('/chat', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ message, sessionId })
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      out.textContent = JSON.stringify(json, null, 2);
-      return;
-    }
-    sessionId = json.sessionId;
-    sid.textContent = sessionId;
-    out.textContent = json.reply;
+function headers() {
+  const key = document.getElementById('apiKey').value.trim();
+  const h = { 'content-type': 'application/json' };
+  if (key) h['x-magicmerlin-api-key'] = key;
+  return h;
+}
+
+async function call(method, params = {}) {
+  const res = await fetch('/call', { method: 'POST', headers: headers(), body: JSON.stringify({ method, params }) });
+  const body = await res.json();
+  return { ok: res.ok, body };
+}
+
+function showTab(name) {
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  pages.forEach(p => p.classList.toggle('hidden', p.dataset.page !== name));
+}
+tabs.forEach(tab => tab.addEventListener('click', () => showTab(tab.dataset.tab)));
+
+async function loadOverview() {
+  const statusRes = await fetch('/status', { headers: headers() });
+  const status = await statusRes.json();
+  const acpRes = await fetch('/acp/sessions', { headers: headers() });
+  const acp = await acpRes.json();
+  const cards = [
+    ['Compat', status?.compat?.compatVersion || '-'],
+    ['Fingerprint', status?.compat?.fingerprint || '-'],
+    ['Cron Jobs', status?.scheduler?.jobCount ?? '-'],
+    ['Next Cron Run', status?.scheduler?.nextRunAt ?? '-'],
+    ['ACP Sessions', (acp?.sessions || []).length],
+    ['Health', status?.openclawStatus ? 'ok' : 'degraded'],
+  ];
+  document.getElementById('overviewCards').innerHTML = cards.map(([k, v]) => `<div class=\"card\"><div class=\"muted\">${k}</div><div>${v}</div></div>`).join('');
+}
+
+async function loadSessions() {
+  const res = await fetch('/sessions', { headers: headers() });
+  const json = await res.json();
+  const body = document.getElementById('sessionsBody');
+  const rows = json.sessions || [];
+  body.innerHTML = rows.map(s => `<tr>
+    <td>${s.id}</td><td>${s.status}</td><td>${s.agent || '-'}</td><td>${s.updatedAt}</td>
+    <td class=\"row\">
+      <button data-view=\"${s.id}\">View</button>
+      <button data-compact=\"${s.id}\">Compact</button>
+      <button data-delete=\"${s.id}\" class=\"danger\">Delete</button>
+    </td></tr>`).join('');
+  for (const btn of body.querySelectorAll('[data-view]')) btn.onclick = async () => {
+    const id = btn.dataset.view;
+    const response = await fetch(`/sessions/${id}`, { headers: headers() });
+    document.getElementById('sessionDetails').textContent = JSON.stringify(await response.json(), null, 2);
+  };
+  for (const btn of body.querySelectorAll('[data-compact]')) btn.onclick = async () => {
+    await call('sessions.compact', { id: btn.dataset.compact });
+    loadSessions();
+  };
+  for (const btn of body.querySelectorAll('[data-delete]')) btn.onclick = async () => {
+    await call('sessions.delete', { id: btn.dataset.delete });
+    loadSessions();
+  };
+}
+
+async function loadCron() {
+  const res = await fetch('/cron', { headers: headers() });
+  const json = await res.json();
+  const jobs = json.jobs || [];
+  const body = document.getElementById('cronBody');
+  body.innerHTML = jobs.map(j => `<tr>
+    <td>${j.id}</td><td>${j.name}</td><td>${j.enabled}</td><td>${j.nextRunAt ?? '-'}</td>
+    <td class=\"row\">
+      <button data-run=\"${j.id}\">Run</button>
+      <button data-toggle=\"${j.id}\" data-enabled=\"${j.enabled}\">${j.enabled ? 'Disable' : 'Enable'}</button>
+    </td></tr>`).join('');
+  for (const btn of body.querySelectorAll('[data-run]')) btn.onclick = async () => { await fetch(`/cron/run/${btn.dataset.run}`, { method: 'POST', headers: headers() }); loadCron(); };
+  for (const btn of body.querySelectorAll('[data-toggle]')) btn.onclick = async () => {
+    const id = btn.dataset.toggle;
+    const enabled = btn.dataset.enabled === 'true';
+    await fetch(enabled ? `/cron/pause/${id}` : `/cron/resume/${id}`, { method: 'POST', headers: headers() });
+    loadCron();
+  };
+}
+
+async function loadCronRuns() {
+  const response = await call('cron.runs', { limit: 25 });
+  document.getElementById('cronRuns').textContent = JSON.stringify(response.body, null, 2);
+}
+
+async function configGet() {
+  const path = document.getElementById('configPath').value.trim();
+  const response = await call('config.get', { path });
+  document.getElementById('configOut').textContent = JSON.stringify(response.body, null, 2);
+}
+async function configSet() {
+  const path = document.getElementById('configPath').value.trim();
+  const value = document.getElementById('configValue').value;
+  const response = await call('config.set', { path, value });
+  document.getElementById('configOut').textContent = JSON.stringify(response.body, null, 2);
+}
+async function configUnset() {
+  const path = document.getElementById('configPath').value.trim();
+  const response = await call('config.unset', { path });
+  document.getElementById('configOut').textContent = JSON.stringify(response.body, null, 2);
+}
+
+async function pollLogs() {
+  const out = document.getElementById('logsOut');
+  const response = await fetch(`/events?since=${logsCursor}&limit=200`, { headers: headers() });
+  if (!response.ok) {
+    out.textContent += '[poll error]\\n';
+    return;
   }
+  const payload = await response.json();
+  for (const event of (payload.events || [])) {
+    out.textContent += JSON.stringify(event) + '\\n';
+  }
+  logsCursor = payload.nextCursor || logsCursor;
+  out.scrollTop = out.scrollHeight;
+}
 
-  document.getElementById('send').addEventListener('click', send);
+function connectLogs() {
+  const out = document.getElementById('logsOut');
+  out.textContent += '[polling started]\\n';
+  if (logsTimer) clearInterval(logsTimer);
+  logsTimer = setInterval(pollLogs, 1000);
+  pollLogs();
+}
+
+document.getElementById('refreshOverview').onclick = loadOverview;
+document.getElementById('refreshSessions').onclick = loadSessions;
+document.getElementById('refreshCron').onclick = loadCron;
+document.getElementById('refreshCronRuns').onclick = loadCronRuns;
+document.getElementById('configGet').onclick = configGet;
+document.getElementById('configSet').onclick = configSet;
+document.getElementById('configUnset').onclick = configUnset;
+document.getElementById('connectLogs').onclick = connectLogs;
+document.getElementById('clearLogs').onclick = () => { document.getElementById('logsOut').textContent = ''; logsCursor = 0; };
+
+loadOverview();
+loadSessions();
+loadCron();
 </script>
 </body>
 </html>"#;
@@ -3122,6 +3521,71 @@ async fn http_plugins_list(
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EventsQuery {
+    since: Option<usize>,
+    limit: Option<usize>,
+}
+
+async fn http_events(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<EventsQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let since = query.since.unwrap_or(0);
+    let limit = query.limit.unwrap_or(100).clamp(1, 500);
+    let history = state.event_history.lock().await;
+    let start = since.min(history.len());
+    let items: Vec<GatewayEvent> = history
+        .iter()
+        .skip(start)
+        .take(limit)
+        .cloned()
+        .collect();
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "events": items,
+            "nextCursor": start + items.len(),
+            "total": history.len(),
+        })),
+    )
+}
+
+async fn http_acp_sessions(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let sessions = state.acp.list_sessions().await;
+    (StatusCode::OK, Json(serde_json::json!({ "sessions": sessions })))
+}
+
+async fn http_security_audit(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    if !is_authorized(&headers) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"error":"unauthorized"})),
+        );
+    }
+
+    let cfg = state.config.lock().await;
+    let ctx = build_security_context(&cfg, &state.auth);
+    let report = run_security_audit(&ctx);
+    (StatusCode::OK, Json(serde_json::json!(report)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3142,6 +3606,9 @@ mod tests {
         let scheduler = Arc::new(Scheduler::new(db_path.clone()).await.expect("scheduler"));
         let cfg = ConfigManager::load(ConfigOptions::default()).expect("config");
         let (events, _) = broadcast::channel(32);
+        let acp = Arc::new(
+            AcpRuntime::new(&state_root.join("acp"), AgentHarnessConfig::default()).expect("acp"),
+        );
         AppState {
             providers,
             info,
@@ -3150,9 +3617,11 @@ mod tests {
             config: Arc::new(Mutex::new(cfg)),
             auth: Arc::new(GatewayAuth::default()),
             events,
+            event_history: Arc::new(Mutex::new(Vec::new())),
             run_queue: Arc::new(RunQueue::default()),
             started_at: Instant::now(),
             presence: Arc::new(Mutex::new(SystemPresence::default())),
+            acp,
         }
     }
 

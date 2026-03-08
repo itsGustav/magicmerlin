@@ -3,6 +3,7 @@
 mod error;
 mod model;
 mod paths;
+mod security;
 mod secrets;
 
 use std::collections::BTreeMap;
@@ -12,6 +13,10 @@ use std::path::{Path, PathBuf};
 pub use error::ConfigError;
 pub use model::{Config, GatewayConfig};
 pub use paths::{PathScope, StatePaths};
+pub use security::{
+    is_tool_allowed, run_security_audit, validate_trusted_proxy, validate_workspace_path,
+    SecurityAuditContext, SecurityAuditReport, SecurityIssue, SecuritySeverity,
+};
 pub use secrets::{Secrets, SecretsError};
 use serde_json::Value;
 

@@ -930,6 +930,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "magicmerlin-acp"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "magicmerlin-agent"
 version = "0.0.0"
 dependencies = [
@@ -1022,10 +1035,12 @@ dependencies = [
  "chrono-tz",
  "clap",
  "cron",
+ "magicmerlin-acp",
  "magicmerlin-auto-reply",
  "magicmerlin-compat",
  "magicmerlin-config",
  "magicmerlin-logging",
+ "magicmerlin-plugins",
  "magicmerlin-sessions",
  "magicmerlin-tools",
  "reqwest",
@@ -1061,6 +1076,17 @@ dependencies = [
  "thiserror 1.0.69",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "magicmerlin-plugins"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2132,6 +2158,7 @@ dependencies = [
  "getrandom 0.4.1",
  "js-sys",
  "rand",
+ "serde_core",
  "wasm-bindgen",
 ]
 

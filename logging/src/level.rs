@@ -5,7 +5,7 @@ use std::str::FromStr;
 use tracing_subscriber::filter::LevelFilter;
 
 /// User-configurable logging levels for MagicMerlin.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LogLevel {
     /// Disable all logging.
     Silent,
@@ -16,6 +16,7 @@ pub enum LogLevel {
     /// Warning and above.
     Warn,
     /// Informational and above.
+    #[default]
     Info,
     /// Debug and above.
     Debug,
@@ -35,12 +36,6 @@ impl LogLevel {
             Self::Debug => LevelFilter::DEBUG,
             Self::Trace => LevelFilter::TRACE,
         }
-    }
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        Self::Info
     }
 }
 

@@ -2,6 +2,8 @@
 resolver = "2"
 members = [
   "gateway",
+  "plugins",
+  "acp",
   "compat",
   "tools",
   "sentinel",
