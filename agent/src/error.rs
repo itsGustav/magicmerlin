@@ -1,6 +1,7 @@
 //! Error types for agent runtime.
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 /// Result alias for agent runtime operations.
 pub type Result<T> = std::result::Result<T, AgentError>;
@@ -31,4 +32,13 @@ pub enum AgentError {
     /// Generic invariant violation.
     #[error("invalid state: {0}")]
     InvalidState(String),
+    /// Operation exceeded timeout.
+    #[error("operation timed out after {0:?}")]
+    Timeout(Duration),
+    /// Operation was cancelled.
+    #[error("operation cancelled: {0}")]
+    Cancelled(String),
+    /// External command error.
+    #[error("tool execution failed: {0}")]
+    ToolExecution(String),
 }

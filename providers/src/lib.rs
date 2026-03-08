@@ -3,15 +3,22 @@
 pub mod auth;
 pub mod error;
 pub mod model_registry;
+mod model_catalog;
 pub mod providers;
 pub mod router;
 pub mod types;
 
-pub use auth::{AuthProfile, AuthProfiles, OAuthTokenConfig};
-pub use error::{ProviderError, Result};
-pub use model_registry::{ModelCapabilities, ModelDefinition, ModelRegistry};
-pub use router::{ProviderRouter, RetryConfig};
+pub use auth::{AuthHealth, AuthProfile, AuthProfiles, OAuthTokenConfig};
+pub use error::{ProviderError, Result, RetryHint};
+pub use model_registry::{
+    ModelCapabilities, ModelDefinition, ModelRegistry, ModelRequirements,
+};
+pub use router::{
+    CircuitBreakerConfig, ProviderRouter, RequestMiddleware, ResponseMiddleware, RetryConfig,
+    RouterMetrics, TokenBucketConfig,
+};
 pub use types::{
     CompletionRequest, CompletionResponse, ContentBlock, ContentPart, Message, MessageContent,
-    Role, StopReason, StreamChunk, ToolCall, ToolDefinition, ToolResultContent, Usage,
+    ResponseFormat, ResponseFormatMode, Role, StopReason, StreamChunk, ToolCall, ToolDefinition,
+    ToolResultContent, Usage,
 };

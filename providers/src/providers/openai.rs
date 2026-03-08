@@ -21,6 +21,13 @@ impl OpenAiProvider {
             inner: OpenAiCompatProvider::new("openai", "https://api.openai.com", "openai", auth),
         }
     }
+
+    /// Creates provider with custom base URL.
+    pub fn with_base_url(auth: AuthProfiles, base_url: impl Into<String>) -> Self {
+        Self {
+            inner: OpenAiCompatProvider::new("openai", base_url, "openai", auth),
+        }
+    }
 }
 
 #[async_trait]
@@ -38,6 +45,6 @@ impl LlmProvider for OpenAiProvider {
     }
 
     fn supports_model(&self, model_id: &str) -> bool {
-        model_id.starts_with("gpt") || model_id.starts_with('o')
+        model_id.starts_with("gpt") || model_id.starts_with('o') || model_id.starts_with("chatgpt")
     }
 }

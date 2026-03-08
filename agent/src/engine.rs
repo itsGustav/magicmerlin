@@ -1,17 +1,23 @@
 //! Core agent turn loop and tool-call orchestration.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
 use magicmerlin_providers::types::{
-    CompletionRequest, ContentBlock, Message, MessageContent, Role, ToolCall,
+    approximate_tokens, CompletionRequest, CompletionResponse, ContentBlock, Message,
+    MessageContent, Role, ToolCall,
 };
 use serde_json::json;
 
 use crate::error::{AgentError, Result};
 use crate::session::SessionRecord;
-use crate::system_prompt::{PromptRuntimeMetadata, SystemPromptAssembler};
+use crate::system_prompt::{
+    InboundContext, PromptRuntimeMetadata, SystemPromptAssembler, ToolSchemaDescriptor,
+};
 use crate::SessionManager;
 
 /// Agent engine configuration.
@@ -27,6 +33,12 @@ pub struct AgentEngineConfig {
     pub compact_threshold_pct: u64,
     /// Maximum tool-call rounds per turn.
     pub max_tool_rounds: usize,
+    /// Maximum total agent rounds per run.
+    pub max_turns: usize,
+    /// Max token budget for one run.
+    pub token_budget: u64,
+    /// Max tool timeout.
+    pub tool_timeout: Duration,
     /// Agent name.
     pub agent_name: String,
     /// Agent directory path.
@@ -37,6 +49,8 @@ pub struct AgentEngineConfig {
     pub channel: String,
     /// Timezone name.
     pub timezone: String,
+    /// Whether provider streaming should be used when available.
+    pub stream_responses: bool,
 }
 
 impl Default for AgentEngineConfig {
@@ -47,11 +61,15 @@ impl Default for AgentEngineConfig {
             context_window: 128_000,
             compact_threshold_pct: 85,
             max_tool_rounds: 8,
+            max_turns: 12,
+            token_budget: 120_000,
+            tool_timeout: Duration::from_secs(30),
             agent_name: "merlin".to_string(),
             agent_dir: PathBuf::from("."),
             workspace_dir: PathBuf::from("."),
             channel: "terminal".to_string(),
             timezone: "UTC".to_string(),
+            stream_responses: true,
         }
     }
 }
@@ -63,13 +81,69 @@ pub struct ToolExecutionResult {
     pub tool_call_id: String,
     /// Tool output content.
     pub content: String,
+    /// Whether execution failed.
+    pub is_error: bool,
+}
+
+impl ToolExecutionResult {
+    /// Creates success tool result.
+    pub fn ok(tool_call_id: String, content: String) -> Self {
+        Self {
+            tool_call_id,
+            content,
+            is_error: false,
+        }
+    }
+
+    /// Creates failure tool result.
+    pub fn err(tool_call_id: String, error: String) -> Self {
+        Self {
+            tool_call_id,
+            content: error,
+            is_error: true,
+        }
+    }
 }
 
 /// Tool execution abstraction consumed by agent loop.
 #[async_trait]
 pub trait ToolExecutor: Send + Sync {
-    /// Executes tool calls and returns tool results.
-    async fn execute_tools(&self, tool_calls: &[ToolCall]) -> Result<Vec<ToolExecutionResult>>;
+    /// Executes one tool call.
+    async fn execute_tool(&self, tool_call: &ToolCall) -> Result<ToolExecutionResult>;
+
+    /// Executes multiple calls concurrently if implementation supports it.
+    async fn execute_tools_parallel(&self, tool_calls: &[ToolCall]) -> Result<Vec<ToolExecutionResult>> {
+        let mut results = Vec::new();
+        for call in tool_calls {
+            results.push(self.execute_tool(call).await?);
+        }
+        Ok(results)
+    }
+}
+
+/// Abort signal for in-progress turn.
+#[derive(Debug, Clone, Default)]
+pub struct AbortSignal {
+    cancelled: Arc<AtomicBool>,
+}
+
+impl AbortSignal {
+    /// Creates a new signal.
+    pub fn new() -> Self {
+        Self {
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    /// Triggers cancellation.
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+    }
+
+    /// Returns whether cancellation was requested.
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::SeqCst)
+    }
 }
 
 /// Final agent reply payload.
@@ -77,6 +151,10 @@ pub trait ToolExecutor: Send + Sync {
 pub struct AgentReply {
     /// Plain-text assistant response.
     pub text: String,
+    /// Number of rounds executed.
+    pub rounds: usize,
+    /// Token estimate used in this turn.
+    pub token_estimate: u64,
 }
 
 /// Turn-loop runtime over provider router and session manager.
@@ -108,6 +186,29 @@ impl AgentEngine {
         user_message: &str,
         tools: &dyn ToolExecutor,
     ) -> Result<AgentReply> {
+        self.run_turn_with_options(
+            session,
+            user_message,
+            tools,
+            &InboundContext::default(),
+            &[],
+            None,
+        )
+        .await
+    }
+
+    /// Runs one turn with explicit context and optional abort signal.
+    pub async fn run_turn_with_options(
+        &self,
+        session: &mut SessionRecord,
+        user_message: &str,
+        tools: &dyn ToolExecutor,
+        inbound_context: &InboundContext,
+        tool_schemas: &[ToolSchemaDescriptor],
+        abort_signal: Option<&AbortSignal>,
+    ) -> Result<AgentReply> {
+        self.check_abort(abort_signal)?;
+
         self.sessions.compact_if_needed(
             session,
             self.config.context_window,
@@ -117,13 +218,17 @@ impl AgentEngine {
         self.sessions
             .append_message(session, json!({"role":"user","content":user_message}))?;
 
-        let assembler =
-            SystemPromptAssembler::new(&self.config.workspace_dir, &self.config.agent_dir, 8_000);
-        let system_prompt = assembler.assemble(&PromptRuntimeMetadata {
-            model: self.config.model.clone(),
-            channel: self.config.channel.clone(),
-            timezone: self.config.timezone.clone(),
-        })?;
+        let assembler = SystemPromptAssembler::new(&self.config.workspace_dir, &self.config.agent_dir, 8_000);
+        let system_prompt = assembler.assemble_with_context(
+            &PromptRuntimeMetadata::now(
+                self.config.model.clone(),
+                self.config.channel.clone(),
+                self.config.timezone.clone(),
+                self.config.agent_name.clone(),
+            ),
+            inbound_context,
+            tool_schemas,
+        )?;
 
         let transcript_values = session.transcript.read(0, None)?;
         let mut messages = vec![Message {
@@ -133,21 +238,27 @@ impl AgentEngine {
         messages.extend(transcript_values.iter().filter_map(value_to_message));
 
         let mut rounds = 0_usize;
+        let mut tool_rounds = 0_usize;
+        let mut consumed_tokens = estimate_messages_tokens(&messages);
+
         loop {
+            self.check_abort(abort_signal)?;
+            rounds = rounds.saturating_add(1);
+            if rounds > self.config.max_turns {
+                return Err(AgentError::InvalidState(
+                    "agent loop exceeded max turns".to_string(),
+                ));
+            }
+
+            if consumed_tokens > self.config.token_budget {
+                return Err(AgentError::InvalidState(format!(
+                    "turn exceeded token budget: {} > {}",
+                    consumed_tokens, self.config.token_budget
+                )));
+            }
+
             let response = self
-                .router
-                .complete_with_failover(
-                    CompletionRequest {
-                        model: self.config.model.clone(),
-                        messages: messages.clone(),
-                        tools: None,
-                        temperature: None,
-                        max_tokens: None,
-                        stream: false,
-                        extra: std::collections::HashMap::new(),
-                    },
-                    &self.config.fallbacks,
-                )
+                .request_completion(messages.clone())
                 .await?;
 
             let assistant_text = response
@@ -156,6 +267,9 @@ impl AgentEngine {
                 .map(content_to_text)
                 .collect::<Vec<_>>()
                 .join("\n");
+            consumed_tokens = consumed_tokens
+                .saturating_add(estimate_response_tokens(&response) as u64)
+                .saturating_add(approximate_tokens(&assistant_text) as u64);
 
             self.sessions.append_message(
                 session,
@@ -174,21 +288,31 @@ impl AgentEngine {
             if response.tool_calls.is_empty() {
                 return Ok(AgentReply {
                     text: assistant_text,
+                    rounds,
+                    token_estimate: consumed_tokens,
                 });
             }
 
-            rounds += 1;
-            if rounds > self.config.max_tool_rounds {
+            tool_rounds = tool_rounds.saturating_add(1);
+            if tool_rounds > self.config.max_tool_rounds {
                 return Err(AgentError::InvalidState(
                     "tool loop exceeded max rounds".to_string(),
                 ));
             }
 
-            let tool_results = tools.execute_tools(&response.tool_calls).await?;
+            let tool_results = self
+                .execute_tools_with_timeout(tools, &response.tool_calls, abort_signal)
+                .await?;
+
             for result in tool_results {
                 self.sessions.append_message(
                     session,
-                    json!({"role":"tool","tool_call_id":result.tool_call_id,"content":result.content}),
+                    json!({
+                        "role":"tool",
+                        "tool_call_id":result.tool_call_id,
+                        "content":result.content,
+                        "is_error": result.is_error,
+                    }),
                 )?;
 
                 messages.push(Message {
@@ -200,6 +324,64 @@ impl AgentEngine {
                 });
             }
         }
+    }
+
+    async fn request_completion(&self, messages: Vec<Message>) -> Result<CompletionResponse> {
+        let mut extra = HashMap::new();
+        extra.insert("agent_name".to_string(), json!(self.config.agent_name));
+
+        let request = CompletionRequest {
+            model: self.config.model.clone(),
+            messages,
+            tools: None,
+            temperature: None,
+            max_tokens: None,
+            stream: self.config.stream_responses,
+            extra,
+        };
+
+        self.router
+            .complete_with_failover(request, &self.config.fallbacks)
+            .await
+            .map_err(AgentError::from)
+    }
+
+    async fn execute_tools_with_timeout(
+        &self,
+        tools: &dyn ToolExecutor,
+        tool_calls: &[ToolCall],
+        abort_signal: Option<&AbortSignal>,
+    ) -> Result<Vec<ToolExecutionResult>> {
+        self.check_abort(abort_signal)?;
+
+        let execution = tools.execute_tools_parallel(tool_calls);
+        let timed = tokio::time::timeout(self.config.tool_timeout, execution).await;
+
+        self.check_abort(abort_signal)?;
+
+        match timed {
+            Ok(Ok(results)) => Ok(results),
+            Ok(Err(err)) => Err(err),
+            Err(_) => {
+                let timeout_results = tool_calls
+                    .iter()
+                    .map(|call| {
+                        ToolExecutionResult::err(
+                            call.id.clone(),
+                            format!("tool timeout after {:?}", self.config.tool_timeout),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                Ok(timeout_results)
+            }
+        }
+    }
+
+    fn check_abort(&self, abort_signal: Option<&AbortSignal>) -> Result<()> {
+        if abort_signal.map(|signal| signal.is_cancelled()).unwrap_or(false) {
+            return Err(AgentError::Cancelled("agent turn aborted".to_string()));
+        }
+        Ok(())
     }
 }
 
@@ -226,5 +408,23 @@ fn content_to_text(content: &ContentBlock) -> String {
     match content {
         ContentBlock::Text { text } => text.clone(),
         ContentBlock::Json { value } => value.to_string(),
+        ContentBlock::Thinking { text } => text.clone(),
     }
+}
+
+fn estimate_messages_tokens(messages: &[Message]) -> u64 {
+    messages
+        .iter()
+        .map(|msg| serde_json::to_string(msg).unwrap_or_default())
+        .map(|text| approximate_tokens(&text) as u64)
+        .sum()
+}
+
+fn estimate_response_tokens(response: &CompletionResponse) -> u32 {
+    response
+        .content
+        .iter()
+        .map(content_to_text)
+        .map(|text| approximate_tokens(&text))
+        .sum()
 }

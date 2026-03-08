@@ -70,6 +70,22 @@ pub enum ContentPart {
     Text { text: String },
     /// Image URL segment.
     ImageUrl { url: String },
+    /// Base64 image segment.
+    ImageBase64 {
+        /// MIME type, for example `image/png`.
+        mime_type: String,
+        /// Base64 payload (without data URL prefix).
+        data: String,
+    },
+    /// PDF/document payload.
+    DocumentBase64 {
+        /// MIME type, for example `application/pdf`.
+        mime_type: String,
+        /// Base64 payload.
+        data: String,
+        /// Optional display title.
+        title: Option<String>,
+    },
 }
 
 /// Tool declaration with JSON schema parameters.
@@ -111,6 +127,8 @@ pub enum ContentBlock {
     Text { text: String },
     /// Non-text output.
     Json { value: Value },
+    /// Reasoning/thinking output emitted by some providers.
+    Thinking { text: String },
 }
 
 /// Token/caching usage counters.
@@ -178,7 +196,131 @@ pub struct StreamChunk {
     pub done: bool,
 }
 
+/// Supported response-format modes.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ResponseFormatMode {
+    /// No explicit response format constraints.
+    None,
+    /// Strict JSON object response.
+    JsonObject,
+    /// JSON Schema-constrained response.
+    JsonSchema,
+}
+
+/// Parsed response format from request extras.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ResponseFormat {
+    /// Mode for provider mapping.
+    pub mode: ResponseFormatMode,
+    /// Optional schema object for `json_schema` mode.
+    pub schema: Option<Value>,
+    /// Optional schema name.
+    pub schema_name: Option<String>,
+    /// Optional strict toggle.
+    pub strict: Option<bool>,
+}
+
+impl Default for ResponseFormat {
+    fn default() -> Self {
+        Self {
+            mode: ResponseFormatMode::None,
+            schema: None,
+            schema_name: None,
+            strict: None,
+        }
+    }
+}
+
+/// Attempts to parse response-format related fields from a request `extra` map.
+pub fn parse_response_format(extra: &HashMap<String, Value>) -> ResponseFormat {
+    let mut format = ResponseFormat::default();
+    let Some(value) = extra.get("response_format") else {
+        return format;
+    };
+
+    let kind = value
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+
+    if kind == "json_object" {
+        format.mode = ResponseFormatMode::JsonObject;
+        return format;
+    }
+
+    if kind != "json_schema" {
+        return format;
+    }
+
+    format.mode = ResponseFormatMode::JsonSchema;
+    let schema_wrapper = value.get("json_schema");
+    format.schema = schema_wrapper
+        .and_then(|v| v.get("schema"))
+        .cloned()
+        .or_else(|| value.get("schema").cloned());
+    format.schema_name = schema_wrapper
+        .and_then(|v| v.get("name"))
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| {
+            value
+                .get("name")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        });
+    format.strict = schema_wrapper
+        .and_then(|v| v.get("strict"))
+        .and_then(Value::as_bool)
+        .or_else(|| value.get("strict").and_then(Value::as_bool));
+
+    format
+}
+
+/// Extracts optional reasoning effort for OpenAI reasoning models from request extras.
+pub fn parse_reasoning_effort(extra: &HashMap<String, Value>) -> Option<String> {
+    extra
+        .get("reasoning_effort")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+}
+
 /// Returns approximate token count from plain text using chars/4 heuristic.
 pub fn approximate_tokens(text: &str) -> u32 {
     ((text.chars().count() as f64) / 4.0).ceil() as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_json_schema_response_format() {
+        let mut extra = HashMap::new();
+        extra.insert(
+            "response_format".to_string(),
+            serde_json::json!({
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "structured_output",
+                    "strict": true,
+                    "schema": {"type": "object", "properties": {"answer": {"type": "string"}}}
+                }
+            }),
+        );
+
+        let parsed = parse_response_format(&extra);
+        assert_eq!(parsed.mode, ResponseFormatMode::JsonSchema);
+        assert_eq!(parsed.schema_name.as_deref(), Some("structured_output"));
+        assert_eq!(parsed.strict, Some(true));
+        assert!(parsed.schema.is_some());
+    }
+
+    #[test]
+    fn parses_reasoning_effort() {
+        let mut extra = HashMap::new();
+        extra.insert("reasoning_effort".to_string(), Value::String("high".to_string()));
+        assert_eq!(parse_reasoning_effort(&extra).as_deref(), Some("high"));
+    }
 }

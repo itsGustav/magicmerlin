@@ -76,17 +76,14 @@ struct MockTools;
 
 #[async_trait]
 impl ToolExecutor for MockTools {
-    async fn execute_tools(
+    async fn execute_tool(
         &self,
-        tool_calls: &[ToolCall],
-    ) -> Result<Vec<ToolExecutionResult>, magicmerlin_agent::AgentError> {
-        Ok(tool_calls
-            .iter()
-            .map(|c| ToolExecutionResult {
-                tool_call_id: c.id.clone(),
-                content: "tool output".to_string(),
-            })
-            .collect())
+        tool_call: &ToolCall,
+    ) -> Result<ToolExecutionResult, magicmerlin_agent::AgentError> {
+        Ok(ToolExecutionResult::ok(
+            tool_call.id.clone(),
+            "tool output".to_string(),
+        ))
     }
 }
 
@@ -103,10 +100,12 @@ async fn runs_turn_with_tool_round_trip() {
         capabilities: ModelCapabilities::default(),
     });
 
-    let mut router = ProviderRouter::new(models);
-    router.register_provider(Arc::new(TwoStepProvider {
-        calls: Arc::new(Mutex::new(0)),
-    }));
+    let router = ProviderRouter::new(models);
+    router
+        .register_provider(Arc::new(TwoStepProvider {
+            calls: Arc::new(Mutex::new(0)),
+        }))
+        .await;
 
     let temp = tempfile::tempdir().expect("tmp");
     let storage = Storage::new(temp.path().join("db.sqlite")).expect("storage");
@@ -122,6 +121,7 @@ async fn runs_turn_with_tool_round_trip() {
         sessions,
         AgentEngineConfig {
             model: "openai/gpt-5.2".to_string(),
+            fallbacks: Vec::new(),
             workspace_dir: temp.path().to_path_buf(),
             agent_dir: temp.path().to_path_buf(),
             ..AgentEngineConfig::default()

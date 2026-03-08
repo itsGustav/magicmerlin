@@ -27,6 +27,12 @@ pub struct OAuthTokenConfig {
     pub access_token: Option<String>,
     /// Expiry epoch seconds for current access token.
     pub expires_at_epoch: Option<u64>,
+    /// Optional static scopes.
+    #[serde(default)]
+    pub scope: Option<String>,
+    /// Optional audience.
+    #[serde(default)]
+    pub audience: Option<String>,
 }
 
 /// Auth profile entry loaded from `auth-profiles.json`.
@@ -41,6 +47,25 @@ pub struct AuthProfile {
     pub header: Option<String>,
     /// Optional OAuth refresh config.
     pub oauth: Option<OAuthTokenConfig>,
+}
+
+/// Health snapshot for one auth provider.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AuthHealth {
+    /// Provider name.
+    pub provider: String,
+    /// Whether at least one auth mechanism is configured.
+    pub configured: bool,
+    /// Number of API keys configured.
+    pub key_count: usize,
+    /// Current key index for round-robin.
+    pub next_key_idx: usize,
+    /// Whether OAuth is enabled.
+    pub oauth_enabled: bool,
+    /// OAuth token expiry if present.
+    pub oauth_expires_at_epoch: Option<u64>,
+    /// Seconds until expiry (0 when absent/expired).
+    pub oauth_ttl_seconds: u64,
 }
 
 /// Internal mutable auth state for one provider.
@@ -106,7 +131,7 @@ impl AuthProfiles {
         provider: &str,
         client: &reqwest::Client,
     ) -> Result<(HeaderName, HeaderValue)> {
-        let (header_name, token) = self.next_token(provider).await?;
+        let (header_name, token) = self.next_token(provider, client).await?;
         if token.is_empty() {
             return Err(ProviderError::MissingAuth(provider.to_string()));
         }
@@ -121,7 +146,6 @@ impl AuthProfiles {
             message: format!("invalid header value: {err}"),
         })?;
 
-        let _ = client;
         Ok((header_name, value))
     }
 
@@ -135,7 +159,75 @@ impl AuthProfiles {
         }
     }
 
-    async fn next_token(&self, provider: &str) -> Result<(HeaderName, String)> {
+    /// Adds an API key to an existing provider.
+    pub async fn add_api_key(&self, provider: &str, key: String) -> Result<()> {
+        let mut lock = self.state.lock().await;
+        let Some(state) = lock.get_mut(provider) else {
+            return Err(ProviderError::MissingAuth(provider.to_string()));
+        };
+        if key.is_empty() {
+            return Err(ProviderError::InvalidRequest(
+                "api key cannot be empty".to_string(),
+            ));
+        }
+        state.profile.api_keys.push(key);
+        Ok(())
+    }
+
+    /// Upserts a full auth profile definition.
+    pub async fn upsert_profile(&self, profile: AuthProfile) {
+        let mut lock = self.state.lock().await;
+        lock.insert(
+            profile.provider.clone(),
+            ProviderAuthState {
+                profile,
+                next_key_idx: 0,
+            },
+        );
+    }
+
+    /// Returns auth health snapshot for all providers.
+    pub async fn health_report(&self) -> Vec<AuthHealth> {
+        let lock = self.state.lock().await;
+        lock.iter()
+            .map(|(provider, state)| {
+                let expires_at = state
+                    .profile
+                    .oauth
+                    .as_ref()
+                    .and_then(|oauth| oauth.expires_at_epoch);
+                let now = now_epoch();
+                let ttl = expires_at
+                    .map(|expiry| expiry.saturating_sub(now))
+                    .unwrap_or(0);
+
+                AuthHealth {
+                    provider: provider.clone(),
+                    configured: !state.profile.api_keys.is_empty() || state.profile.oauth.is_some(),
+                    key_count: state.profile.api_keys.len(),
+                    next_key_idx: state.next_key_idx,
+                    oauth_enabled: state.profile.oauth.is_some(),
+                    oauth_expires_at_epoch: expires_at,
+                    oauth_ttl_seconds: ttl,
+                }
+            })
+            .collect()
+    }
+
+    /// Returns a sanitized health summary JSON object.
+    pub async fn health_json(&self) -> serde_json::Value {
+        let report = self.health_report().await;
+        serde_json::json!({
+            "providers": report,
+            "generated_at": now_epoch(),
+        })
+    }
+
+    async fn next_token(
+        &self,
+        provider: &str,
+        client: &reqwest::Client,
+    ) -> Result<(HeaderName, String)> {
         let mut lock = self.state.lock().await;
         let state = lock
             .get_mut(provider)
@@ -147,10 +239,10 @@ impl AuthProfiles {
             let now = now_epoch();
             let expired = oauth
                 .expires_at_epoch
-                .map(|ts| ts <= now + 30)
+                .map(|ts| ts <= now + 60)
                 .unwrap_or(oauth.access_token.is_none());
             if expired {
-                refresh_oauth_token(provider, oauth).await?;
+                refresh_oauth_token(provider, oauth, client).await?;
             }
             if let Some(token) = oauth.access_token.clone() {
                 return Ok((AUTHORIZATION, token));
@@ -171,6 +263,9 @@ fn parse_header_name(header: Option<&str>) -> HeaderName {
         if name.eq_ignore_ascii_case("x-api-key") {
             return HeaderName::from_static("x-api-key");
         }
+        if name.eq_ignore_ascii_case("api-key") {
+            return HeaderName::from_static("api-key");
+        }
     }
     AUTHORIZATION
 }
@@ -182,22 +277,28 @@ fn now_epoch() -> u64 {
         .as_secs()
 }
 
-async fn refresh_oauth_token(provider: &str, oauth: &mut OAuthTokenConfig) -> Result<()> {
-    let client = reqwest::Client::new();
-    let resp = client
-        .post(&oauth.token_url)
-        .form(&[
-            ("grant_type", "refresh_token"),
-            ("client_id", oauth.client_id.as_str()),
-            ("client_secret", oauth.client_secret.as_str()),
-            ("refresh_token", oauth.refresh_token.as_str()),
-        ])
-        .send()
-        .await?;
+async fn refresh_oauth_token(
+    provider: &str,
+    oauth: &mut OAuthTokenConfig,
+    client: &reqwest::Client,
+) -> Result<()> {
+    let mut form = vec![
+        ("grant_type", "refresh_token".to_string()),
+        ("client_id", oauth.client_id.clone()),
+        ("client_secret", oauth.client_secret.clone()),
+        ("refresh_token", oauth.refresh_token.clone()),
+    ];
+    if let Some(scope) = oauth.scope.clone() {
+        form.push(("scope", scope));
+    }
+    if let Some(audience) = oauth.audience.clone() {
+        form.push(("audience", audience));
+    }
 
+    let resp = client.post(&oauth.token_url).form(&form).send().await?;
     if !resp.status().is_success() {
         let status = resp.status().as_u16();
-        let body = resp.text().await.unwrap_or_else(|_| String::new());
+        let body = resp.text().await.unwrap_or_default();
         return Err(ProviderError::OAuthRefresh {
             provider: provider.to_string(),
             message: format!("status={status} body={body}"),
@@ -265,5 +366,19 @@ mod tests {
             .expect("header");
         assert_eq!(name, HeaderName::from_static("x-api-key"));
         assert_eq!(value.to_str().expect("str"), "ant-key");
+    }
+
+    #[tokio::test]
+    async fn reports_health_without_exposing_tokens() {
+        let profiles = AuthProfiles::from_profiles(vec![AuthProfile {
+            provider: "google".to_string(),
+            api_keys: vec!["g1".to_string()],
+            header: Some("x-api-key".to_string()),
+            oauth: None,
+        }]);
+
+        let health = profiles.health_json().await.to_string();
+        assert!(health.contains("google"));
+        assert!(!health.contains("g1"));
     }
 }
