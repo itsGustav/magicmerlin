@@ -971,6 +971,7 @@ dependencies = [
  "chrono",
  "magicmerlin-config",
  "magicmerlin-infra",
+ "magicmerlin-media",
  "magicmerlin-providers",
  "magicmerlin-storage",
  "reqwest",
@@ -1076,6 +1077,23 @@ dependencies = [
  "thiserror 1.0.69",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "magicmerlin-media"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "base64",
+ "futures-util",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
 ]
 
 [[package]]
