@@ -13,6 +13,6 @@ pub use health::{ChannelHealth, ConnectionState, HealthMonitor};
 pub use policy::{DmPolicy, DmPolicyEnforcer, MentionGate};
 pub use registry::{Channel, ChannelRegistry};
 pub use types::{
-    ChatType, InboundMessage, InlineButton, MediaAttachment, MediaType, MessageId, OutboundMessage,
-    ParseMode, Platform, Result, Sender,
+    ChannelError, ChatType, InboundMessage, InlineButton, MediaAttachment, MediaType, MessageId,
+    OutboundMessage, ParseMode, Platform, Result, Sender,
 };
