@@ -1,0 +1,1624 @@
+#![cfg(feature = "telegram")]
+
+use magicmerlin_channels::telegram::TelegramTarget;
+
+macro_rules! target_case {
+    (
+        $name:ident,
+        $input:expr,
+        $account:expr,
+        $bot:expr,
+        $chat:expr,
+        $thread:expr
+    ) => {
+        #[test]
+        fn $name() {
+            let target = TelegramTarget::parse($input);
+            assert_eq!(target.account_name.as_deref(), $account);
+            assert_eq!(target.bot_username.as_deref(), $bot);
+            assert_eq!(target.chat_id, $chat);
+            assert_eq!(target.thread_id, $thread);
+        }
+    };
+}
+
+target_case!(
+    target_account_case_001,
+    "alpha::chat-001::1",
+    Some("alpha"),
+    None,
+    "chat-001",
+    Some(1)
+);
+target_case!(
+    target_account_case_002,
+    "alpha::chat-002",
+    Some("alpha"),
+    None,
+    "chat-002",
+    None
+);
+target_case!(
+    target_account_case_003,
+    "alpha::chat-003::3",
+    Some("alpha"),
+    None,
+    "chat-003",
+    Some(3)
+);
+target_case!(
+    target_account_case_004,
+    "alpha::chat-004",
+    Some("alpha"),
+    None,
+    "chat-004",
+    None
+);
+target_case!(
+    target_account_case_005,
+    "alpha::chat-005::5",
+    Some("alpha"),
+    None,
+    "chat-005",
+    Some(5)
+);
+target_case!(
+    target_account_case_006,
+    "alpha::chat-006",
+    Some("alpha"),
+    None,
+    "chat-006",
+    None
+);
+target_case!(
+    target_account_case_007,
+    "alpha::chat-007::7",
+    Some("alpha"),
+    None,
+    "chat-007",
+    Some(7)
+);
+target_case!(
+    target_account_case_008,
+    "alpha::chat-008",
+    Some("alpha"),
+    None,
+    "chat-008",
+    None
+);
+target_case!(
+    target_account_case_009,
+    "alpha::chat-009::9",
+    Some("alpha"),
+    None,
+    "chat-009",
+    Some(9)
+);
+target_case!(
+    target_account_case_010,
+    "alpha::chat-010",
+    Some("alpha"),
+    None,
+    "chat-010",
+    None
+);
+target_case!(
+    target_account_case_011,
+    "alpha::chat-011::11",
+    Some("alpha"),
+    None,
+    "chat-011",
+    Some(11)
+);
+target_case!(
+    target_account_case_012,
+    "alpha::chat-012",
+    Some("alpha"),
+    None,
+    "chat-012",
+    None
+);
+target_case!(
+    target_account_case_013,
+    "alpha::chat-013::13",
+    Some("alpha"),
+    None,
+    "chat-013",
+    Some(13)
+);
+target_case!(
+    target_account_case_014,
+    "alpha::chat-014",
+    Some("alpha"),
+    None,
+    "chat-014",
+    None
+);
+target_case!(
+    target_account_case_015,
+    "alpha::chat-015::15",
+    Some("alpha"),
+    None,
+    "chat-015",
+    Some(15)
+);
+target_case!(
+    target_account_case_016,
+    "alpha::chat-016",
+    Some("alpha"),
+    None,
+    "chat-016",
+    None
+);
+target_case!(
+    target_account_case_017,
+    "alpha::chat-017::17",
+    Some("alpha"),
+    None,
+    "chat-017",
+    Some(17)
+);
+target_case!(
+    target_account_case_018,
+    "alpha::chat-018",
+    Some("alpha"),
+    None,
+    "chat-018",
+    None
+);
+target_case!(
+    target_account_case_019,
+    "alpha::chat-019::19",
+    Some("alpha"),
+    None,
+    "chat-019",
+    Some(19)
+);
+target_case!(
+    target_account_case_020,
+    "alpha::chat-020",
+    Some("alpha"),
+    None,
+    "chat-020",
+    None
+);
+target_case!(
+    target_account_case_021,
+    "alpha::chat-021::21",
+    Some("alpha"),
+    None,
+    "chat-021",
+    Some(21)
+);
+target_case!(
+    target_account_case_022,
+    "alpha::chat-022",
+    Some("alpha"),
+    None,
+    "chat-022",
+    None
+);
+target_case!(
+    target_account_case_023,
+    "alpha::chat-023::23",
+    Some("alpha"),
+    None,
+    "chat-023",
+    Some(23)
+);
+target_case!(
+    target_account_case_024,
+    "alpha::chat-024",
+    Some("alpha"),
+    None,
+    "chat-024",
+    None
+);
+target_case!(
+    target_account_case_025,
+    "alpha::chat-025::25",
+    Some("alpha"),
+    None,
+    "chat-025",
+    Some(25)
+);
+target_case!(
+    target_account_case_026,
+    "alpha::chat-026",
+    Some("alpha"),
+    None,
+    "chat-026",
+    None
+);
+target_case!(
+    target_account_case_027,
+    "alpha::chat-027::27",
+    Some("alpha"),
+    None,
+    "chat-027",
+    Some(27)
+);
+target_case!(
+    target_account_case_028,
+    "alpha::chat-028",
+    Some("alpha"),
+    None,
+    "chat-028",
+    None
+);
+target_case!(
+    target_account_case_029,
+    "alpha::chat-029::29",
+    Some("alpha"),
+    None,
+    "chat-029",
+    Some(29)
+);
+target_case!(
+    target_account_case_030,
+    "alpha::chat-030",
+    Some("alpha"),
+    None,
+    "chat-030",
+    None
+);
+target_case!(
+    target_account_case_031,
+    "alpha::chat-031::31",
+    Some("alpha"),
+    None,
+    "chat-031",
+    Some(31)
+);
+target_case!(
+    target_account_case_032,
+    "alpha::chat-032",
+    Some("alpha"),
+    None,
+    "chat-032",
+    None
+);
+target_case!(
+    target_account_case_033,
+    "alpha::chat-033::33",
+    Some("alpha"),
+    None,
+    "chat-033",
+    Some(33)
+);
+target_case!(
+    target_account_case_034,
+    "alpha::chat-034",
+    Some("alpha"),
+    None,
+    "chat-034",
+    None
+);
+target_case!(
+    target_account_case_035,
+    "alpha::chat-035::35",
+    Some("alpha"),
+    None,
+    "chat-035",
+    Some(35)
+);
+target_case!(
+    target_account_case_036,
+    "alpha::chat-036",
+    Some("alpha"),
+    None,
+    "chat-036",
+    None
+);
+target_case!(
+    target_account_case_037,
+    "alpha::chat-037::37",
+    Some("alpha"),
+    None,
+    "chat-037",
+    Some(37)
+);
+target_case!(
+    target_account_case_038,
+    "alpha::chat-038",
+    Some("alpha"),
+    None,
+    "chat-038",
+    None
+);
+target_case!(
+    target_account_case_039,
+    "alpha::chat-039::39",
+    Some("alpha"),
+    None,
+    "chat-039",
+    Some(39)
+);
+target_case!(
+    target_account_case_040,
+    "alpha::chat-040",
+    Some("alpha"),
+    None,
+    "chat-040",
+    None
+);
+target_case!(
+    target_account_case_041,
+    "alpha::chat-041::41",
+    Some("alpha"),
+    None,
+    "chat-041",
+    Some(41)
+);
+target_case!(
+    target_account_case_042,
+    "alpha::chat-042",
+    Some("alpha"),
+    None,
+    "chat-042",
+    None
+);
+target_case!(
+    target_account_case_043,
+    "alpha::chat-043::43",
+    Some("alpha"),
+    None,
+    "chat-043",
+    Some(43)
+);
+target_case!(
+    target_account_case_044,
+    "alpha::chat-044",
+    Some("alpha"),
+    None,
+    "chat-044",
+    None
+);
+target_case!(
+    target_account_case_045,
+    "alpha::chat-045::45",
+    Some("alpha"),
+    None,
+    "chat-045",
+    Some(45)
+);
+target_case!(
+    target_account_case_046,
+    "alpha::chat-046",
+    Some("alpha"),
+    None,
+    "chat-046",
+    None
+);
+target_case!(
+    target_account_case_047,
+    "alpha::chat-047::47",
+    Some("alpha"),
+    None,
+    "chat-047",
+    Some(47)
+);
+target_case!(
+    target_account_case_048,
+    "alpha::chat-048",
+    Some("alpha"),
+    None,
+    "chat-048",
+    None
+);
+target_case!(
+    target_account_case_049,
+    "alpha::chat-049::49",
+    Some("alpha"),
+    None,
+    "chat-049",
+    Some(49)
+);
+target_case!(
+    target_account_case_050,
+    "alpha::chat-050",
+    Some("alpha"),
+    None,
+    "chat-050",
+    None
+);
+target_case!(
+    target_account_case_051,
+    "alpha::chat-051::51",
+    Some("alpha"),
+    None,
+    "chat-051",
+    Some(51)
+);
+target_case!(
+    target_account_case_052,
+    "alpha::chat-052",
+    Some("alpha"),
+    None,
+    "chat-052",
+    None
+);
+target_case!(
+    target_account_case_053,
+    "alpha::chat-053::53",
+    Some("alpha"),
+    None,
+    "chat-053",
+    Some(53)
+);
+target_case!(
+    target_account_case_054,
+    "alpha::chat-054",
+    Some("alpha"),
+    None,
+    "chat-054",
+    None
+);
+target_case!(
+    target_account_case_055,
+    "alpha::chat-055::55",
+    Some("alpha"),
+    None,
+    "chat-055",
+    Some(55)
+);
+target_case!(
+    target_account_case_056,
+    "alpha::chat-056",
+    Some("alpha"),
+    None,
+    "chat-056",
+    None
+);
+target_case!(
+    target_account_case_057,
+    "alpha::chat-057::57",
+    Some("alpha"),
+    None,
+    "chat-057",
+    Some(57)
+);
+target_case!(
+    target_account_case_058,
+    "alpha::chat-058",
+    Some("alpha"),
+    None,
+    "chat-058",
+    None
+);
+target_case!(
+    target_account_case_059,
+    "alpha::chat-059::59",
+    Some("alpha"),
+    None,
+    "chat-059",
+    Some(59)
+);
+target_case!(
+    target_account_case_060,
+    "alpha::chat-060",
+    Some("alpha"),
+    None,
+    "chat-060",
+    None
+);
+target_case!(
+    target_account_case_061,
+    "alpha::chat-061::61",
+    Some("alpha"),
+    None,
+    "chat-061",
+    Some(61)
+);
+target_case!(
+    target_account_case_062,
+    "alpha::chat-062",
+    Some("alpha"),
+    None,
+    "chat-062",
+    None
+);
+target_case!(
+    target_account_case_063,
+    "alpha::chat-063::63",
+    Some("alpha"),
+    None,
+    "chat-063",
+    Some(63)
+);
+target_case!(
+    target_account_case_064,
+    "alpha::chat-064",
+    Some("alpha"),
+    None,
+    "chat-064",
+    None
+);
+target_case!(
+    target_account_case_065,
+    "alpha::chat-065::65",
+    Some("alpha"),
+    None,
+    "chat-065",
+    Some(65)
+);
+target_case!(
+    target_account_case_066,
+    "alpha::chat-066",
+    Some("alpha"),
+    None,
+    "chat-066",
+    None
+);
+target_case!(
+    target_account_case_067,
+    "alpha::chat-067::67",
+    Some("alpha"),
+    None,
+    "chat-067",
+    Some(67)
+);
+target_case!(
+    target_account_case_068,
+    "alpha::chat-068",
+    Some("alpha"),
+    None,
+    "chat-068",
+    None
+);
+target_case!(
+    target_account_case_069,
+    "alpha::chat-069::69",
+    Some("alpha"),
+    None,
+    "chat-069",
+    Some(69)
+);
+target_case!(
+    target_account_case_070,
+    "alpha::chat-070",
+    Some("alpha"),
+    None,
+    "chat-070",
+    None
+);
+target_case!(
+    target_account_case_071,
+    "alpha::chat-071::71",
+    Some("alpha"),
+    None,
+    "chat-071",
+    Some(71)
+);
+target_case!(
+    target_account_case_072,
+    "alpha::chat-072",
+    Some("alpha"),
+    None,
+    "chat-072",
+    None
+);
+target_case!(
+    target_account_case_073,
+    "alpha::chat-073::73",
+    Some("alpha"),
+    None,
+    "chat-073",
+    Some(73)
+);
+target_case!(
+    target_account_case_074,
+    "alpha::chat-074",
+    Some("alpha"),
+    None,
+    "chat-074",
+    None
+);
+target_case!(
+    target_account_case_075,
+    "alpha::chat-075::75",
+    Some("alpha"),
+    None,
+    "chat-075",
+    Some(75)
+);
+target_case!(
+    target_account_case_076,
+    "alpha::chat-076",
+    Some("alpha"),
+    None,
+    "chat-076",
+    None
+);
+target_case!(
+    target_account_case_077,
+    "alpha::chat-077::77",
+    Some("alpha"),
+    None,
+    "chat-077",
+    Some(77)
+);
+target_case!(
+    target_account_case_078,
+    "alpha::chat-078",
+    Some("alpha"),
+    None,
+    "chat-078",
+    None
+);
+target_case!(
+    target_account_case_079,
+    "alpha::chat-079::79",
+    Some("alpha"),
+    None,
+    "chat-079",
+    Some(79)
+);
+target_case!(
+    target_account_case_080,
+    "alpha::chat-080",
+    Some("alpha"),
+    None,
+    "chat-080",
+    None
+);
+target_case!(
+    target_account_case_081,
+    "alpha::chat-081::81",
+    Some("alpha"),
+    None,
+    "chat-081",
+    Some(81)
+);
+target_case!(
+    target_account_case_082,
+    "alpha::chat-082",
+    Some("alpha"),
+    None,
+    "chat-082",
+    None
+);
+target_case!(
+    target_account_case_083,
+    "alpha::chat-083::83",
+    Some("alpha"),
+    None,
+    "chat-083",
+    Some(83)
+);
+target_case!(
+    target_account_case_084,
+    "alpha::chat-084",
+    Some("alpha"),
+    None,
+    "chat-084",
+    None
+);
+target_case!(
+    target_account_case_085,
+    "alpha::chat-085::85",
+    Some("alpha"),
+    None,
+    "chat-085",
+    Some(85)
+);
+target_case!(
+    target_account_case_086,
+    "alpha::chat-086",
+    Some("alpha"),
+    None,
+    "chat-086",
+    None
+);
+target_case!(
+    target_account_case_087,
+    "alpha::chat-087::87",
+    Some("alpha"),
+    None,
+    "chat-087",
+    Some(87)
+);
+target_case!(
+    target_account_case_088,
+    "alpha::chat-088",
+    Some("alpha"),
+    None,
+    "chat-088",
+    None
+);
+target_case!(
+    target_account_case_089,
+    "alpha::chat-089::89",
+    Some("alpha"),
+    None,
+    "chat-089",
+    Some(89)
+);
+target_case!(
+    target_account_case_090,
+    "alpha::chat-090",
+    Some("alpha"),
+    None,
+    "chat-090",
+    None
+);
+target_case!(
+    target_account_case_091,
+    "alpha::chat-091::91",
+    Some("alpha"),
+    None,
+    "chat-091",
+    Some(91)
+);
+target_case!(
+    target_account_case_092,
+    "alpha::chat-092",
+    Some("alpha"),
+    None,
+    "chat-092",
+    None
+);
+target_case!(
+    target_account_case_093,
+    "alpha::chat-093::93",
+    Some("alpha"),
+    None,
+    "chat-093",
+    Some(93)
+);
+target_case!(
+    target_account_case_094,
+    "alpha::chat-094",
+    Some("alpha"),
+    None,
+    "chat-094",
+    None
+);
+target_case!(
+    target_account_case_095,
+    "alpha::chat-095::95",
+    Some("alpha"),
+    None,
+    "chat-095",
+    Some(95)
+);
+target_case!(
+    target_account_case_096,
+    "alpha::chat-096",
+    Some("alpha"),
+    None,
+    "chat-096",
+    None
+);
+target_case!(
+    target_account_case_097,
+    "alpha::chat-097::97",
+    Some("alpha"),
+    None,
+    "chat-097",
+    Some(97)
+);
+target_case!(
+    target_account_case_098,
+    "alpha::chat-098",
+    Some("alpha"),
+    None,
+    "chat-098",
+    None
+);
+target_case!(
+    target_account_case_099,
+    "alpha::chat-099::99",
+    Some("alpha"),
+    None,
+    "chat-099",
+    Some(99)
+);
+target_case!(
+    target_account_case_100,
+    "alpha::chat-100",
+    Some("alpha"),
+    None,
+    "chat-100",
+    None
+);
+target_case!(
+    target_bot_case_001,
+    "@bot_alpha:chat-101:101",
+    None,
+    Some("bot_alpha"),
+    "chat-101",
+    Some(101)
+);
+target_case!(
+    target_bot_case_002,
+    "@bot_alpha:chat-102",
+    None,
+    Some("bot_alpha"),
+    "chat-102",
+    None
+);
+target_case!(
+    target_bot_case_003,
+    "@bot_alpha:chat-103:103",
+    None,
+    Some("bot_alpha"),
+    "chat-103",
+    Some(103)
+);
+target_case!(
+    target_bot_case_004,
+    "@bot_alpha:chat-104",
+    None,
+    Some("bot_alpha"),
+    "chat-104",
+    None
+);
+target_case!(
+    target_bot_case_005,
+    "@bot_alpha:chat-105:105",
+    None,
+    Some("bot_alpha"),
+    "chat-105",
+    Some(105)
+);
+target_case!(
+    target_bot_case_006,
+    "@bot_alpha:chat-106",
+    None,
+    Some("bot_alpha"),
+    "chat-106",
+    None
+);
+target_case!(
+    target_bot_case_007,
+    "@bot_alpha:chat-107:107",
+    None,
+    Some("bot_alpha"),
+    "chat-107",
+    Some(107)
+);
+target_case!(
+    target_bot_case_008,
+    "@bot_alpha:chat-108",
+    None,
+    Some("bot_alpha"),
+    "chat-108",
+    None
+);
+target_case!(
+    target_bot_case_009,
+    "@bot_alpha:chat-109:109",
+    None,
+    Some("bot_alpha"),
+    "chat-109",
+    Some(109)
+);
+target_case!(
+    target_bot_case_010,
+    "@bot_alpha:chat-110",
+    None,
+    Some("bot_alpha"),
+    "chat-110",
+    None
+);
+target_case!(
+    target_bot_case_011,
+    "@bot_alpha:chat-111:111",
+    None,
+    Some("bot_alpha"),
+    "chat-111",
+    Some(111)
+);
+target_case!(
+    target_bot_case_012,
+    "@bot_alpha:chat-112",
+    None,
+    Some("bot_alpha"),
+    "chat-112",
+    None
+);
+target_case!(
+    target_bot_case_013,
+    "@bot_alpha:chat-113:113",
+    None,
+    Some("bot_alpha"),
+    "chat-113",
+    Some(113)
+);
+target_case!(
+    target_bot_case_014,
+    "@bot_alpha:chat-114",
+    None,
+    Some("bot_alpha"),
+    "chat-114",
+    None
+);
+target_case!(
+    target_bot_case_015,
+    "@bot_alpha:chat-115:115",
+    None,
+    Some("bot_alpha"),
+    "chat-115",
+    Some(115)
+);
+target_case!(
+    target_bot_case_016,
+    "@bot_alpha:chat-116",
+    None,
+    Some("bot_alpha"),
+    "chat-116",
+    None
+);
+target_case!(
+    target_bot_case_017,
+    "@bot_alpha:chat-117:117",
+    None,
+    Some("bot_alpha"),
+    "chat-117",
+    Some(117)
+);
+target_case!(
+    target_bot_case_018,
+    "@bot_alpha:chat-118",
+    None,
+    Some("bot_alpha"),
+    "chat-118",
+    None
+);
+target_case!(
+    target_bot_case_019,
+    "@bot_alpha:chat-119:119",
+    None,
+    Some("bot_alpha"),
+    "chat-119",
+    Some(119)
+);
+target_case!(
+    target_bot_case_020,
+    "@bot_alpha:chat-120",
+    None,
+    Some("bot_alpha"),
+    "chat-120",
+    None
+);
+target_case!(
+    target_bot_case_021,
+    "@bot_alpha:chat-121:121",
+    None,
+    Some("bot_alpha"),
+    "chat-121",
+    Some(121)
+);
+target_case!(
+    target_bot_case_022,
+    "@bot_alpha:chat-122",
+    None,
+    Some("bot_alpha"),
+    "chat-122",
+    None
+);
+target_case!(
+    target_bot_case_023,
+    "@bot_alpha:chat-123:123",
+    None,
+    Some("bot_alpha"),
+    "chat-123",
+    Some(123)
+);
+target_case!(
+    target_bot_case_024,
+    "@bot_alpha:chat-124",
+    None,
+    Some("bot_alpha"),
+    "chat-124",
+    None
+);
+target_case!(
+    target_bot_case_025,
+    "@bot_alpha:chat-125:125",
+    None,
+    Some("bot_alpha"),
+    "chat-125",
+    Some(125)
+);
+target_case!(
+    target_bot_case_026,
+    "@bot_alpha:chat-126",
+    None,
+    Some("bot_alpha"),
+    "chat-126",
+    None
+);
+target_case!(
+    target_bot_case_027,
+    "@bot_alpha:chat-127:127",
+    None,
+    Some("bot_alpha"),
+    "chat-127",
+    Some(127)
+);
+target_case!(
+    target_bot_case_028,
+    "@bot_alpha:chat-128",
+    None,
+    Some("bot_alpha"),
+    "chat-128",
+    None
+);
+target_case!(
+    target_bot_case_029,
+    "@bot_alpha:chat-129:129",
+    None,
+    Some("bot_alpha"),
+    "chat-129",
+    Some(129)
+);
+target_case!(
+    target_bot_case_030,
+    "@bot_alpha:chat-130",
+    None,
+    Some("bot_alpha"),
+    "chat-130",
+    None
+);
+target_case!(
+    target_bot_case_031,
+    "@bot_alpha:chat-131:131",
+    None,
+    Some("bot_alpha"),
+    "chat-131",
+    Some(131)
+);
+target_case!(
+    target_bot_case_032,
+    "@bot_alpha:chat-132",
+    None,
+    Some("bot_alpha"),
+    "chat-132",
+    None
+);
+target_case!(
+    target_bot_case_033,
+    "@bot_alpha:chat-133:133",
+    None,
+    Some("bot_alpha"),
+    "chat-133",
+    Some(133)
+);
+target_case!(
+    target_bot_case_034,
+    "@bot_alpha:chat-134",
+    None,
+    Some("bot_alpha"),
+    "chat-134",
+    None
+);
+target_case!(
+    target_bot_case_035,
+    "@bot_alpha:chat-135:135",
+    None,
+    Some("bot_alpha"),
+    "chat-135",
+    Some(135)
+);
+target_case!(
+    target_bot_case_036,
+    "@bot_alpha:chat-136",
+    None,
+    Some("bot_alpha"),
+    "chat-136",
+    None
+);
+target_case!(
+    target_bot_case_037,
+    "@bot_alpha:chat-137:137",
+    None,
+    Some("bot_alpha"),
+    "chat-137",
+    Some(137)
+);
+target_case!(
+    target_bot_case_038,
+    "@bot_alpha:chat-138",
+    None,
+    Some("bot_alpha"),
+    "chat-138",
+    None
+);
+target_case!(
+    target_bot_case_039,
+    "@bot_alpha:chat-139:139",
+    None,
+    Some("bot_alpha"),
+    "chat-139",
+    Some(139)
+);
+target_case!(
+    target_bot_case_040,
+    "@bot_alpha:chat-140",
+    None,
+    Some("bot_alpha"),
+    "chat-140",
+    None
+);
+target_case!(
+    target_bot_case_041,
+    "@bot_alpha:chat-141:141",
+    None,
+    Some("bot_alpha"),
+    "chat-141",
+    Some(141)
+);
+target_case!(
+    target_bot_case_042,
+    "@bot_alpha:chat-142",
+    None,
+    Some("bot_alpha"),
+    "chat-142",
+    None
+);
+target_case!(
+    target_bot_case_043,
+    "@bot_alpha:chat-143:143",
+    None,
+    Some("bot_alpha"),
+    "chat-143",
+    Some(143)
+);
+target_case!(
+    target_bot_case_044,
+    "@bot_alpha:chat-144",
+    None,
+    Some("bot_alpha"),
+    "chat-144",
+    None
+);
+target_case!(
+    target_bot_case_045,
+    "@bot_alpha:chat-145:145",
+    None,
+    Some("bot_alpha"),
+    "chat-145",
+    Some(145)
+);
+target_case!(
+    target_bot_case_046,
+    "@bot_alpha:chat-146",
+    None,
+    Some("bot_alpha"),
+    "chat-146",
+    None
+);
+target_case!(
+    target_bot_case_047,
+    "@bot_alpha:chat-147:147",
+    None,
+    Some("bot_alpha"),
+    "chat-147",
+    Some(147)
+);
+target_case!(
+    target_bot_case_048,
+    "@bot_alpha:chat-148",
+    None,
+    Some("bot_alpha"),
+    "chat-148",
+    None
+);
+target_case!(
+    target_bot_case_049,
+    "@bot_alpha:chat-149:149",
+    None,
+    Some("bot_alpha"),
+    "chat-149",
+    Some(149)
+);
+target_case!(
+    target_bot_case_050,
+    "@bot_alpha:chat-150",
+    None,
+    Some("bot_alpha"),
+    "chat-150",
+    None
+);
+target_case!(
+    target_bot_case_051,
+    "@bot_alpha:chat-151:151",
+    None,
+    Some("bot_alpha"),
+    "chat-151",
+    Some(151)
+);
+target_case!(
+    target_bot_case_052,
+    "@bot_alpha:chat-152",
+    None,
+    Some("bot_alpha"),
+    "chat-152",
+    None
+);
+target_case!(
+    target_bot_case_053,
+    "@bot_alpha:chat-153:153",
+    None,
+    Some("bot_alpha"),
+    "chat-153",
+    Some(153)
+);
+target_case!(
+    target_bot_case_054,
+    "@bot_alpha:chat-154",
+    None,
+    Some("bot_alpha"),
+    "chat-154",
+    None
+);
+target_case!(
+    target_bot_case_055,
+    "@bot_alpha:chat-155:155",
+    None,
+    Some("bot_alpha"),
+    "chat-155",
+    Some(155)
+);
+target_case!(
+    target_bot_case_056,
+    "@bot_alpha:chat-156",
+    None,
+    Some("bot_alpha"),
+    "chat-156",
+    None
+);
+target_case!(
+    target_bot_case_057,
+    "@bot_alpha:chat-157:157",
+    None,
+    Some("bot_alpha"),
+    "chat-157",
+    Some(157)
+);
+target_case!(
+    target_bot_case_058,
+    "@bot_alpha:chat-158",
+    None,
+    Some("bot_alpha"),
+    "chat-158",
+    None
+);
+target_case!(
+    target_bot_case_059,
+    "@bot_alpha:chat-159:159",
+    None,
+    Some("bot_alpha"),
+    "chat-159",
+    Some(159)
+);
+target_case!(
+    target_bot_case_060,
+    "@bot_alpha:chat-160",
+    None,
+    Some("bot_alpha"),
+    "chat-160",
+    None
+);
+target_case!(
+    target_bot_case_061,
+    "@bot_alpha:chat-161:161",
+    None,
+    Some("bot_alpha"),
+    "chat-161",
+    Some(161)
+);
+target_case!(
+    target_bot_case_062,
+    "@bot_alpha:chat-162",
+    None,
+    Some("bot_alpha"),
+    "chat-162",
+    None
+);
+target_case!(
+    target_bot_case_063,
+    "@bot_alpha:chat-163:163",
+    None,
+    Some("bot_alpha"),
+    "chat-163",
+    Some(163)
+);
+target_case!(
+    target_bot_case_064,
+    "@bot_alpha:chat-164",
+    None,
+    Some("bot_alpha"),
+    "chat-164",
+    None
+);
+target_case!(
+    target_bot_case_065,
+    "@bot_alpha:chat-165:165",
+    None,
+    Some("bot_alpha"),
+    "chat-165",
+    Some(165)
+);
+target_case!(
+    target_bot_case_066,
+    "@bot_alpha:chat-166",
+    None,
+    Some("bot_alpha"),
+    "chat-166",
+    None
+);
+target_case!(
+    target_bot_case_067,
+    "@bot_alpha:chat-167:167",
+    None,
+    Some("bot_alpha"),
+    "chat-167",
+    Some(167)
+);
+target_case!(
+    target_bot_case_068,
+    "@bot_alpha:chat-168",
+    None,
+    Some("bot_alpha"),
+    "chat-168",
+    None
+);
+target_case!(
+    target_bot_case_069,
+    "@bot_alpha:chat-169:169",
+    None,
+    Some("bot_alpha"),
+    "chat-169",
+    Some(169)
+);
+target_case!(
+    target_bot_case_070,
+    "@bot_alpha:chat-170",
+    None,
+    Some("bot_alpha"),
+    "chat-170",
+    None
+);
+target_case!(
+    target_bot_case_071,
+    "@bot_alpha:chat-171:171",
+    None,
+    Some("bot_alpha"),
+    "chat-171",
+    Some(171)
+);
+target_case!(
+    target_bot_case_072,
+    "@bot_alpha:chat-172",
+    None,
+    Some("bot_alpha"),
+    "chat-172",
+    None
+);
+target_case!(
+    target_bot_case_073,
+    "@bot_alpha:chat-173:173",
+    None,
+    Some("bot_alpha"),
+    "chat-173",
+    Some(173)
+);
+target_case!(
+    target_bot_case_074,
+    "@bot_alpha:chat-174",
+    None,
+    Some("bot_alpha"),
+    "chat-174",
+    None
+);
+target_case!(
+    target_bot_case_075,
+    "@bot_alpha:chat-175:175",
+    None,
+    Some("bot_alpha"),
+    "chat-175",
+    Some(175)
+);
+target_case!(
+    target_bot_case_076,
+    "@bot_alpha:chat-176",
+    None,
+    Some("bot_alpha"),
+    "chat-176",
+    None
+);
+target_case!(
+    target_bot_case_077,
+    "@bot_alpha:chat-177:177",
+    None,
+    Some("bot_alpha"),
+    "chat-177",
+    Some(177)
+);
+target_case!(
+    target_bot_case_078,
+    "@bot_alpha:chat-178",
+    None,
+    Some("bot_alpha"),
+    "chat-178",
+    None
+);
+target_case!(
+    target_bot_case_079,
+    "@bot_alpha:chat-179:179",
+    None,
+    Some("bot_alpha"),
+    "chat-179",
+    Some(179)
+);
+target_case!(
+    target_bot_case_080,
+    "@bot_alpha:chat-180",
+    None,
+    Some("bot_alpha"),
+    "chat-180",
+    None
+);
+target_case!(
+    target_bot_case_081,
+    "@bot_alpha:chat-181:181",
+    None,
+    Some("bot_alpha"),
+    "chat-181",
+    Some(181)
+);
+target_case!(
+    target_bot_case_082,
+    "@bot_alpha:chat-182",
+    None,
+    Some("bot_alpha"),
+    "chat-182",
+    None
+);
+target_case!(
+    target_bot_case_083,
+    "@bot_alpha:chat-183:183",
+    None,
+    Some("bot_alpha"),
+    "chat-183",
+    Some(183)
+);
+target_case!(
+    target_bot_case_084,
+    "@bot_alpha:chat-184",
+    None,
+    Some("bot_alpha"),
+    "chat-184",
+    None
+);
+target_case!(
+    target_bot_case_085,
+    "@bot_alpha:chat-185:185",
+    None,
+    Some("bot_alpha"),
+    "chat-185",
+    Some(185)
+);
+target_case!(
+    target_bot_case_086,
+    "@bot_alpha:chat-186",
+    None,
+    Some("bot_alpha"),
+    "chat-186",
+    None
+);
+target_case!(
+    target_bot_case_087,
+    "@bot_alpha:chat-187:187",
+    None,
+    Some("bot_alpha"),
+    "chat-187",
+    Some(187)
+);
+target_case!(
+    target_bot_case_088,
+    "@bot_alpha:chat-188",
+    None,
+    Some("bot_alpha"),
+    "chat-188",
+    None
+);
+target_case!(
+    target_bot_case_089,
+    "@bot_alpha:chat-189:189",
+    None,
+    Some("bot_alpha"),
+    "chat-189",
+    Some(189)
+);
+target_case!(
+    target_bot_case_090,
+    "@bot_alpha:chat-190",
+    None,
+    Some("bot_alpha"),
+    "chat-190",
+    None
+);
+target_case!(
+    target_bot_case_091,
+    "@bot_alpha:chat-191:191",
+    None,
+    Some("bot_alpha"),
+    "chat-191",
+    Some(191)
+);
+target_case!(
+    target_bot_case_092,
+    "@bot_alpha:chat-192",
+    None,
+    Some("bot_alpha"),
+    "chat-192",
+    None
+);
+target_case!(
+    target_bot_case_093,
+    "@bot_alpha:chat-193:193",
+    None,
+    Some("bot_alpha"),
+    "chat-193",
+    Some(193)
+);
+target_case!(
+    target_bot_case_094,
+    "@bot_alpha:chat-194",
+    None,
+    Some("bot_alpha"),
+    "chat-194",
+    None
+);
+target_case!(
+    target_bot_case_095,
+    "@bot_alpha:chat-195:195",
+    None,
+    Some("bot_alpha"),
+    "chat-195",
+    Some(195)
+);
+target_case!(
+    target_bot_case_096,
+    "@bot_alpha:chat-196",
+    None,
+    Some("bot_alpha"),
+    "chat-196",
+    None
+);
+target_case!(
+    target_bot_case_097,
+    "@bot_alpha:chat-197:197",
+    None,
+    Some("bot_alpha"),
+    "chat-197",
+    Some(197)
+);
+target_case!(
+    target_bot_case_098,
+    "@bot_alpha:chat-198",
+    None,
+    Some("bot_alpha"),
+    "chat-198",
+    None
+);
+target_case!(
+    target_bot_case_099,
+    "@bot_alpha:chat-199:199",
+    None,
+    Some("bot_alpha"),
+    "chat-199",
+    Some(199)
+);
+target_case!(
+    target_bot_case_100,
+    "@bot_alpha:chat-200",
+    None,
+    Some("bot_alpha"),
+    "chat-200",
+    None
+);

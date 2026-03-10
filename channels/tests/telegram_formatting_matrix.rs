@@ -1,0 +1,1840 @@
+#![cfg(feature = "telegram")]
+
+use magicmerlin_channels::telegram::{
+    parse_html, parse_markdown_v2, TelegramEntityKind,
+};
+
+macro_rules! markdown_case {
+    (
+        $name:ident,
+        $input:expr,
+        $expected_text:expr,
+        $expected_kind:expr
+    ) => {
+        #[test]
+        fn $name() {
+            let formatted = parse_markdown_v2($input);
+            assert_eq!(formatted.text, $expected_text);
+            assert_eq!(formatted.entities.len(), 1);
+            assert_eq!(formatted.entities[0].kind, $expected_kind);
+        }
+    };
+}
+
+macro_rules! html_case {
+    (
+        $name:ident,
+        $input:expr,
+        $expected_text:expr,
+        $expected_kind:expr
+    ) => {
+        #[test]
+        fn $name() {
+            let formatted = parse_html($input);
+            assert_eq!(formatted.text, $expected_text);
+            assert_eq!(formatted.entities.len(), 1);
+            assert_eq!(formatted.entities[0].kind, $expected_kind);
+        }
+    };
+}
+
+markdown_case!(
+    markdown_bold_case_001,
+    "*bold001*",
+    "bold001",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_002,
+    "*bold002*",
+    "bold002",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_003,
+    "*bold003*",
+    "bold003",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_004,
+    "*bold004*",
+    "bold004",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_005,
+    "*bold005*",
+    "bold005",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_006,
+    "*bold006*",
+    "bold006",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_007,
+    "*bold007*",
+    "bold007",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_008,
+    "*bold008*",
+    "bold008",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_009,
+    "*bold009*",
+    "bold009",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_010,
+    "*bold010*",
+    "bold010",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_011,
+    "*bold011*",
+    "bold011",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_012,
+    "*bold012*",
+    "bold012",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_013,
+    "*bold013*",
+    "bold013",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_014,
+    "*bold014*",
+    "bold014",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_015,
+    "*bold015*",
+    "bold015",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_016,
+    "*bold016*",
+    "bold016",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_017,
+    "*bold017*",
+    "bold017",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_018,
+    "*bold018*",
+    "bold018",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_019,
+    "*bold019*",
+    "bold019",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_020,
+    "*bold020*",
+    "bold020",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_021,
+    "*bold021*",
+    "bold021",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_022,
+    "*bold022*",
+    "bold022",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_023,
+    "*bold023*",
+    "bold023",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_024,
+    "*bold024*",
+    "bold024",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_025,
+    "*bold025*",
+    "bold025",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_026,
+    "*bold026*",
+    "bold026",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_027,
+    "*bold027*",
+    "bold027",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_028,
+    "*bold028*",
+    "bold028",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_029,
+    "*bold029*",
+    "bold029",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_030,
+    "*bold030*",
+    "bold030",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_031,
+    "*bold031*",
+    "bold031",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_032,
+    "*bold032*",
+    "bold032",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_033,
+    "*bold033*",
+    "bold033",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_034,
+    "*bold034*",
+    "bold034",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_035,
+    "*bold035*",
+    "bold035",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_036,
+    "*bold036*",
+    "bold036",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_037,
+    "*bold037*",
+    "bold037",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_038,
+    "*bold038*",
+    "bold038",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_039,
+    "*bold039*",
+    "bold039",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_040,
+    "*bold040*",
+    "bold040",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_041,
+    "*bold041*",
+    "bold041",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_042,
+    "*bold042*",
+    "bold042",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_043,
+    "*bold043*",
+    "bold043",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_044,
+    "*bold044*",
+    "bold044",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_045,
+    "*bold045*",
+    "bold045",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_046,
+    "*bold046*",
+    "bold046",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_047,
+    "*bold047*",
+    "bold047",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_048,
+    "*bold048*",
+    "bold048",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_049,
+    "*bold049*",
+    "bold049",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_bold_case_050,
+    "*bold050*",
+    "bold050",
+    TelegramEntityKind::Bold
+);
+markdown_case!(
+    markdown_italic_case_051,
+    "_italic051_",
+    "italic051",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_052,
+    "_italic052_",
+    "italic052",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_053,
+    "_italic053_",
+    "italic053",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_054,
+    "_italic054_",
+    "italic054",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_055,
+    "_italic055_",
+    "italic055",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_056,
+    "_italic056_",
+    "italic056",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_057,
+    "_italic057_",
+    "italic057",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_058,
+    "_italic058_",
+    "italic058",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_059,
+    "_italic059_",
+    "italic059",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_060,
+    "_italic060_",
+    "italic060",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_061,
+    "_italic061_",
+    "italic061",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_062,
+    "_italic062_",
+    "italic062",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_063,
+    "_italic063_",
+    "italic063",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_064,
+    "_italic064_",
+    "italic064",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_065,
+    "_italic065_",
+    "italic065",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_066,
+    "_italic066_",
+    "italic066",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_067,
+    "_italic067_",
+    "italic067",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_068,
+    "_italic068_",
+    "italic068",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_069,
+    "_italic069_",
+    "italic069",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_070,
+    "_italic070_",
+    "italic070",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_071,
+    "_italic071_",
+    "italic071",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_072,
+    "_italic072_",
+    "italic072",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_073,
+    "_italic073_",
+    "italic073",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_074,
+    "_italic074_",
+    "italic074",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_075,
+    "_italic075_",
+    "italic075",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_076,
+    "_italic076_",
+    "italic076",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_077,
+    "_italic077_",
+    "italic077",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_078,
+    "_italic078_",
+    "italic078",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_079,
+    "_italic079_",
+    "italic079",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_080,
+    "_italic080_",
+    "italic080",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_081,
+    "_italic081_",
+    "italic081",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_082,
+    "_italic082_",
+    "italic082",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_083,
+    "_italic083_",
+    "italic083",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_084,
+    "_italic084_",
+    "italic084",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_085,
+    "_italic085_",
+    "italic085",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_086,
+    "_italic086_",
+    "italic086",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_087,
+    "_italic087_",
+    "italic087",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_088,
+    "_italic088_",
+    "italic088",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_089,
+    "_italic089_",
+    "italic089",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_090,
+    "_italic090_",
+    "italic090",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_091,
+    "_italic091_",
+    "italic091",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_092,
+    "_italic092_",
+    "italic092",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_093,
+    "_italic093_",
+    "italic093",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_094,
+    "_italic094_",
+    "italic094",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_095,
+    "_italic095_",
+    "italic095",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_096,
+    "_italic096_",
+    "italic096",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_097,
+    "_italic097_",
+    "italic097",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_098,
+    "_italic098_",
+    "italic098",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_099,
+    "_italic099_",
+    "italic099",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_italic_case_100,
+    "_italic100_",
+    "italic100",
+    TelegramEntityKind::Italic
+);
+markdown_case!(
+    markdown_link_case_101,
+    "[link101](https://example.com/101)",
+    "link101",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_102,
+    "[link102](https://example.com/102)",
+    "link102",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_103,
+    "[link103](https://example.com/103)",
+    "link103",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_104,
+    "[link104](https://example.com/104)",
+    "link104",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_105,
+    "[link105](https://example.com/105)",
+    "link105",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_106,
+    "[link106](https://example.com/106)",
+    "link106",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_107,
+    "[link107](https://example.com/107)",
+    "link107",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_108,
+    "[link108](https://example.com/108)",
+    "link108",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_109,
+    "[link109](https://example.com/109)",
+    "link109",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_110,
+    "[link110](https://example.com/110)",
+    "link110",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_111,
+    "[link111](https://example.com/111)",
+    "link111",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_112,
+    "[link112](https://example.com/112)",
+    "link112",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_113,
+    "[link113](https://example.com/113)",
+    "link113",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_114,
+    "[link114](https://example.com/114)",
+    "link114",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_115,
+    "[link115](https://example.com/115)",
+    "link115",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_116,
+    "[link116](https://example.com/116)",
+    "link116",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_117,
+    "[link117](https://example.com/117)",
+    "link117",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_118,
+    "[link118](https://example.com/118)",
+    "link118",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_119,
+    "[link119](https://example.com/119)",
+    "link119",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_120,
+    "[link120](https://example.com/120)",
+    "link120",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_121,
+    "[link121](https://example.com/121)",
+    "link121",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_122,
+    "[link122](https://example.com/122)",
+    "link122",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_123,
+    "[link123](https://example.com/123)",
+    "link123",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_124,
+    "[link124](https://example.com/124)",
+    "link124",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_125,
+    "[link125](https://example.com/125)",
+    "link125",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_126,
+    "[link126](https://example.com/126)",
+    "link126",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_127,
+    "[link127](https://example.com/127)",
+    "link127",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_128,
+    "[link128](https://example.com/128)",
+    "link128",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_129,
+    "[link129](https://example.com/129)",
+    "link129",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_130,
+    "[link130](https://example.com/130)",
+    "link130",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_131,
+    "[link131](https://example.com/131)",
+    "link131",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_132,
+    "[link132](https://example.com/132)",
+    "link132",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_133,
+    "[link133](https://example.com/133)",
+    "link133",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_134,
+    "[link134](https://example.com/134)",
+    "link134",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_135,
+    "[link135](https://example.com/135)",
+    "link135",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_136,
+    "[link136](https://example.com/136)",
+    "link136",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_137,
+    "[link137](https://example.com/137)",
+    "link137",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_138,
+    "[link138](https://example.com/138)",
+    "link138",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_139,
+    "[link139](https://example.com/139)",
+    "link139",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_140,
+    "[link140](https://example.com/140)",
+    "link140",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_141,
+    "[link141](https://example.com/141)",
+    "link141",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_142,
+    "[link142](https://example.com/142)",
+    "link142",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_143,
+    "[link143](https://example.com/143)",
+    "link143",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_144,
+    "[link144](https://example.com/144)",
+    "link144",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_145,
+    "[link145](https://example.com/145)",
+    "link145",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_146,
+    "[link146](https://example.com/146)",
+    "link146",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_147,
+    "[link147](https://example.com/147)",
+    "link147",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_148,
+    "[link148](https://example.com/148)",
+    "link148",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_149,
+    "[link149](https://example.com/149)",
+    "link149",
+    TelegramEntityKind::Link
+);
+markdown_case!(
+    markdown_link_case_150,
+    "[link150](https://example.com/150)",
+    "link150",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_bold_case_151,
+    "<b>bold151</b>",
+    "bold151",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_152,
+    "<b>bold152</b>",
+    "bold152",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_153,
+    "<b>bold153</b>",
+    "bold153",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_154,
+    "<b>bold154</b>",
+    "bold154",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_155,
+    "<b>bold155</b>",
+    "bold155",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_156,
+    "<b>bold156</b>",
+    "bold156",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_157,
+    "<b>bold157</b>",
+    "bold157",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_158,
+    "<b>bold158</b>",
+    "bold158",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_159,
+    "<b>bold159</b>",
+    "bold159",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_160,
+    "<b>bold160</b>",
+    "bold160",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_161,
+    "<b>bold161</b>",
+    "bold161",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_162,
+    "<b>bold162</b>",
+    "bold162",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_163,
+    "<b>bold163</b>",
+    "bold163",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_164,
+    "<b>bold164</b>",
+    "bold164",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_165,
+    "<b>bold165</b>",
+    "bold165",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_166,
+    "<b>bold166</b>",
+    "bold166",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_167,
+    "<b>bold167</b>",
+    "bold167",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_168,
+    "<b>bold168</b>",
+    "bold168",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_169,
+    "<b>bold169</b>",
+    "bold169",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_170,
+    "<b>bold170</b>",
+    "bold170",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_171,
+    "<b>bold171</b>",
+    "bold171",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_172,
+    "<b>bold172</b>",
+    "bold172",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_173,
+    "<b>bold173</b>",
+    "bold173",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_174,
+    "<b>bold174</b>",
+    "bold174",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_175,
+    "<b>bold175</b>",
+    "bold175",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_176,
+    "<b>bold176</b>",
+    "bold176",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_177,
+    "<b>bold177</b>",
+    "bold177",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_178,
+    "<b>bold178</b>",
+    "bold178",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_179,
+    "<b>bold179</b>",
+    "bold179",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_180,
+    "<b>bold180</b>",
+    "bold180",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_181,
+    "<b>bold181</b>",
+    "bold181",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_182,
+    "<b>bold182</b>",
+    "bold182",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_183,
+    "<b>bold183</b>",
+    "bold183",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_184,
+    "<b>bold184</b>",
+    "bold184",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_185,
+    "<b>bold185</b>",
+    "bold185",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_186,
+    "<b>bold186</b>",
+    "bold186",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_187,
+    "<b>bold187</b>",
+    "bold187",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_188,
+    "<b>bold188</b>",
+    "bold188",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_189,
+    "<b>bold189</b>",
+    "bold189",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_190,
+    "<b>bold190</b>",
+    "bold190",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_191,
+    "<b>bold191</b>",
+    "bold191",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_192,
+    "<b>bold192</b>",
+    "bold192",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_193,
+    "<b>bold193</b>",
+    "bold193",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_194,
+    "<b>bold194</b>",
+    "bold194",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_195,
+    "<b>bold195</b>",
+    "bold195",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_196,
+    "<b>bold196</b>",
+    "bold196",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_197,
+    "<b>bold197</b>",
+    "bold197",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_198,
+    "<b>bold198</b>",
+    "bold198",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_199,
+    "<b>bold199</b>",
+    "bold199",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_bold_case_200,
+    "<b>bold200</b>",
+    "bold200",
+    TelegramEntityKind::Bold
+);
+html_case!(
+    html_code_case_201,
+    "<code>code201</code>",
+    "code201",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_202,
+    "<code>code202</code>",
+    "code202",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_203,
+    "<code>code203</code>",
+    "code203",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_204,
+    "<code>code204</code>",
+    "code204",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_205,
+    "<code>code205</code>",
+    "code205",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_206,
+    "<code>code206</code>",
+    "code206",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_207,
+    "<code>code207</code>",
+    "code207",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_208,
+    "<code>code208</code>",
+    "code208",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_209,
+    "<code>code209</code>",
+    "code209",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_210,
+    "<code>code210</code>",
+    "code210",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_211,
+    "<code>code211</code>",
+    "code211",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_212,
+    "<code>code212</code>",
+    "code212",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_213,
+    "<code>code213</code>",
+    "code213",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_214,
+    "<code>code214</code>",
+    "code214",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_215,
+    "<code>code215</code>",
+    "code215",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_216,
+    "<code>code216</code>",
+    "code216",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_217,
+    "<code>code217</code>",
+    "code217",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_218,
+    "<code>code218</code>",
+    "code218",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_219,
+    "<code>code219</code>",
+    "code219",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_220,
+    "<code>code220</code>",
+    "code220",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_221,
+    "<code>code221</code>",
+    "code221",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_222,
+    "<code>code222</code>",
+    "code222",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_223,
+    "<code>code223</code>",
+    "code223",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_224,
+    "<code>code224</code>",
+    "code224",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_225,
+    "<code>code225</code>",
+    "code225",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_226,
+    "<code>code226</code>",
+    "code226",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_227,
+    "<code>code227</code>",
+    "code227",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_228,
+    "<code>code228</code>",
+    "code228",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_229,
+    "<code>code229</code>",
+    "code229",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_230,
+    "<code>code230</code>",
+    "code230",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_231,
+    "<code>code231</code>",
+    "code231",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_232,
+    "<code>code232</code>",
+    "code232",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_233,
+    "<code>code233</code>",
+    "code233",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_234,
+    "<code>code234</code>",
+    "code234",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_235,
+    "<code>code235</code>",
+    "code235",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_236,
+    "<code>code236</code>",
+    "code236",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_237,
+    "<code>code237</code>",
+    "code237",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_238,
+    "<code>code238</code>",
+    "code238",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_239,
+    "<code>code239</code>",
+    "code239",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_240,
+    "<code>code240</code>",
+    "code240",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_241,
+    "<code>code241</code>",
+    "code241",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_242,
+    "<code>code242</code>",
+    "code242",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_243,
+    "<code>code243</code>",
+    "code243",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_244,
+    "<code>code244</code>",
+    "code244",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_245,
+    "<code>code245</code>",
+    "code245",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_246,
+    "<code>code246</code>",
+    "code246",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_247,
+    "<code>code247</code>",
+    "code247",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_248,
+    "<code>code248</code>",
+    "code248",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_249,
+    "<code>code249</code>",
+    "code249",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_code_case_250,
+    "<code>code250</code>",
+    "code250",
+    TelegramEntityKind::Code
+);
+html_case!(
+    html_link_case_251,
+    "<a href=\"https://example.com/251\">link251</a>",
+    "link251",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_252,
+    "<a href=\"https://example.com/252\">link252</a>",
+    "link252",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_253,
+    "<a href=\"https://example.com/253\">link253</a>",
+    "link253",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_254,
+    "<a href=\"https://example.com/254\">link254</a>",
+    "link254",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_255,
+    "<a href=\"https://example.com/255\">link255</a>",
+    "link255",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_256,
+    "<a href=\"https://example.com/256\">link256</a>",
+    "link256",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_257,
+    "<a href=\"https://example.com/257\">link257</a>",
+    "link257",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_258,
+    "<a href=\"https://example.com/258\">link258</a>",
+    "link258",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_259,
+    "<a href=\"https://example.com/259\">link259</a>",
+    "link259",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_260,
+    "<a href=\"https://example.com/260\">link260</a>",
+    "link260",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_261,
+    "<a href=\"https://example.com/261\">link261</a>",
+    "link261",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_262,
+    "<a href=\"https://example.com/262\">link262</a>",
+    "link262",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_263,
+    "<a href=\"https://example.com/263\">link263</a>",
+    "link263",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_264,
+    "<a href=\"https://example.com/264\">link264</a>",
+    "link264",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_265,
+    "<a href=\"https://example.com/265\">link265</a>",
+    "link265",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_266,
+    "<a href=\"https://example.com/266\">link266</a>",
+    "link266",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_267,
+    "<a href=\"https://example.com/267\">link267</a>",
+    "link267",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_268,
+    "<a href=\"https://example.com/268\">link268</a>",
+    "link268",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_269,
+    "<a href=\"https://example.com/269\">link269</a>",
+    "link269",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_270,
+    "<a href=\"https://example.com/270\">link270</a>",
+    "link270",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_271,
+    "<a href=\"https://example.com/271\">link271</a>",
+    "link271",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_272,
+    "<a href=\"https://example.com/272\">link272</a>",
+    "link272",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_273,
+    "<a href=\"https://example.com/273\">link273</a>",
+    "link273",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_274,
+    "<a href=\"https://example.com/274\">link274</a>",
+    "link274",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_275,
+    "<a href=\"https://example.com/275\">link275</a>",
+    "link275",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_276,
+    "<a href=\"https://example.com/276\">link276</a>",
+    "link276",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_277,
+    "<a href=\"https://example.com/277\">link277</a>",
+    "link277",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_278,
+    "<a href=\"https://example.com/278\">link278</a>",
+    "link278",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_279,
+    "<a href=\"https://example.com/279\">link279</a>",
+    "link279",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_280,
+    "<a href=\"https://example.com/280\">link280</a>",
+    "link280",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_281,
+    "<a href=\"https://example.com/281\">link281</a>",
+    "link281",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_282,
+    "<a href=\"https://example.com/282\">link282</a>",
+    "link282",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_283,
+    "<a href=\"https://example.com/283\">link283</a>",
+    "link283",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_284,
+    "<a href=\"https://example.com/284\">link284</a>",
+    "link284",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_285,
+    "<a href=\"https://example.com/285\">link285</a>",
+    "link285",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_286,
+    "<a href=\"https://example.com/286\">link286</a>",
+    "link286",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_287,
+    "<a href=\"https://example.com/287\">link287</a>",
+    "link287",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_288,
+    "<a href=\"https://example.com/288\">link288</a>",
+    "link288",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_289,
+    "<a href=\"https://example.com/289\">link289</a>",
+    "link289",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_290,
+    "<a href=\"https://example.com/290\">link290</a>",
+    "link290",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_291,
+    "<a href=\"https://example.com/291\">link291</a>",
+    "link291",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_292,
+    "<a href=\"https://example.com/292\">link292</a>",
+    "link292",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_293,
+    "<a href=\"https://example.com/293\">link293</a>",
+    "link293",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_294,
+    "<a href=\"https://example.com/294\">link294</a>",
+    "link294",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_295,
+    "<a href=\"https://example.com/295\">link295</a>",
+    "link295",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_296,
+    "<a href=\"https://example.com/296\">link296</a>",
+    "link296",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_297,
+    "<a href=\"https://example.com/297\">link297</a>",
+    "link297",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_298,
+    "<a href=\"https://example.com/298\">link298</a>",
+    "link298",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_299,
+    "<a href=\"https://example.com/299\">link299</a>",
+    "link299",
+    TelegramEntityKind::Link
+);
+html_case!(
+    html_link_case_300,
+    "<a href=\"https://example.com/300\">link300</a>",
+    "link300",
+    TelegramEntityKind::Link
+);
