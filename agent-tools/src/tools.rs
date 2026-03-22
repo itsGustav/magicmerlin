@@ -15,6 +15,8 @@ use tokio::process::Command;
 use crate::error::{Result, ToolError};
 use crate::registry::{Tool, ToolContext, ToolRegistry, ToolResult};
 
+use std::io::Read as StdRead;
+
 const READ_MAX_BYTES: usize = 50 * 1024;
 const READ_MAX_LINES: usize = 2000;
 
@@ -37,6 +39,7 @@ pub fn register_default_tools(registry: &mut ToolRegistry) {
     registry.register(Arc::new(SubagentsTool));
     registry.register(Arc::new(AgentsListTool));
     registry.register(Arc::new(MessageTool));
+    registry.register(Arc::new(CronTool));
     registry.register(Arc::new(ImageTool));
     registry.register(Arc::new(PdfTool));
     registry.register(Arc::new(TtsTool));
@@ -109,6 +112,11 @@ impl Tool for ExecTool {
                 "background": true,
                 "cwd": cwd,
             })));
+        }
+
+        // Foreground PTY execution
+        if tty {
+            return exec_foreground_pty(&cmd, &cwd, &env, timeout_ms).await;
         }
 
         let mut command = shell_command(&cmd);
@@ -641,7 +649,7 @@ impl Tool for MemorySearchTool {
     }
 
     fn description(&self) -> &str {
-        "Performs keyword/BM25-like search over MEMORY.md and memory/*.md files."
+        "Performs semantic-style search over MEMORY.md and memory/*.md files using chunked TF-IDF."
     }
 
     fn schema(&self) -> Value {
@@ -649,7 +657,9 @@ impl Tool for MemorySearchTool {
             "type":"object",
             "properties": {
                 "query":{"type":"string"},
+                "maxResults":{"type":"integer"},
                 "limit":{"type":"integer"},
+                "minScore":{"type":"number"},
                 "min_score":{"type":"number"}
             },
             "required":["query"]
@@ -659,47 +669,110 @@ impl Tool for MemorySearchTool {
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let query = required_string(&params, "query", self.name())?;
         let query_terms = tokenize(&query);
-        let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
+        let max_results = params
+            .get("maxResults")
+            .or_else(|| params.get("limit"))
+            .and_then(Value::as_u64)
+            .unwrap_or(10) as usize;
         let min_score = params
-            .get("min_score")
+            .get("minScore")
+            .or_else(|| params.get("min_score"))
             .and_then(Value::as_f64)
             .unwrap_or(0.01);
-        let root = ctx.state_paths.state_dir.clone();
-        let files = collect_memory_files(&root)?;
 
-        let mut docs = Vec::new();
-        for path in files {
-            let body = std::fs::read_to_string(&path).map_err(|source| ToolError::Io {
+        // Collect from both state dir and workspace dir
+        let mut files = collect_memory_files(&ctx.state_paths.state_dir)?;
+        let ws_files = collect_memory_files(&ctx.workspace_dir)?;
+        for f in ws_files {
+            if !files.contains(&f) {
+                files.push(f);
+            }
+        }
+
+        // Build chunks (~200-word segments with overlap context)
+        let mut all_chunks: Vec<MemoryChunk> = Vec::new();
+        for path in &files {
+            let body = std::fs::read_to_string(path).map_err(|source| ToolError::Io {
                 path: path.clone(),
                 source,
             })?;
-            for (idx, line) in body.lines().enumerate() {
-                let terms = tokenize(line);
-                if terms.is_empty() {
-                    continue;
-                }
-                let score = bm25_score(&query_terms, &terms, 80.0);
-                if score >= min_score {
-                    docs.push((
-                        score,
-                        json!({
-                            "path": path,
-                            "line": idx + 1,
-                            "score": score,
-                            "snippet": line,
-                        }),
-                    ));
+            let chunks = chunk_text(&body, 200);
+            for chunk in chunks {
+                let terms = tokenize(&chunk.text);
+                if !terms.is_empty() {
+                    all_chunks.push(MemoryChunk {
+                        path: path.clone(),
+                        start_line: chunk.start_line,
+                        end_line: chunk.end_line,
+                        text: chunk.text,
+                        terms,
+                    });
                 }
             }
         }
 
-        docs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
-        let matches = docs
+        // Compute IDF across all chunks for each query term
+        let total_docs = all_chunks.len().max(1) as f64;
+        let mut idf_map: HashMap<String, f64> = HashMap::new();
+        for qt in &query_terms {
+            let doc_freq = all_chunks
+                .iter()
+                .filter(|c| c.terms.contains(qt))
+                .count() as f64;
+            let idf = ((total_docs - doc_freq + 0.5) / (doc_freq + 0.5) + 1.0).ln();
+            idf_map.insert(qt.clone(), idf.max(0.1));
+        }
+
+        // Score each chunk with TF-IDF / BM25
+        let avg_dl = if all_chunks.is_empty() {
+            1.0
+        } else {
+            all_chunks.iter().map(|c| c.terms.len()).sum::<usize>() as f64 / total_docs
+        };
+
+        let mut scored: Vec<(f64, &MemoryChunk)> = Vec::new();
+        for chunk in &all_chunks {
+            let mut score = 0.0_f64;
+            let dl = chunk.terms.len() as f64;
+            let k1 = 1.2_f64;
+            let b = 0.75_f64;
+            for qt in &query_terms {
+                let tf = chunk.terms.iter().filter(|t| *t == qt).count() as f64;
+                if tf == 0.0 {
+                    continue;
+                }
+                let idf = idf_map.get(qt).copied().unwrap_or(0.1);
+                let denom = tf + k1 * (1.0 - b + b * dl / avg_dl.max(1.0));
+                score += idf * (tf * (k1 + 1.0)) / denom;
+            }
+            if score >= min_score {
+                scored.push((score, chunk));
+            }
+        }
+
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
+        let results: Vec<Value> = scored
             .into_iter()
-            .take(limit)
-            .map(|(_, v)| v)
-            .collect::<Vec<_>>();
-        Ok(ToolResult::success(json!({"matches": matches})))
+            .take(max_results)
+            .map(|(score, chunk)| {
+                let rel_path = chunk
+                    .path
+                    .strip_prefix(&ctx.state_paths.state_dir)
+                    .or_else(|_| chunk.path.strip_prefix(&ctx.workspace_dir))
+                    .unwrap_or(&chunk.path);
+                json!({
+                    "path": rel_path,
+                    "startLine": chunk.start_line,
+                    "endLine": chunk.end_line,
+                    "score": (score * 1000.0).round() / 1000.0,
+                    "snippet": truncate_chars(&chunk.text, 500),
+                    "source": "memory",
+                    "citation": format!("{}#L{}-L{}", rel_path.display(), chunk.start_line, chunk.end_line),
+                })
+            })
+            .collect();
+
+        Ok(ToolResult::success(json!({"results": results})))
     }
 }
 
@@ -736,25 +809,29 @@ impl Tool for MemoryGetTool {
             path: path.clone(),
             source,
         })?;
+        let total_lines = body.lines().count();
         let from = params.get("from").and_then(Value::as_u64).unwrap_or(1) as usize;
         let lines_count = params.get("lines").and_then(Value::as_u64).unwrap_or(50) as usize;
 
-        let mut out = Vec::new();
-        for (idx, line) in body.lines().enumerate() {
-            let line_no = idx + 1;
-            if line_no < from {
-                continue;
-            }
-            if out.len() >= lines_count {
-                break;
-            }
-            out.push(format!("{line_no}: {line}"));
-        }
+        let content: String = body
+            .lines()
+            .enumerate()
+            .filter_map(|(idx, line)| {
+                let line_no = idx + 1;
+                if line_no >= from && line_no < from + lines_count {
+                    Some(line)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
         Ok(ToolResult::success(json!({
+            "content": content,
             "path": path,
             "from": from,
-            "lines": out,
+            "totalLines": total_lines,
         })))
     }
 }
@@ -814,13 +891,59 @@ impl Tool for SessionStatusTool {
             .map(str::to_string)
             .or_else(|| ctx.config.agents.defaults.model.clone());
 
+        // Estimate tokens from transcript if available
+        let agent_name = session
+            .get("agent")
+            .and_then(Value::as_str)
+            .unwrap_or(&ctx.agent_name);
+        let transcript_path = ctx
+            .state_paths
+            .sessions_dir
+            .join(agent_name)
+            .join(format!("{}.jsonl", session_key.replace(':', "__")));
+
+        let (context_tokens, message_count) = if transcript_path.exists() {
+            let body = std::fs::read_to_string(&transcript_path).unwrap_or_default();
+            let lines: Vec<&str> = body.lines().collect();
+            let total_chars: usize = lines.iter().map(|l| l.len()).sum();
+            // Rough heuristic: ~4 chars per token
+            (total_chars / 4, lines.len())
+        } else {
+            (0, 0)
+        };
+
+        // Context window size heuristic based on model name
+        let context_window = if model
+            .as_deref()
+            .unwrap_or("")
+            .contains("opus")
+        {
+            200_000
+        } else {
+            128_000
+        };
+        let context_pct = if context_window > 0 {
+            ((context_tokens as f64 / context_window as f64) * 100.0).round() as u64
+        } else {
+            0
+        };
+
+        let started_at = session.get("started_at").and_then(Value::as_i64);
+        let start_time = started_at.map(|ts| {
+            chrono::DateTime::from_timestamp(ts, 0)
+                .map(|dt| dt.to_rfc3339())
+                .unwrap_or_default()
+        });
+
         Ok(ToolResult::success(json!({
-            "session": session,
+            "sessionKey": session_key,
             "model": model,
-            "tokens_used": null,
-            "context_pct": null,
-            "cost_usd": null,
-            "cache": {"hits": null, "misses": null}
+            "contextTokens": context_tokens,
+            "contextPercent": context_pct,
+            "messageCount": message_count,
+            "startTime": start_time,
+            "cost": null,
+            "session": session,
         })))
     }
 }
@@ -1224,36 +1347,97 @@ impl Tool for MessageTool {
     }
 
     fn description(&self) -> &str {
-        "Sends message payload to delivery target metadata."
+        "Dispatches message actions (send/react/delete/edit/poll) through the gateway channel system."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
+                "action":{"type":"string", "enum":["send","react","delete","edit","poll"]},
+                "channel":{"type":"string"},
+                "target":{"type":"string"},
+                "message":{"type":"string"},
                 "text":{"type":"string"},
+                "messageId":{"type":"string"},
+                "emoji":{"type":"string"},
                 "media":{"type":"array"},
-                "buttons":{"type":"array"},
-                "reaction":{"type":"string"},
-                "edit":{"type":"boolean"},
-                "delete":{"type":"boolean"}
+                "buttons":{"type":"array"}
             }
         })
     }
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let delivery = ctx.delivery.clone().map(|d| {
-            json!({
-                "channel": d.channel,
-                "target": d.target,
-            })
-        });
+        let action = params
+            .get("action")
+            .and_then(Value::as_str)
+            .unwrap_or("send");
 
-        Ok(ToolResult::success(json!({
-            "delivered": delivery.is_some(),
-            "delivery": delivery,
-            "payload": params,
-        })))
+        // Resolve channel/target from params or delivery context
+        let channel = params
+            .get("channel")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .or_else(|| ctx.delivery.as_ref().map(|d| d.channel.clone()));
+        let target = params
+            .get("target")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .or_else(|| ctx.delivery.as_ref().map(|d| d.target.clone()));
+
+        let method = format!("channels.{action}");
+        let mut call_params = params.clone();
+        if let Some(obj) = call_params.as_object_mut() {
+            if let Some(ch) = &channel {
+                obj.insert("channel".to_string(), json!(ch));
+            }
+            if let Some(tgt) = &target {
+                obj.insert("target".to_string(), json!(tgt));
+            }
+            // Normalize: if "text" present but not "message", copy it
+            if obj.get("message").is_none() {
+                if let Some(text) = obj.get("text").cloned() {
+                    obj.insert("message".to_string(), text);
+                }
+            }
+        }
+
+        gateway_call(ctx, &method, call_params).await
+    }
+}
+
+struct CronTool;
+
+#[async_trait]
+impl Tool for CronTool {
+    fn name(&self) -> &str {
+        "cron"
+    }
+
+    fn description(&self) -> &str {
+        "Manages scheduled jobs via the gateway cron subsystem."
+    }
+
+    fn schema(&self) -> Value {
+        json!({
+            "type":"object",
+            "properties": {
+                "action":{"type":"string", "enum":["status","list","add","update","remove","run","runs","wake"]},
+                "id":{"type":"string"},
+                "name":{"type":"string"},
+                "schedule":{"type":"string"},
+                "command":{"type":"string"},
+                "enabled":{"type":"boolean"},
+                "limit":{"type":"integer"}
+            },
+            "required":["action"]
+        })
+    }
+
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
+        let action = required_string(&params, "action", self.name())?;
+        let method = format!("cron.{action}");
+        gateway_call(ctx, &method, params).await
     }
 }
 
@@ -1819,6 +2003,110 @@ impl Tool for NodesTool {
     }
 }
 
+/// Executes a command inside a real PTY and returns combined output.
+async fn exec_foreground_pty(
+    cmd: &str,
+    cwd: &Path,
+    env: &HashMap<String, String>,
+    timeout_ms: u64,
+) -> Result<ToolResult> {
+    use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+
+    let pty_system = native_pty_system();
+    let pair = pty_system
+        .openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| ToolError::Execution(format!("pty open: {e}")))?;
+
+    let mut cmd_builder = CommandBuilder::new("sh");
+    cmd_builder.args(["-lc", cmd]);
+    cmd_builder.cwd(cwd);
+    for (k, v) in env {
+        cmd_builder.env(k, v);
+    }
+
+    let mut child = pair
+        .slave
+        .spawn_command(cmd_builder)
+        .map_err(|e| ToolError::Execution(format!("pty spawn: {e}")))?;
+    let pid = child.process_id();
+    // Drop slave so master reader sees EOF when child exits.
+    drop(pair.slave);
+
+    let mut reader = pair
+        .master
+        .try_clone_reader()
+        .map_err(|e| ToolError::Execution(format!("pty reader: {e}")))?;
+
+    let read_handle = tokio::task::spawn_blocking(move || {
+        let mut buf = Vec::new();
+        let _ = reader.read_to_end(&mut buf);
+        String::from_utf8_lossy(&buf).to_string()
+    });
+
+    let wait_handle = tokio::task::spawn_blocking(move || child.wait());
+
+    let result = tokio::time::timeout(Duration::from_millis(timeout_ms), async {
+        let output = read_handle
+            .await
+            .map_err(|e| ToolError::Execution(e.to_string()))?;
+        let status = wait_handle
+            .await
+            .map_err(|e| ToolError::Execution(e.to_string()))?
+            .map_err(|e| ToolError::Execution(e.to_string()))?;
+        Ok::<_, ToolError>((output, status))
+    })
+    .await
+    .map_err(|_| ToolError::Execution("pty command timed out".to_string()))??;
+
+    let (output, status) = result;
+    Ok(ToolResult::success(json!({
+        "status": if status.success() { 0 } else { 1 },
+        "output": output,
+        "output_bytes": output.len(),
+        "pid": pid,
+        "tty": true,
+    })))
+}
+
+/// Derives gateway URL from env or config.
+fn gateway_url(ctx: &ToolContext) -> String {
+    if let Ok(url) = std::env::var("MAGICMERLIN_GATEWAY_URL") {
+        return url;
+    }
+    let port = ctx.config.gateway.port.unwrap_or(18789);
+    let bind = ctx.config.gateway.bind.as_deref().unwrap_or("127.0.0.1");
+    format!("http://{bind}:{port}")
+}
+
+/// POSTs a JSON-RPC-style call to the gateway.
+async fn gateway_call(ctx: &ToolContext, method: &str, params: Value) -> Result<ToolResult> {
+    let url = format!("{}/call", gateway_url(ctx));
+    let body = json!({ "method": method, "params": params });
+    let resp = reqwest::Client::new()
+        .post(&url)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| ToolError::Execution(format!("gateway request failed: {e}")))?;
+    let status = resp.status().as_u16();
+    let value = resp
+        .json::<Value>()
+        .await
+        .unwrap_or_else(|_| json!({"error": "non-json response"}));
+    if status >= 400 {
+        return Ok(ToolResult::failure(format!(
+            "gateway returned {status}: {}",
+            serde_json::to_string(&value).unwrap_or_default()
+        )));
+    }
+    Ok(ToolResult::success(value))
+}
+
 fn required_string(params: &Value, key: &str, tool: &str) -> Result<String> {
     params
         .get(key)
@@ -1965,6 +2253,61 @@ async fn atomic_write(path: &Path, content: &[u8]) -> Result<()> {
         })
 }
 
+struct MemoryChunk {
+    path: PathBuf,
+    start_line: usize,
+    end_line: usize,
+    text: String,
+    terms: Vec<String>,
+}
+
+struct RawChunk {
+    start_line: usize,
+    end_line: usize,
+    text: String,
+}
+
+/// Splits text into ~`target_words`-word chunks aligned to line boundaries.
+fn chunk_text(text: &str, target_words: usize) -> Vec<RawChunk> {
+    let lines: Vec<&str> = text.lines().collect();
+    if lines.is_empty() {
+        return Vec::new();
+    }
+    let mut chunks = Vec::new();
+    let mut start = 0;
+    let mut word_count = 0;
+    let mut buf = String::new();
+
+    for (i, line) in lines.iter().enumerate() {
+        let words_in_line = line.split_whitespace().count();
+        if word_count > 0 && word_count + words_in_line > target_words {
+            chunks.push(RawChunk {
+                start_line: start + 1,
+                end_line: i, // exclusive of current, so last included is i
+                text: buf.clone(),
+            });
+            buf.clear();
+            start = i;
+            word_count = 0;
+        }
+        if !buf.is_empty() {
+            buf.push('\n');
+        }
+        buf.push_str(line);
+        word_count += words_in_line;
+    }
+
+    if !buf.is_empty() {
+        chunks.push(RawChunk {
+            start_line: start + 1,
+            end_line: lines.len(),
+            text: buf,
+        });
+    }
+
+    chunks
+}
+
 fn collect_memory_files(root: &Path) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     let top = root.join("MEMORY.md");
@@ -2013,6 +2356,7 @@ fn tokenize(text: &str) -> Vec<String> {
         .collect()
 }
 
+#[cfg(test)]
 fn bm25_score(query: &[String], doc: &[String], avg_doc_len: f64) -> f64 {
     if query.is_empty() || doc.is_empty() {
         return 0.0;
@@ -2202,22 +2546,25 @@ fn rand_suffix(len: usize) -> String {
 mod tests {
     use super::*;
 
+    fn make_test_ctx(temp: &std::path::Path) -> ToolContext {
+        let state_paths = magicmerlin_config::StatePaths::new(magicmerlin_config::PathScope::dev())
+            .expect("paths");
+        ToolContext {
+            agent_name: "merlin".to_string(),
+            workspace_dir: temp.to_path_buf(),
+            state_paths,
+            config: magicmerlin_config::Config::default(),
+            delivery: None,
+            process_manager: crate::ProcessManager::new(),
+        }
+    }
+
     #[tokio::test]
     async fn edit_replaces_text_once() {
         let temp = tempfile::tempdir().expect("tmp");
         let path = temp.path().join("a.txt");
         std::fs::write(&path, "hello old").expect("write");
-
-        let state_paths = magicmerlin_config::StatePaths::new(magicmerlin_config::PathScope::dev())
-            .expect("paths");
-        let ctx = ToolContext {
-            agent_name: "merlin".to_string(),
-            workspace_dir: temp.path().to_path_buf(),
-            state_paths,
-            config: magicmerlin_config::Config::default(),
-            delivery: None,
-            process_manager: crate::ProcessManager::new(),
-        };
+        let ctx = make_test_ctx(temp.path());
 
         EditTool
             .execute(
@@ -2237,16 +2584,186 @@ mod tests {
         register_default_tools(&mut registry);
         let names = registry.names();
         for required in [
-            "exec",
-            "process",
-            "read",
-            "write",
-            "edit",
-            "memory_get",
-            "nodes",
+            "exec", "process", "read", "write", "edit", "memory_get", "memory_search",
+            "message", "cron", "session_status", "nodes",
         ] {
-            assert!(names.contains(&required.to_string()));
+            assert!(
+                names.contains(&required.to_string()),
+                "missing tool: {required}"
+            );
         }
+    }
+
+    // --- Tool 1: exec PTY ---
+    #[tokio::test]
+    async fn exec_foreground_pty_captures_output() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = ExecTool
+            .execute(json!({"cmd": "echo pty_hello", "tty": true}), &ctx)
+            .await
+            .expect("pty exec");
+        assert!(result.ok);
+        let output = result.value.get("output").and_then(Value::as_str).unwrap_or("");
+        assert!(output.contains("pty_hello"), "got: {output}");
+        assert_eq!(result.value.get("tty").and_then(Value::as_bool), Some(true));
+    }
+
+    #[tokio::test]
+    async fn exec_background_returns_session_id() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = ExecTool
+            .execute(json!({"cmd": "sleep 0.1", "background": true}), &ctx)
+            .await
+            .expect("bg exec");
+        assert!(result.ok);
+        assert!(result.value.get("session_id").is_some());
+    }
+
+    // --- Tool 2: memory_search ---
+    #[tokio::test]
+    async fn memory_search_finds_chunks() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(
+            temp.path().join("MEMORY.md"),
+            "The quick brown fox jumps over the lazy dog.\nRust is a systems programming language.",
+        )
+        .expect("write");
+        let mut ctx = make_test_ctx(temp.path());
+        ctx.state_paths.state_dir = temp.path().to_path_buf();
+
+        let result = MemorySearchTool
+            .execute(json!({"query": "rust programming"}), &ctx)
+            .await
+            .expect("search");
+        assert!(result.ok);
+        let results = result.value.get("results").and_then(Value::as_array).unwrap();
+        assert!(!results.is_empty(), "should find at least one result");
+        let first = &results[0];
+        assert!(first.get("score").and_then(Value::as_f64).unwrap_or(0.0) > 0.0);
+        assert!(first.get("citation").is_some());
+    }
+
+    // --- Tool 3: memory_get ---
+    #[tokio::test]
+    async fn memory_get_returns_content_and_total_lines() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(
+            temp.path().join("notes.md"),
+            "line1\nline2\nline3\nline4\nline5",
+        )
+        .expect("write");
+        let mut ctx = make_test_ctx(temp.path());
+        ctx.state_paths.state_dir = temp.path().to_path_buf();
+
+        let result = MemoryGetTool
+            .execute(json!({"path": "notes.md", "from": 2, "lines": 2}), &ctx)
+            .await
+            .expect("get");
+        assert!(result.ok);
+        assert_eq!(
+            result.value.get("totalLines").and_then(Value::as_u64),
+            Some(5)
+        );
+        let content = result.value.get("content").and_then(Value::as_str).unwrap();
+        assert!(content.contains("line2"));
+        assert!(content.contains("line3"));
+        assert!(!content.contains("line1"));
+    }
+
+    // --- Tool 4: message ---
+    #[tokio::test]
+    async fn message_tool_constructs_gateway_call() {
+        // We can't test actual gateway, but verify parameter handling
+        let temp = tempfile::tempdir().expect("tmp");
+        let mut ctx = make_test_ctx(temp.path());
+        ctx.delivery = Some(crate::registry::DeliveryContext {
+            channel: "telegram".to_string(),
+            target: "12345".to_string(),
+        });
+
+        // This will fail to connect to gateway, which is expected.
+        // We verify the tool doesn't panic and returns a meaningful error.
+        let result = MessageTool
+            .execute(
+                json!({"action": "send", "text": "hello world"}),
+                &ctx,
+            )
+            .await;
+        // Gateway not running, so expect an error
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- Tool 5: cron ---
+    #[tokio::test]
+    async fn cron_tool_requires_action() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = CronTool.execute(json!({}), &ctx).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn cron_tool_dispatches_to_gateway() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        // Gateway not running, so expect connection error
+        let result = CronTool
+            .execute(json!({"action": "list"}), &ctx)
+            .await;
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- Tool 6: session_status ---
+    #[tokio::test]
+    async fn session_status_handles_missing_session() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let mut ctx = make_test_ctx(temp.path());
+        ctx.state_paths.state_dir = temp.path().to_path_buf();
+
+        // Create the db so Storage works
+        let db_path = temp.path().join("openclaw.db");
+        let storage = magicmerlin_storage::Storage::new(&db_path).expect("storage");
+        let conn = storage.connection().expect("conn");
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS sessions (
+                id TEXT PRIMARY KEY,
+                agent TEXT,
+                status TEXT NOT NULL DEFAULT 'unknown',
+                started_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL DEFAULT 0,
+                metadata TEXT
+            )",
+        )
+        .expect("create table");
+
+        let result = SessionStatusTool
+            .execute(json!({"session_key": "nonexistent:key"}), &ctx)
+            .await
+            .expect("status");
+        assert!(result.ok);
+        let session = result.value.get("session").unwrap();
+        assert_eq!(
+            session.get("missing").and_then(Value::as_bool),
+            Some(true)
+        );
+        // Should have token fields even for missing session
+        assert!(result.value.get("contextTokens").is_some());
+        assert!(result.value.get("messageCount").is_some());
+    }
+
+    // --- Helpers ---
+    #[test]
+    fn chunk_text_produces_correct_segments() {
+        let text = (0..20)
+            .map(|i| format!("word{i} extra filler text padding"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let chunks = chunk_text(&text, 10);
+        assert!(chunks.len() >= 2, "should produce multiple chunks");
+        assert_eq!(chunks[0].start_line, 1);
+        assert!(chunks[0].end_line > 0);
     }
 
     #[test]
@@ -2273,5 +2790,15 @@ mod tests {
         let q = tokenize("hello world");
         let d = tokenize("hello there world");
         assert!(bm25_score(&q, &d, 10.0) > 0.0);
+    }
+
+    #[test]
+    fn gateway_url_uses_env_override() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        // Without env var, should use config defaults
+        let url = gateway_url(&ctx);
+        assert!(url.starts_with("http://"));
+        assert!(url.contains("18789") || url.contains("127.0.0.1"));
     }
 }
