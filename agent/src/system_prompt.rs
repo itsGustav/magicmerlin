@@ -4,11 +4,14 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Local, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::{AgentError, Result};
+
+/// Maximum characters for MEMORY.md injection.
+const MEMORY_MAX_CHARS: usize = 14_000;
 
 const DEFAULT_FILES: [&str; 8] = [
     "AGENTS.md",
@@ -16,8 +19,8 @@ const DEFAULT_FILES: [&str; 8] = [
     "USER.md",
     "IDENTITY.md",
     "TOOLS.md",
-    "MEMORY.md",
     "HEARTBEAT.md",
+    "MEMORY.md",
     "BOOTSTRAP.md",
 ];
 
@@ -82,6 +85,17 @@ pub struct ToolSchemaDescriptor {
     pub parameters: Value,
 }
 
+/// Skill descriptor with frontmatter metadata.
+#[derive(Debug, Clone)]
+pub struct SkillDescriptor {
+    /// Skill name from frontmatter.
+    pub name: String,
+    /// Skill description from frontmatter.
+    pub description: String,
+    /// Path to the SKILL.md file.
+    pub path: PathBuf,
+}
+
 /// System prompt assembler from workspace and agent files.
 #[derive(Debug, Clone)]
 pub struct SystemPromptAssembler {
@@ -125,27 +139,40 @@ impl SystemPromptAssembler {
         tools: &[ToolSchemaDescriptor],
     ) -> Result<String> {
         let mut sections = Vec::new();
+
+        // Runtime metadata
         sections.push(render_runtime_metadata(metadata));
 
-        for file in &self.include_files {
-            if let Some(content) = self.load_file(file)? {
-                sections.push(format!("<{file}>\n{content}\n</{file}>"));
-            }
-        }
+        // Project Context section with workspace files
+        sections.push("## Project Context".to_string());
+        self.inject_workspace_files(&mut sections)?;
 
-        let skills = discover_skills(&[
+        // Today and yesterday memory files
+        self.inject_memory_files(&mut sections)?;
+
+        // Skills discovery with frontmatter
+        let skill_dirs = [
             self.workspace_dir.join(".codex/skills"),
             self.agent_dir.join("skills"),
             PathBuf::from("/Users/gustav/.codex/skills"),
-        ])?;
+        ];
+        let skills = discover_skills_with_frontmatter(&skill_dirs)?;
         if !skills.is_empty() {
-            sections.push(render_skills_xml(&skills));
+            sections.push(render_skills_xml_detailed(&skills));
         }
 
+        // Reply tag instructions
+        sections.push(render_reply_tag_instructions());
+
+        // Silent reply instructions
+        sections.push(render_silent_reply_instructions());
+
+        // Inbound context
         if inbound != &InboundContext::default() {
             sections.push(render_inbound_context(inbound));
         }
 
+        // Tool schemas
         if !tools.is_empty() {
             sections.push(render_tool_schema_block(tools)?);
         }
@@ -153,7 +180,73 @@ impl SystemPromptAssembler {
         Ok(sections.join("\n\n"))
     }
 
-    fn load_file(&self, name: &str) -> Result<Option<String>> {
+    /// Injects workspace files into sections with per-file limits and proper headers.
+    fn inject_workspace_files(&self, sections: &mut Vec<String>) -> Result<()> {
+        for file in &self.include_files {
+            let max_chars = if file == "MEMORY.md" {
+                MEMORY_MAX_CHARS
+            } else {
+                self.max_chars_per_file
+            };
+
+            match self.load_file(file, max_chars)? {
+                Some((path, content)) => {
+                    sections.push(format!("## {}\n{}", path.display(), content));
+                }
+                None => {
+                    // BOOTSTRAP.md gets a missing marker when absent
+                    if file == "BOOTSTRAP.md" {
+                        let expected = self.workspace_dir.join(file);
+                        sections.push(format!(
+                            "[MISSING] Expected at: {}",
+                            expected.display()
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Injects today's and yesterday's memory files if they exist.
+    fn inject_memory_files(&self, sections: &mut Vec<String>) -> Result<()> {
+        let today = Local::now().date_naive();
+        let yesterday = today.pred_opt().unwrap_or(today);
+
+        for date in &[yesterday, today] {
+            self.try_inject_memory_date(sections, *date)?;
+        }
+        Ok(())
+    }
+
+    fn try_inject_memory_date(
+        &self,
+        sections: &mut Vec<String>,
+        date: NaiveDate,
+    ) -> Result<()> {
+        let filename = format!("memory/{}.md", date.format("%Y-%m-%d"));
+        let from_agent = self.agent_dir.join(&filename);
+        let from_workspace = self.workspace_dir.join(&filename);
+        let path = if from_agent.exists() {
+            from_agent
+        } else if from_workspace.exists() {
+            from_workspace
+        } else {
+            return Ok(());
+        };
+
+        let raw = fs::read_to_string(&path).map_err(|source| AgentError::Io {
+            path: path.clone(),
+            source,
+        })?;
+        let clipped = smart_clip_markdown(&raw, self.max_chars_per_file);
+        sections.push(format!("## {}\n{}", path.display(), clipped));
+        Ok(())
+    }
+
+    /// Loads a workspace/agent file with the given character limit.
+    /// Returns the resolved path and clipped content.
+    fn load_file(&self, name: &str, max_chars: usize) -> Result<Option<(PathBuf, String)>> {
         let from_agent = self.agent_dir.join(name);
         let from_workspace = self.workspace_dir.join(name);
         let path = if from_agent.exists() {
@@ -170,13 +263,31 @@ impl SystemPromptAssembler {
             path: path.clone(),
             source,
         })?;
-        let clipped = smart_clip_markdown(&raw, self.max_chars_per_file);
-        Ok(Some(clipped))
+
+        let was_truncated = raw.chars().count() > max_chars;
+        let clipped = smart_clip_markdown(&raw, max_chars);
+
+        // MEMORY.md gets a special truncation suffix
+        let content = if name == "MEMORY.md" && was_truncated {
+            let kept = clipped.chars().count();
+            format!("{clipped}\n…(truncated MEMORY.md: kept {kept} chars)…")
+        } else {
+            clipped
+        };
+
+        Ok(Some((path, content)))
     }
 }
 
+// ---------------------------------------------------------------------------
+// Rendering helpers
+// ---------------------------------------------------------------------------
+
 fn render_runtime_metadata(metadata: &PromptRuntimeMetadata) -> String {
-    let provider = metadata.provider.clone().unwrap_or_else(|| "unknown".to_string());
+    let provider = metadata
+        .provider
+        .clone()
+        .unwrap_or_else(|| "unknown".to_string());
     format!(
         "<runtime>\ndate_local={}\ndate_utc={}\ntimezone={}\nmodel={}\nprovider={}\nchannel={}\nagent={}\n</runtime>",
         metadata.now_local.format("%Y-%m-%d %H:%M:%S %:z"),
@@ -217,24 +328,44 @@ fn render_inbound_context(inbound: &InboundContext) -> String {
     lines.join("\n")
 }
 
-fn render_skills_xml(skills: &[PathBuf]) -> String {
-    let mut out = String::from("<available_skills>");
-    for path in skills {
-        let skill_name = path
-            .parent()
-            .and_then(|v| v.file_name())
-            .and_then(|v| v.to_str())
-            .unwrap_or("unknown");
-        out.push_str(&format!("\n<skill name=\"{skill_name}\">{}\n</skill>", path.display()));
-    }
-    out.push_str("\n</available_skills>");
-    out
+fn render_reply_tag_instructions() -> String {
+    "\
+## Reply Tags
+When replying to a specific message, prepend one of these tags as the FIRST token in your response:
+- `[[reply_to_current]]` — replies to the message that triggered this turn
+- `[[reply_to:<id>]]` — replies to a specific message by its platform ID
+
+Rules:
+- The tag must be the very first token in your response
+- Only use one reply tag per message
+- If no tag is present, the reply is sent as a new message"
+        .to_string()
+}
+
+fn render_silent_reply_instructions() -> String {
+    "\
+## Silent Replies
+When you have nothing to say, respond with ONLY: NO_REPLY
+Rules:
+- It must be your ENTIRE message — nothing else
+- Never append it to an actual response
+
+For heartbeat checks, respond with ONLY: HEARTBEAT_OK
+Rules:
+- Used when the heartbeat system checks if you are alive
+- It must be your ENTIRE message — nothing else
+- Never use HEARTBEAT_OK in response to user messages"
+        .to_string()
 }
 
 fn render_tool_schema_block(tools: &[ToolSchemaDescriptor]) -> Result<String> {
     let serialized = serde_json::to_string_pretty(tools)?;
     Ok(format!("<tool_schemas>\n{serialized}\n</tool_schemas>"))
 }
+
+// ---------------------------------------------------------------------------
+// Skills discovery
+// ---------------------------------------------------------------------------
 
 /// Discovers skill descriptors by finding `SKILL.md` under directories.
 pub fn discover_skills(dirs: &[PathBuf]) -> Result<Vec<PathBuf>> {
@@ -248,6 +379,27 @@ pub fn discover_skills(dirs: &[PathBuf]) -> Result<Vec<PathBuf>> {
     out.sort();
     out.dedup();
     Ok(out)
+}
+
+/// Discovers skills and parses name/description from SKILL.md frontmatter.
+pub fn discover_skills_with_frontmatter(dirs: &[PathBuf]) -> Result<Vec<SkillDescriptor>> {
+    let paths = discover_skills(dirs)?;
+    let mut skills = Vec::new();
+
+    for path in paths {
+        let content = fs::read_to_string(&path).map_err(|source| AgentError::Io {
+            path: path.clone(),
+            source,
+        })?;
+        let (name, description) = parse_skill_frontmatter(&content, &path);
+        skills.push(SkillDescriptor {
+            name,
+            description,
+            path,
+        });
+    }
+
+    Ok(skills)
 }
 
 fn walk_skill_dir(root: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
@@ -270,6 +422,65 @@ fn walk_skill_dir(root: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     }
     Ok(())
 }
+
+/// Parses simple YAML-like frontmatter from a SKILL.md file.
+fn parse_skill_frontmatter(content: &str, path: &Path) -> (String, String) {
+    let default_name = path
+        .parent()
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    if !content.starts_with("---") {
+        return (default_name, String::new());
+    }
+
+    let rest = &content[3..];
+    let end = match rest.find("\n---") {
+        Some(pos) => pos,
+        None => return (default_name, String::new()),
+    };
+
+    let frontmatter = &rest[..end];
+    let mut name = default_name;
+    let mut description = String::new();
+
+    for line in frontmatter.lines() {
+        let line = line.trim();
+        if let Some(val) = line.strip_prefix("name:") {
+            name = val.trim().trim_matches('"').trim_matches('\'').to_string();
+        } else if let Some(val) = line.strip_prefix("description:") {
+            description = val.trim().trim_matches('"').trim_matches('\'').to_string();
+        }
+    }
+
+    (name, description)
+}
+
+/// Renders skills with full frontmatter metadata as XML.
+fn render_skills_xml_detailed(skills: &[SkillDescriptor]) -> String {
+    let mut out = String::from("<available_skills>");
+    for skill in skills {
+        out.push_str("\n  <skill>");
+        out.push_str(&format!("\n    <name>{}</name>", skill.name));
+        out.push_str(&format!(
+            "\n    <description>{}</description>",
+            skill.description
+        ));
+        out.push_str(&format!(
+            "\n    <location>{}</location>",
+            skill.path.display()
+        ));
+        out.push_str("\n  </skill>");
+    }
+    out.push_str("\n</available_skills>");
+    out
+}
+
+// ---------------------------------------------------------------------------
+// Markdown clipping
+// ---------------------------------------------------------------------------
 
 /// Clips markdown content while preserving heading structure and recent context.
 pub fn smart_clip_markdown(input: &str, max_chars: usize) -> String {
@@ -317,6 +528,10 @@ fn simple_clip(input: &str, max_chars: usize) -> String {
     out.push_str("\n[truncated]");
     out
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -385,5 +600,178 @@ mod tests {
         assert!(prompt.contains("<inbound_context>"));
         assert!(prompt.contains("<tool_schemas>"));
         assert!(prompt.contains("Alice"));
+    }
+
+    #[test]
+    fn injects_project_context_and_instruction_sections() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(temp.path().join("SOUL.md"), "soul content here").expect("write");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+
+        assert!(prompt.contains("## Project Context"));
+        assert!(prompt.contains("## Reply Tags"));
+        assert!(prompt.contains("## Silent Replies"));
+        assert!(prompt.contains("soul content here"));
+        assert!(prompt.contains("[[reply_to_current]]"));
+        assert!(prompt.contains("NO_REPLY"));
+        assert!(prompt.contains("HEARTBEAT_OK"));
+    }
+
+    #[test]
+    fn bootstrap_missing_marker() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("[MISSING] Expected at:"));
+        assert!(prompt.contains("BOOTSTRAP.md"));
+    }
+
+    #[test]
+    fn bootstrap_present_no_marker() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(temp.path().join("BOOTSTRAP.md"), "bootstrap content").expect("write");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("bootstrap content"));
+        assert!(!prompt.contains("[MISSING]"));
+    }
+
+    #[test]
+    fn memory_truncation_with_suffix() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let big_memory = "x".repeat(20_000);
+        std::fs::write(temp.path().join("MEMORY.md"), &big_memory).expect("write");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("truncated MEMORY.md: kept"));
+    }
+
+    #[test]
+    fn memory_not_truncated_no_suffix() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(temp.path().join("MEMORY.md"), "short memory").expect("write");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("short memory"));
+        assert!(!prompt.contains("truncated MEMORY.md"));
+    }
+
+    #[test]
+    fn skills_with_frontmatter() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let skills_dir = temp.path().join(".codex/skills/weather");
+        std::fs::create_dir_all(&skills_dir).expect("mkdir");
+        std::fs::write(
+            skills_dir.join("SKILL.md"),
+            "---\nname: weather\ndescription: Get current weather\n---\nContent here",
+        )
+        .expect("write");
+
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("<name>weather</name>"));
+        assert!(prompt.contains("<description>Get current weather</description>"));
+        assert!(prompt.contains("<location>"));
+    }
+
+    #[test]
+    fn skills_without_frontmatter_uses_dirname() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let skills_dir = temp.path().join(".codex/skills/calculator");
+        std::fs::create_dir_all(&skills_dir).expect("mkdir");
+        std::fs::write(skills_dir.join("SKILL.md"), "Just content, no frontmatter")
+            .expect("write");
+
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        assert!(prompt.contains("<name>calculator</name>"));
+    }
+
+    #[test]
+    fn parse_skill_frontmatter_works() {
+        let content =
+            "---\nname: test-skill\ndescription: A test skill\n---\n# Test\nBody content";
+        let path = PathBuf::from("/skills/fallback/SKILL.md");
+        let (name, desc) = parse_skill_frontmatter(content, &path);
+        assert_eq!(name, "test-skill");
+        assert_eq!(desc, "A test skill");
+    }
+
+    #[test]
+    fn parse_skill_frontmatter_missing() {
+        let content = "# No frontmatter here";
+        let path = PathBuf::from("/skills/myskill/SKILL.md");
+        let (name, desc) = parse_skill_frontmatter(content, &path);
+        assert_eq!(name, "myskill");
+        assert_eq!(desc, "");
+    }
+
+    #[test]
+    fn workspace_file_headers_include_path() {
+        let temp = tempfile::tempdir().expect("tmp");
+        std::fs::write(temp.path().join("IDENTITY.md"), "I am merlin").expect("write");
+        let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
+        let prompt = assembler
+            .assemble(&PromptRuntimeMetadata::now(
+                "test".to_string(),
+                "terminal".to_string(),
+                "UTC".to_string(),
+                "merlin".to_string(),
+            ))
+            .expect("assemble");
+        // File is injected with path-based header
+        let identity_path = temp.path().join("IDENTITY.md");
+        assert!(prompt.contains(&format!("## {}", identity_path.display())));
+        assert!(prompt.contains("I am merlin"));
     }
 }

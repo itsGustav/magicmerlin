@@ -2698,12 +2698,13 @@ async fn run_agent_turn(
         let reply = match command {
             SlashCommand::Status => "session is active".to_string(),
             SlashCommand::Compact => "session compaction requested".to_string(),
-            SlashCommand::Reasoning(mode) => format!("reasoning mode: {:?}", mode),
-            SlashCommand::Model(model) => {
-                format!("model {}", model.unwrap_or_else(|| "unchanged".to_string()))
+            SlashCommand::Reasoning { on } => format!("reasoning mode: {:?}", on),
+            SlashCommand::Model { name } => {
+                format!("model {}", name.unwrap_or_else(|| "unchanged".to_string()))
             }
             SlashCommand::Reset => "session reset requested".to_string(),
-            SlashCommand::Help => "/status /compact /reasoning /model /reset /help".to_string(),
+            SlashCommand::Help { .. } => "/status /compact /reasoning /model /reset /help".to_string(),
+            _ => format!("command received: {:?}", command),
         };
         return Ok(
             serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id, "kind":"command"}),
