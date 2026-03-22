@@ -18,6 +18,17 @@ pub struct DeliveryContext {
     pub target: String,
 }
 
+/// A registered node host for remote device control.
+#[derive(Debug, Clone)]
+pub struct NodeConfig {
+    /// Node identifier.
+    pub id: String,
+    /// Base URL of the node host (e.g. `http://192.168.1.42:9222`).
+    pub url: String,
+    /// Bearer token for authentication.
+    pub token: String,
+}
+
 /// Tool execution context.
 #[derive(Clone)]
 pub struct ToolContext {
@@ -33,6 +44,8 @@ pub struct ToolContext {
     pub delivery: Option<DeliveryContext>,
     /// Shared process manager.
     pub process_manager: crate::ProcessManager,
+    /// Registered node hosts for remote device control.
+    pub node_configs: Vec<NodeConfig>,
 }
 
 /// Tool execution result wrapper.

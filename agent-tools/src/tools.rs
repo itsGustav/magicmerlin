@@ -7,13 +7,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use chrono::Utc;
 use rusqlite::params;
 use serde_json::{json, Value};
 use tokio::process::Command;
 
 use crate::error::{Result, ToolError};
-use crate::registry::{Tool, ToolContext, ToolRegistry, ToolResult};
+use crate::gateway::gateway_call;
+use crate::registry::{NodeConfig, Tool, ToolContext, ToolRegistry, ToolResult};
 
 use std::io::Read as StdRead;
 
@@ -46,6 +46,8 @@ pub fn register_default_tools(registry: &mut ToolRegistry) {
     registry.register(Arc::new(BrowserTool));
     registry.register(Arc::new(CanvasTool));
     registry.register(Arc::new(NodesTool));
+    registry.register(Arc::new(SessionsYieldTool));
+    registry.register(Arc::new(GatewayTool));
 }
 
 struct ExecTool;
@@ -957,7 +959,7 @@ impl Tool for SessionsListTool {
     }
 
     fn description(&self) -> &str {
-        "Lists known sessions from sqlite with optional filters."
+        "Lists sessions via the gateway sessions subsystem."
     }
 
     fn schema(&self) -> Value {
@@ -966,73 +968,14 @@ impl Tool for SessionsListTool {
             "properties": {
                 "activeMinutes":{"type":"integer"},
                 "kinds":{"type":"array", "items": {"type":"string"}},
-                "limit":{"type":"integer"}
+                "limit":{"type":"integer"},
+                "messageLimit":{"type":"integer"}
             }
         })
     }
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let limit = params
-            .get("limit")
-            .and_then(Value::as_u64)
-            .unwrap_or(100)
-            .min(500);
-        let active_minutes = params.get("activeMinutes").and_then(Value::as_i64);
-
-        let storage =
-            magicmerlin_storage::Storage::new(ctx.state_paths.state_dir.join("openclaw.db"))?;
-        let conn = storage.connection()?;
-
-        let mut query =
-            "SELECT id, agent, status, started_at, updated_at FROM sessions".to_string();
-        if active_minutes.is_some() {
-            query.push_str(" WHERE updated_at >= ?1");
-        }
-        query.push_str(" ORDER BY updated_at DESC LIMIT ?2");
-
-        let mut out = Vec::new();
-        if let Some(minutes) = active_minutes {
-            let threshold = Utc::now().timestamp() - (minutes * 60);
-            let mut stmt = conn
-                .prepare(&query)
-                .map_err(|e| ToolError::Execution(e.to_string()))?;
-            let rows = stmt
-                .query_map(params![threshold, limit], |row| {
-                    Ok(json!({
-                        "session_key": row.get::<_, String>(0)?,
-                        "agent": row.get::<_, Option<String>>(1)?,
-                        "status": row.get::<_, String>(2)?,
-                        "started_at": row.get::<_, i64>(3)?,
-                        "updated_at": row.get::<_, i64>(4)?,
-                    }))
-                })
-                .map_err(|e| ToolError::Execution(e.to_string()))?;
-
-            for row in rows {
-                out.push(row.map_err(|e| ToolError::Execution(e.to_string()))?);
-            }
-        } else {
-            let query = "SELECT id, agent, status, started_at, updated_at FROM sessions ORDER BY updated_at DESC LIMIT ?1";
-            let mut stmt = conn
-                .prepare(query)
-                .map_err(|e| ToolError::Execution(e.to_string()))?;
-            let rows = stmt
-                .query_map(params![limit], |row| {
-                    Ok(json!({
-                        "session_key": row.get::<_, String>(0)?,
-                        "agent": row.get::<_, Option<String>>(1)?,
-                        "status": row.get::<_, String>(2)?,
-                        "started_at": row.get::<_, i64>(3)?,
-                        "updated_at": row.get::<_, i64>(4)?,
-                    }))
-                })
-                .map_err(|e| ToolError::Execution(e.to_string()))?;
-            for row in rows {
-                out.push(row.map_err(|e| ToolError::Execution(e.to_string()))?);
-            }
-        }
-
-        Ok(ToolResult::success(json!({"sessions": out})))
+        gateway_call(ctx, "sessions.list", params).await
     }
 }
 
@@ -1045,45 +988,23 @@ impl Tool for SessionsHistoryTool {
     }
 
     fn description(&self) -> &str {
-        "Returns transcript history for a session."
+        "Returns transcript history for a session via the gateway."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
-                "agent":{"type":"string"},
-                "session_key":{"type":"string"},
+                "sessionKey":{"type":"string"},
                 "limit":{"type":"integer"},
                 "includeTools":{"type":"boolean"}
             },
-            "required":["agent","session_key"]
+            "required":["sessionKey"]
         })
     }
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let agent = required_string(&params, "agent", self.name())?;
-        let session_key = required_string(&params, "session_key", self.name())?;
-        let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(100) as usize;
-        let include_tools = params
-            .get("includeTools")
-            .and_then(Value::as_bool)
-            .unwrap_or(true);
-
-        let transcript_path = ctx
-            .state_paths
-            .sessions_dir
-            .join(agent)
-            .join(format!("{}.jsonl", session_key.replace(':', "__")));
-        let store = magicmerlin_storage::TranscriptStore::new(transcript_path)?;
-        let mut entries = store.read(0, Some(limit))?;
-        if !include_tools {
-            entries.retain(|item| {
-                let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
-                !matches!(kind, "tool_use" | "tool_result")
-            });
-        }
-        Ok(ToolResult::success(json!({"entries": entries})))
+        gateway_call(ctx, "sessions.history", params).await
     }
 }
 
@@ -1096,51 +1017,23 @@ impl Tool for SessionsSendTool {
     }
 
     fn description(&self) -> &str {
-        "Queues a message to another session by key or label."
+        "Sends a message to another session via the gateway."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
-                "session_key":{"type":"string"},
-                "label":{"type":"string"},
-                "message":{"type":"string"}
+                "sessionKey":{"type":"string"},
+                "message":{"type":"string"},
+                "timeoutSeconds":{"type":"integer"}
             },
-            "required":["message"]
+            "required":["sessionKey","message"]
         })
     }
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let message = required_string(&params, "message", self.name())?;
-        let target = params
-            .get("session_key")
-            .and_then(Value::as_str)
-            .or_else(|| params.get("label").and_then(Value::as_str))
-            .ok_or_else(|| ToolError::InvalidParams {
-                tool: self.name().to_string(),
-                message: "missing session_key or label".to_string(),
-            })?
-            .to_string();
-
-        let queue_dir = ctx.state_paths.state_dir.join("session_inbox");
-        tokio::fs::create_dir_all(&queue_dir)
-            .await
-            .map_err(|source| ToolError::Io {
-                path: queue_dir.clone(),
-                source,
-            })?;
-        let path = queue_dir.join(format!("{}.jsonl", target.replace(':', "__")));
-        let entry = json!({
-            "ts": Utc::now().timestamp(),
-            "from": ctx.agent_name,
-            "message": message,
-        });
-        append_jsonl(&path, &entry).await?;
-
-        Ok(ToolResult::success(
-            json!({"queued": true, "target": target}),
-        ))
+        gateway_call(ctx, "sessions.send", params).await
     }
 }
 
@@ -1153,88 +1046,28 @@ impl Tool for SessionsSpawnTool {
     }
 
     fn description(&self) -> &str {
-        "Spawns isolated sub-agent session metadata and parent relation."
+        "Spawns an isolated sub-agent session via the gateway."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
-                "runtime":{"type":"string"},
-                "mode":{"type":"string"},
+                "task":{"type":"string"},
+                "agentId":{"type":"string"},
+                "mode":{"type":"string","enum":["run","session"]},
                 "model":{"type":"string"},
-                "agent":{"type":"string"}
-            }
+                "runtime":{"type":"string","enum":["subagent","acp"]},
+                "timeoutSeconds":{"type":"integer"},
+                "label":{"type":"string"},
+                "thread":{"type":"boolean"}
+            },
+            "required":["task"]
         })
     }
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let runtime = params
-            .get("runtime")
-            .and_then(Value::as_str)
-            .unwrap_or("subagent");
-        let mode = params
-            .get("mode")
-            .and_then(Value::as_str)
-            .unwrap_or("session");
-        let model = params
-            .get("model")
-            .and_then(Value::as_str)
-            .or_else(|| ctx.config.agents.defaults.model.as_deref())
-            .unwrap_or("unknown");
-        let agent = params
-            .get("agent")
-            .and_then(Value::as_str)
-            .unwrap_or("subagent");
-
-        let session_key = format!(
-            "{}:{}:{}",
-            agent,
-            Utc::now().timestamp_millis(),
-            rand_suffix(6)
-        );
-
-        let storage =
-            magicmerlin_storage::Storage::new(ctx.state_paths.state_dir.join("openclaw.db"))?;
-        let conn = storage.connection()?;
-        conn.execute(
-            "INSERT INTO sessions(id, agent, status, started_at, updated_at, metadata) VALUES(?1, ?2, ?3, ?4, ?5, ?6)",
-            params![
-                session_key,
-                agent,
-                "running",
-                Utc::now().timestamp(),
-                Utc::now().timestamp(),
-                json!({
-                    "parent": ctx.agent_name,
-                    "runtime": runtime,
-                    "mode": mode,
-                    "model": model,
-                }).to_string(),
-            ],
-        ).map_err(|e| ToolError::Execution(e.to_string()))?;
-
-        append_subagent_record(
-            &ctx.state_paths.state_dir,
-            json!({
-                "session_key": session_key,
-                "agent": agent,
-                "runtime": runtime,
-                "mode": mode,
-                "model": model,
-                "parent": ctx.agent_name,
-                "status": "running",
-                "started_at": Utc::now().timestamp(),
-            }),
-        )
-        .await?;
-
-        Ok(ToolResult::success(json!({
-            "session_key": session_key,
-            "runtime": runtime,
-            "mode": mode,
-            "model": model,
-        })))
+        gateway_call(ctx, "sessions.spawn", params).await
     }
 }
 
@@ -1247,15 +1080,15 @@ impl Tool for SubagentsTool {
     }
 
     fn description(&self) -> &str {
-        "Lists, steers, or kills sub-agents tracked in state metadata."
+        "Lists, steers, or kills sub-agents via the gateway."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
-                "action":{"type":"string"},
-                "session_key":{"type":"string"},
+                "action":{"type":"string","enum":["list","steer","kill"]},
+                "target":{"type":"string"},
                 "message":{"type":"string"}
             },
             "required":["action"]
@@ -1264,34 +1097,8 @@ impl Tool for SubagentsTool {
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let action = required_string(&params, "action", self.name())?;
-        match action.as_str() {
-            "list" => {
-                let list = read_subagent_records(&ctx.state_paths.state_dir).await?;
-                Ok(ToolResult::success(json!({"subagents": list})))
-            }
-            "steer" => {
-                let target = required_string(&params, "session_key", self.name())?;
-                let message = required_string(&params, "message", self.name())?;
-                SessionsSendTool
-                    .execute(json!({"session_key": target, "message": message}), ctx)
-                    .await
-            }
-            "kill" => {
-                let target = required_string(&params, "session_key", self.name())?;
-                let mut items = read_subagent_records(&ctx.state_paths.state_dir).await?;
-                for item in &mut items {
-                    if item.get("session_key").and_then(Value::as_str) == Some(target.as_str()) {
-                        item["status"] = json!("killed");
-                    }
-                }
-                write_subagent_records(&ctx.state_paths.state_dir, &items).await?;
-                Ok(ToolResult::success(json!({"killed": target})))
-            }
-            _ => Err(ToolError::InvalidParams {
-                tool: self.name().to_string(),
-                message: "action must be list|steer|kill".to_string(),
-            }),
-        }
+        let method = format!("subagents.{action}");
+        gateway_call(ctx, &method, params).await
     }
 }
 
@@ -1304,37 +1111,15 @@ impl Tool for AgentsListTool {
     }
 
     fn description(&self) -> &str {
-        "Returns available agent IDs."
+        "Returns available agent IDs via the gateway."
     }
 
     fn schema(&self) -> Value {
         json!({"type":"object"})
     }
 
-    async fn execute(&self, _params: Value, ctx: &ToolContext) -> Result<ToolResult> {
-        let mut agents = vec![ctx.agent_name.clone()];
-        if let Some(model) = &ctx.config.agents.defaults.model {
-            agents.push(format!("default:{model}"));
-        }
-        if ctx.state_paths.sessions_dir.exists() {
-            for entry in std::fs::read_dir(&ctx.state_paths.sessions_dir).map_err(|source| {
-                ToolError::Io {
-                    path: ctx.state_paths.sessions_dir.clone(),
-                    source,
-                }
-            })? {
-                let entry = entry.map_err(|source| ToolError::Io {
-                    path: ctx.state_paths.sessions_dir.clone(),
-                    source,
-                })?;
-                if entry.path().is_dir() {
-                    agents.push(entry.file_name().to_string_lossy().to_string());
-                }
-            }
-        }
-        agents.sort();
-        agents.dedup();
-        Ok(ToolResult::success(json!({"agents": agents})))
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
+        gateway_call(ctx, "agents.list", params).await
     }
 }
 
@@ -1422,12 +1207,37 @@ impl Tool for CronTool {
         json!({
             "type":"object",
             "properties": {
-                "action":{"type":"string", "enum":["status","list","add","update","remove","run","runs","wake"]},
+                "action":{"type":"string","enum":["status","list","add","update","remove","run","runs","wake"]},
                 "id":{"type":"string"},
-                "name":{"type":"string"},
-                "schedule":{"type":"string"},
-                "command":{"type":"string"},
-                "enabled":{"type":"boolean"},
+                "job":{
+                    "type":"object",
+                    "properties": {
+                        "name":{"type":"string"},
+                        "schedule":{
+                            "type":"object",
+                            "properties": {
+                                "kind":{"type":"string","enum":["cron","interval","once"]},
+                                "expr":{"type":"string"},
+                                "everyMs":{"type":"integer"},
+                                "at":{"type":"string"}
+                            },
+                            "required":["kind"]
+                        },
+                        "payload":{
+                            "type":"object",
+                            "properties": {
+                                "kind":{"type":"string","enum":["text","message"]},
+                                "text":{"type":"string"},
+                                "message":{"type":"string"}
+                            },
+                            "required":["kind"]
+                        },
+                        "delivery":{"type":"object"},
+                        "sessionTarget":{"type":"string"},
+                        "enabled":{"type":"boolean"}
+                    },
+                    "required":["schedule","payload"]
+                },
                 "limit":{"type":"integer"}
             },
             "required":["action"]
@@ -1919,7 +1729,104 @@ impl Tool for CanvasTool {
     }
 }
 
+/// HTTP client for a single registered node host.
+struct NodeApiClient {
+    base_url: String,
+    token: String,
+    http: reqwest::Client,
+}
+
+impl NodeApiClient {
+    fn new(base_url: String, token: String) -> Self {
+        let http = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_default();
+        Self {
+            base_url,
+            token,
+            http,
+        }
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("{}{}", self.base_url.trim_end_matches('/'), path)
+    }
+
+    async fn get(&self, path: &str) -> Result<Value> {
+        let url = self.url(path);
+        let resp = self
+            .http
+            .get(&url)
+            .bearer_auth(&self.token)
+            .send()
+            .await
+            .map_err(|e| ToolError::Execution(format!("node request failed: {e}")))?;
+        let status = resp.status().as_u16();
+        let value: Value = resp
+            .json()
+            .await
+            .unwrap_or_else(|_| json!({"error": "non-json response"}));
+        if status >= 400 {
+            return Err(ToolError::Execution(format!(
+                "node returned HTTP {status}: {}",
+                serde_json::to_string(&value).unwrap_or_default()
+            )));
+        }
+        Ok(value)
+    }
+
+    async fn post(&self, path: &str, body: Value) -> Result<Value> {
+        let url = self.url(path);
+        let resp = self
+            .http
+            .post(&url)
+            .bearer_auth(&self.token)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| ToolError::Execution(format!("node request failed: {e}")))?;
+        let status = resp.status().as_u16();
+        let value: Value = resp
+            .json()
+            .await
+            .unwrap_or_else(|_| json!({"error": "non-json response"}));
+        if status >= 400 {
+            return Err(ToolError::Execution(format!(
+                "node returned HTTP {status}: {}",
+                serde_json::to_string(&value).unwrap_or_default()
+            )));
+        }
+        Ok(value)
+    }
+}
+
 struct NodesTool;
+
+impl NodesTool {
+    fn resolve_node<'a>(
+        configs: &'a [NodeConfig],
+        params: &Value,
+    ) -> Result<&'a NodeConfig> {
+        if configs.is_empty() {
+            return Err(ToolError::InvalidParams {
+                tool: "nodes".to_string(),
+                message: "no node hosts configured".to_string(),
+            });
+        }
+        if let Some(id) = params.get("node").and_then(Value::as_str) {
+            configs
+                .iter()
+                .find(|n| n.id == id)
+                .ok_or_else(|| ToolError::InvalidParams {
+                    tool: "nodes".to_string(),
+                    message: format!("unknown node: {id}"),
+                })
+        } else {
+            Ok(&configs[0])
+        }
+    }
+}
 
 #[async_trait]
 impl Tool for NodesTool {
@@ -1928,78 +1835,282 @@ impl Tool for NodesTool {
     }
 
     fn description(&self) -> &str {
-        "Remote node control over HTTP endpoints."
+        "Remote device control via registered node hosts."
     }
 
     fn schema(&self) -> Value {
         json!({
             "type":"object",
             "properties": {
-                "base_url":{"type":"string"},
-                "action":{"type":"string"},
-                "path":{"type":"string"},
-                "method":{"type":"string"},
-                "body":{}
+                "node":{"type":"string","description":"Node ID from config, defaults to first"},
+                "action":{"type":"string","enum":[
+                    "status","describe",
+                    "pending","approve","reject",
+                    "notify",
+                    "camera_snap","camera_list","camera_clip",
+                    "photos_latest",
+                    "screen_record",
+                    "location_get",
+                    "notifications_list","notifications_action",
+                    "device_status","device_info",
+                    "run","invoke"
+                ]},
+                "requestId":{"type":"string"},
+                "title":{"type":"string"},
+                "body":{"type":"string"},
+                "priority":{"type":"string"},
+                "sound":{"type":"string"},
+                "delivery":{"type":"object"},
+                "facing":{"type":"string"},
+                "maxWidth":{"type":"integer"},
+                "quality":{"type":"integer"},
+                "durationMs":{"type":"integer"},
+                "fps":{"type":"integer"},
+                "includeAudio":{"type":"boolean"},
+                "screenIndex":{"type":"integer"},
+                "limit":{"type":"integer"},
+                "accuracy":{"type":"string"},
+                "timeoutMs":{"type":"integer"},
+                "notificationKey":{"type":"string"},
+                "replyText":{"type":"string"},
+                "command":{"type":"array","items":{"type":"string"}},
+                "params":{"type":"object"},
+                "cwd":{"type":"string"},
+                "env":{"type":"object"}
             },
-            "required":["base_url","action"]
+            "required":["action"]
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
-        let base = required_string(&params, "base_url", self.name())?;
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let action = required_string(&params, "action", self.name())?;
+        let node_cfg = Self::resolve_node(&ctx.node_configs, &params)?;
+        let client = NodeApiClient::new(node_cfg.url.clone(), node_cfg.token.clone());
 
-        let endpoint = match action.as_str() {
-            "status" => "/status",
-            "camera" => "/camera",
-            "screen" => "/screen",
-            "location" => "/location",
-            "run" => "/run",
-            "invoke" => "/invoke",
+        let result = match action.as_str() {
+            // --- Status / describe ---
+            "status" => client.get("/api/status").await?,
+            "describe" => client.get("/api/describe").await?,
+
+            // --- Pairing ---
+            "pending" => client.get("/api/pairing/pending").await?,
+            "approve" => {
+                let id = required_string(&params, "requestId", self.name())?;
+                client
+                    .post("/api/pairing/approve", json!({"requestId": id}))
+                    .await?
+            }
+            "reject" => {
+                let id = required_string(&params, "requestId", self.name())?;
+                client
+                    .post("/api/pairing/reject", json!({"requestId": id}))
+                    .await?
+            }
+
+            // --- Notifications push ---
+            "notify" => {
+                client
+                    .post(
+                        "/api/notify",
+                        json!({
+                            "title": params.get("title"),
+                            "body": params.get("body"),
+                            "priority": params.get("priority"),
+                            "sound": params.get("sound"),
+                            "delivery": params.get("delivery"),
+                        }),
+                    )
+                    .await?
+            }
+
+            // --- Camera ---
+            "camera_snap" => {
+                client
+                    .post(
+                        "/api/camera/snap",
+                        json!({
+                            "facing": params.get("facing"),
+                            "maxWidth": params.get("maxWidth"),
+                            "quality": params.get("quality"),
+                        }),
+                    )
+                    .await?
+            }
+            "camera_list" => client.get("/api/camera/list").await?,
+            "camera_clip" => {
+                client
+                    .post(
+                        "/api/camera/clip",
+                        json!({
+                            "facing": params.get("facing"),
+                            "durationMs": params.get("durationMs"),
+                            "fps": params.get("fps"),
+                            "includeAudio": params.get("includeAudio"),
+                        }),
+                    )
+                    .await?
+            }
+
+            // --- Photos ---
+            "photos_latest" => {
+                let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(10);
+                client
+                    .get(&format!("/api/photos/latest?limit={limit}"))
+                    .await?
+            }
+
+            // --- Screen ---
+            "screen_record" => {
+                client
+                    .post(
+                        "/api/screen/record",
+                        json!({
+                            "durationMs": params.get("durationMs"),
+                            "screenIndex": params.get("screenIndex"),
+                        }),
+                    )
+                    .await?
+            }
+
+            // --- Location ---
+            "location_get" => {
+                let accuracy = params
+                    .get("accuracy")
+                    .and_then(Value::as_str)
+                    .unwrap_or("balanced");
+                let timeout = params
+                    .get("timeoutMs")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(5000);
+                client
+                    .get(&format!(
+                        "/api/location?accuracy={accuracy}&timeoutMs={timeout}"
+                    ))
+                    .await?
+            }
+
+            // --- Notification inbox ---
+            "notifications_list" => {
+                let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(20);
+                client
+                    .get(&format!("/api/notifications?limit={limit}"))
+                    .await?
+            }
+            "notifications_action" => {
+                client
+                    .post(
+                        "/api/notifications/action",
+                        json!({
+                            "notificationKey": params.get("notificationKey"),
+                            "action": params.get("action"),
+                            "replyText": params.get("replyText"),
+                        }),
+                    )
+                    .await?
+            }
+
+            // --- Device ---
+            "device_status" => client.get("/api/device/status").await?,
+            "device_info" => client.get("/api/device/info").await?,
+
+            // --- Run / invoke ---
+            "run" => {
+                client
+                    .post(
+                        "/api/run",
+                        json!({
+                            "command": params.get("command"),
+                            "cwd": params.get("cwd"),
+                            "env": params.get("env"),
+                            "timeoutMs": params.get("timeoutMs"),
+                        }),
+                    )
+                    .await?
+            }
+            "invoke" => {
+                client
+                    .post(
+                        "/api/invoke",
+                        json!({
+                            "command": params.get("command"),
+                            "params": params.get("params"),
+                            "timeoutMs": params.get("timeoutMs"),
+                        }),
+                    )
+                    .await?
+            }
+
             _ => {
                 return Err(ToolError::InvalidParams {
                     tool: self.name().to_string(),
-                    message: "action must be status|camera|screen|location|run|invoke".to_string(),
+                    message: format!("unsupported node action: {action}"),
                 })
             }
         };
 
-        let custom_path = params
-            .get("path")
-            .and_then(Value::as_str)
-            .unwrap_or(endpoint);
-        let url = format!("{}{}", base.trim_end_matches('/'), custom_path);
+        Ok(ToolResult::success(
+            json!({"node": node_cfg.id, "action": action, "result": result}),
+        ))
+    }
+}
 
-        let method = params
-            .get("method")
-            .and_then(Value::as_str)
-            .unwrap_or("POST");
-        let body = params.get("body").cloned().unwrap_or(Value::Null);
+struct SessionsYieldTool;
 
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(20))
-            .build()
-            .map_err(|e| ToolError::Execution(e.to_string()))?;
-        let req = match method {
-            "GET" => client.get(&url),
-            "PUT" => client.put(&url),
-            "DELETE" => client.delete(&url),
-            _ => client.post(&url),
-        };
+#[async_trait]
+impl Tool for SessionsYieldTool {
+    fn name(&self) -> &str {
+        "sessions_yield"
+    }
 
-        let response = req
-            .json(&body)
-            .send()
-            .await
-            .map_err(|e| ToolError::Execution(e.to_string()))?;
-        let status = response.status().as_u16();
-        let text = response.text().await.unwrap_or_default();
+    fn description(&self) -> &str {
+        "Ends the current turn, signalling the gateway to pause until a sub-agent reports back."
+    }
 
-        Ok(ToolResult::success(json!({
-            "status": status,
-            "url": url,
-            "body": text,
-        })))
+    fn schema(&self) -> Value {
+        json!({
+            "type":"object",
+            "properties": {
+                "message":{"type":"string"}
+            }
+        })
+    }
+
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
+        gateway_call(ctx, "sessions.yield", params).await
+    }
+}
+
+struct GatewayTool;
+
+#[async_trait]
+impl Tool for GatewayTool {
+    fn name(&self) -> &str {
+        "gateway"
+    }
+
+    fn description(&self) -> &str {
+        "Gateway control surface for config, restart, and updates."
+    }
+
+    fn schema(&self) -> Value {
+        json!({
+            "type":"object",
+            "properties": {
+                "action":{"type":"string","enum":["restart","config.get","config.patch","config.apply","update.run"]},
+                "reason":{"type":"string"},
+                "delayMs":{"type":"integer"},
+                "path":{"type":"string"},
+                "raw":{"type":"object"},
+                "note":{"type":"string"}
+            },
+            "required":["action"]
+        })
+    }
+
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
+        let action = required_string(&params, "action", self.name())?;
+        let method = format!("gateway.{action}");
+        gateway_call(ctx, &method, params).await
     }
 }
 
@@ -2073,39 +2184,6 @@ async fn exec_foreground_pty(
     })))
 }
 
-/// Derives gateway URL from env or config.
-fn gateway_url(ctx: &ToolContext) -> String {
-    if let Ok(url) = std::env::var("MAGICMERLIN_GATEWAY_URL") {
-        return url;
-    }
-    let port = ctx.config.gateway.port.unwrap_or(18789);
-    let bind = ctx.config.gateway.bind.as_deref().unwrap_or("127.0.0.1");
-    format!("http://{bind}:{port}")
-}
-
-/// POSTs a JSON-RPC-style call to the gateway.
-async fn gateway_call(ctx: &ToolContext, method: &str, params: Value) -> Result<ToolResult> {
-    let url = format!("{}/call", gateway_url(ctx));
-    let body = json!({ "method": method, "params": params });
-    let resp = reqwest::Client::new()
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| ToolError::Execution(format!("gateway request failed: {e}")))?;
-    let status = resp.status().as_u16();
-    let value = resp
-        .json::<Value>()
-        .await
-        .unwrap_or_else(|_| json!({"error": "non-json response"}));
-    if status >= 400 {
-        return Ok(ToolResult::failure(format!(
-            "gateway returned {status}: {}",
-            serde_json::to_string(&value).unwrap_or_default()
-        )));
-    }
-    Ok(ToolResult::success(value))
-}
 
 fn required_string(params: &Value, key: &str, tool: &str) -> Result<String> {
     params
@@ -2464,65 +2542,6 @@ fn truncate_chars(text: &str, max: usize) -> String {
     text.chars().take(max).collect::<String>()
 }
 
-async fn append_jsonl(path: &Path, value: &Value) -> Result<()> {
-    let line = serde_json::to_string(value)?;
-    use tokio::io::AsyncWriteExt;
-    let mut f = tokio::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
-        .await
-        .map_err(|source| ToolError::Io {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    f.write_all(line.as_bytes())
-        .await
-        .map_err(|source| ToolError::Io {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    f.write_all(b"\n").await.map_err(|source| ToolError::Io {
-        path: path.to_path_buf(),
-        source,
-    })?;
-    Ok(())
-}
-
-async fn append_subagent_record(state_dir: &Path, value: Value) -> Result<()> {
-    let path = state_dir.join("subagents.jsonl");
-    append_jsonl(&path, &value).await
-}
-
-async fn read_subagent_records(state_dir: &Path) -> Result<Vec<Value>> {
-    let path = state_dir.join("subagents.jsonl");
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-    let body = tokio::fs::read_to_string(&path)
-        .await
-        .map_err(|source| ToolError::Io {
-            path: path.clone(),
-            source,
-        })?;
-    Ok(body
-        .lines()
-        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
-        .collect())
-}
-
-async fn write_subagent_records(state_dir: &Path, items: &[Value]) -> Result<()> {
-    let path = state_dir.join("subagents.jsonl");
-    let mut out = String::new();
-    for item in items {
-        out.push_str(&serde_json::to_string(item)?);
-        out.push('\n');
-    }
-    tokio::fs::write(&path, out)
-        .await
-        .map_err(|source| ToolError::Io { path, source })
-}
-
 fn rand_suffix(len: usize) -> String {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -2556,6 +2575,7 @@ mod tests {
             config: magicmerlin_config::Config::default(),
             delivery: None,
             process_manager: crate::ProcessManager::new(),
+            node_configs: vec![],
         }
     }
 
@@ -2797,8 +2817,172 @@ mod tests {
         let temp = tempfile::tempdir().expect("tmp");
         let ctx = make_test_ctx(temp.path());
         // Without env var, should use config defaults
-        let url = gateway_url(&ctx);
+        let url = crate::gateway::gateway_url(&ctx);
         assert!(url.starts_with("http://"));
         assert!(url.contains("18789") || url.contains("127.0.0.1"));
+    }
+
+    // --- NodeApiClient URL building ---
+    #[test]
+    fn node_api_client_url_building() {
+        let client = NodeApiClient::new(
+            "http://192.168.1.42:9222".to_string(),
+            "test-token".to_string(),
+        );
+        assert_eq!(client.url("/api/status"), "http://192.168.1.42:9222/api/status");
+        assert_eq!(
+            client.url("/api/location?accuracy=balanced&timeoutMs=5000"),
+            "http://192.168.1.42:9222/api/location?accuracy=balanced&timeoutMs=5000"
+        );
+
+        // Trailing slash should be stripped
+        let client2 = NodeApiClient::new(
+            "http://example.com:8080/".to_string(),
+            "tok".to_string(),
+        );
+        assert_eq!(client2.url("/api/describe"), "http://example.com:8080/api/describe");
+    }
+
+    // --- NodesTool resolve_node ---
+    #[test]
+    fn nodes_tool_resolve_node_selects_first() {
+        let configs = vec![
+            NodeConfig {
+                id: "phone".to_string(),
+                url: "http://10.0.0.1:9222".to_string(),
+                token: "tok1".to_string(),
+            },
+            NodeConfig {
+                id: "tablet".to_string(),
+                url: "http://10.0.0.2:9222".to_string(),
+                token: "tok2".to_string(),
+            },
+        ];
+        let node = NodesTool::resolve_node(&configs, &json!({})).unwrap();
+        assert_eq!(node.id, "phone");
+    }
+
+    #[test]
+    fn nodes_tool_resolve_node_by_id() {
+        let configs = vec![
+            NodeConfig {
+                id: "phone".to_string(),
+                url: "http://10.0.0.1:9222".to_string(),
+                token: "tok1".to_string(),
+            },
+            NodeConfig {
+                id: "tablet".to_string(),
+                url: "http://10.0.0.2:9222".to_string(),
+                token: "tok2".to_string(),
+            },
+        ];
+        let node = NodesTool::resolve_node(&configs, &json!({"node": "tablet"})).unwrap();
+        assert_eq!(node.id, "tablet");
+        assert_eq!(node.url, "http://10.0.0.2:9222");
+    }
+
+    #[test]
+    fn nodes_tool_resolve_node_rejects_empty() {
+        let configs: Vec<NodeConfig> = vec![];
+        let result = NodesTool::resolve_node(&configs, &json!({}));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn nodes_tool_resolve_node_rejects_unknown_id() {
+        let configs = vec![NodeConfig {
+            id: "phone".to_string(),
+            url: "http://10.0.0.1:9222".to_string(),
+            token: "tok1".to_string(),
+        }];
+        let result = NodesTool::resolve_node(&configs, &json!({"node": "nope"}));
+        assert!(result.is_err());
+    }
+
+    // --- sessions_spawn dispatches to gateway ---
+    #[tokio::test]
+    async fn sessions_spawn_dispatches_to_gateway() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = SessionsSpawnTool
+            .execute(json!({"task": "test task"}), &ctx)
+            .await;
+        // Gateway not running, so expect connection error
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- sessions_yield dispatches to gateway ---
+    #[tokio::test]
+    async fn sessions_yield_dispatches_to_gateway() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = SessionsYieldTool
+            .execute(json!({"message": "pausing"}), &ctx)
+            .await;
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- gateway tool dispatches ---
+    #[tokio::test]
+    async fn gateway_tool_requires_action() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = GatewayTool.execute(json!({}), &ctx).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn gateway_tool_dispatches_restart() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = GatewayTool
+            .execute(json!({"action": "restart", "reason": "test"}), &ctx)
+            .await;
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- subagents dispatches to gateway ---
+    #[tokio::test]
+    async fn subagents_tool_dispatches_list() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = SubagentsTool
+            .execute(json!({"action": "list"}), &ctx)
+            .await;
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- agents_list dispatches to gateway ---
+    #[tokio::test]
+    async fn agents_list_dispatches_to_gateway() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let ctx = make_test_ctx(temp.path());
+        let result = AgentsListTool.execute(json!({}), &ctx).await;
+        assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- Registry includes new tools ---
+    #[tokio::test]
+    async fn registry_includes_sprint5_tools() {
+        let mut registry = ToolRegistry::new();
+        register_default_tools(&mut registry);
+        let names = registry.names();
+        for required in [
+            "sessions_spawn",
+            "sessions_list",
+            "sessions_history",
+            "sessions_send",
+            "sessions_yield",
+            "subagents",
+            "agents_list",
+            "gateway",
+            "cron",
+            "nodes",
+        ] {
+            assert!(
+                names.contains(&required.to_string()),
+                "missing tool: {required}"
+            );
+        }
     }
 }

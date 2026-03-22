@@ -130,6 +130,30 @@ pub const SUPPORTED_METHODS: &[&str] = &[
     "browser.screenshot",
     "browser.act",
     "browser.snapshot",
+    // Channels extended
+    "channels.react",
+    "channels.delete",
+    // Nodes extended
+    "nodes.notify",
+    "nodes.location_get",
+    "nodes.screen_record",
+    "nodes.camera_snap",
+    // Browser extended
+    "browser.tabs",
+    "browser.open",
+    // Subagents
+    "subagents.list",
+    "subagents.steer",
+    "subagents.kill",
+    // Gateway control
+    "gateway.status",
+    "gateway.restart",
+    "gateway.config.get",
+    "gateway.config.patch",
+    // Approvals extended
+    "approvals.pending",
+    // Sessions extended
+    "sessions.yield",
     // Back-compat methods still exposed.
     "cron.remove",
     "cron.pause",

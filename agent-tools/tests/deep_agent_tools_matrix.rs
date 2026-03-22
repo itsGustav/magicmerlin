@@ -12,6 +12,7 @@ fn build_ctx() -> ToolContext {
         config: magicmerlin_config::Config::default(),
         delivery: None,
         process_manager: ProcessManager::new(),
+        node_configs: vec![],
     }
 }
 
