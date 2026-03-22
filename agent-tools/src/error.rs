@@ -42,4 +42,7 @@ pub enum ToolError {
     /// Generic runtime failure.
     #[error("execution failed: {0}")]
     Execution(String),
+    /// Tool not available (missing configuration).
+    #[error("tool unavailable: {0}")]
+    Unavailable(String),
 }

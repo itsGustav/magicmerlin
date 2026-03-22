@@ -1,7 +1,7 @@
 //! Default tool implementations and registration.
 
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -16,6 +16,7 @@ use crate::gateway::gateway_call;
 use crate::registry::{NodeConfig, Tool, ToolContext, ToolRegistry, ToolResult};
 
 use std::io::Read as StdRead;
+use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
 
 const READ_MAX_BYTES: usize = 50 * 1024;
 const READ_MAX_LINES: usize = 2000;
@@ -490,59 +491,90 @@ impl Tool for WebSearchTool {
             .unwrap_or(5)
             .clamp(1, 10);
 
-        let api_key = ctx
+        let api_key = match ctx
             .config
             .tools
             .values
             .get("brave_api_key")
             .and_then(Value::as_str)
-            .ok_or_else(|| {
-                ToolError::Execution("missing tools.brave_api_key config".to_string())
-            })?;
-
-        let mut req = reqwest::Client::new()
-            .get("https://api.search.brave.com/res/v1/web/search")
-            .header("X-Subscription-Token", api_key)
-            .query(&[("q", query.as_str()), ("count", &count.to_string())]);
-
-        for key in ["freshness", "country", "search_lang", "ui_lang"] {
-            if let Some(value) = params.get(key).and_then(Value::as_str) {
-                req = req.query(&[(key, value)]);
+        {
+            Some(k) => k.to_string(),
+            None => {
+                return Ok(ToolResult::failure(
+                    "missing tools.brave_api_key config — set it in config to enable web search",
+                ))
             }
+        };
+
+        let http = reqwest::Client::new();
+        let mut last_err = String::new();
+
+        for attempt in 0..3u32 {
+            if attempt > 0 {
+                tokio::time::sleep(Duration::from_millis(500 * 2u64.pow(attempt - 1))).await;
+            }
+
+            let mut req = http
+                .get("https://api.search.brave.com/res/v1/web/search")
+                .header("X-Subscription-Token", &api_key)
+                .query(&[("q", query.as_str()), ("count", &count.to_string())]);
+
+            for key in ["freshness", "country", "search_lang", "ui_lang"] {
+                if let Some(value) = params.get(key).and_then(Value::as_str) {
+                    req = req.query(&[(key, value)]);
+                }
+            }
+
+            let response = match req.send().await {
+                Ok(r) => r,
+                Err(e) => {
+                    last_err = e.to_string();
+                    continue;
+                }
+            };
+
+            let status = response.status().as_u16();
+            if status == 429 {
+                last_err = "rate limited (429)".to_string();
+                continue;
+            }
+
+            let body = response
+                .json::<Value>()
+                .await
+                .map_err(|e| ToolError::Execution(e.to_string()))?;
+
+            let results = body
+                .pointer("/web/results")
+                .and_then(Value::as_array)
+                .map(|items| {
+                    items
+                        .iter()
+                        .map(|item| {
+                            json!({
+                                "title": item.get("title").and_then(Value::as_str).unwrap_or_default(),
+                                "url": item.get("url").and_then(Value::as_str).unwrap_or_default(),
+                                "snippet": item.get("description").and_then(Value::as_str).unwrap_or_default(),
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+
+            let total = body
+                .pointer("/web/totalResults")
+                .and_then(Value::as_u64)
+                .unwrap_or(results.len() as u64);
+
+            return Ok(ToolResult::success(json!({
+                "results": results,
+                "total": total,
+            })));
         }
 
-        let response = req
-            .send()
-            .await
-            .map_err(|e| ToolError::Execution(e.to_string()))?;
-        let status = response.status().as_u16();
-        let value = response
-            .json::<Value>()
-            .await
-            .map_err(|e| ToolError::Execution(e.to_string()))?;
-
-        let results = value
-            .pointer("/web/results")
-            .and_then(Value::as_array)
-            .map(|items| {
-                items
-                    .iter()
-                    .map(|item| {
-                        json!({
-                            "title": item.get("title").and_then(Value::as_str).unwrap_or_default(),
-                            "url": item.get("url").and_then(Value::as_str).unwrap_or_default(),
-                            "description": item.get("description").and_then(Value::as_str).unwrap_or_default(),
-                        })
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-
-        Ok(ToolResult::success(json!({
-            "status": status,
-            "results": results,
-            "raw": value,
-        })))
+        Ok(ToolResult::failure(format!(
+            "web search failed after 3 attempts: {last_err}"
+        )))
     }
 }
 
@@ -577,14 +609,16 @@ impl Tool for WebFetchTool {
             params
                 .get("timeout_ms")
                 .and_then(Value::as_u64)
-                .unwrap_or(20_000),
+                .unwrap_or(30_000),
         );
         let max_chars = params
             .get("max_chars")
+            .or_else(|| params.get("maxChars"))
             .and_then(Value::as_u64)
             .unwrap_or(50_000) as usize;
         let format = params
             .get("format")
+            .or_else(|| params.get("extractMode"))
             .and_then(Value::as_str)
             .unwrap_or("markdown");
 
@@ -619,15 +653,15 @@ impl Tool for WebFetchTool {
                 "status": status,
                 "url": final_url,
                 "content_type": content_type,
-                "text": truncate_chars(&body, max_chars),
+                "content": truncate_chars(&body, max_chars),
                 "truncated": body.chars().count() > max_chars,
             })));
         }
 
         let rendered = match format {
-            "text" => html_to_text(&body),
+            "text" => extract_text_content(&body),
             "html" => body.clone(),
-            _ => html_to_markdown(&body),
+            _ => extract_main_content(&body),
         };
 
         let truncated = rendered.chars().count() > max_chars;
@@ -1274,7 +1308,7 @@ impl Tool for ImageTool {
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let images = params
             .get("images")
             .and_then(Value::as_array)
@@ -1294,9 +1328,17 @@ impl Tool for ImageTool {
             .unwrap_or("Describe this image")
             .to_string();
 
-        let client = magicmerlin_media::understanding::UnderstandingClient::new(
-            magicmerlin_media::understanding::UnderstandingConfig::default(),
-        );
+        let fallback_client;
+        let client: &magicmerlin_media::understanding::UnderstandingClient =
+            match ctx.understanding_client.as_ref() {
+                Some(c) => c,
+                None => {
+                    fallback_client = magicmerlin_media::understanding::UnderstandingClient::new(
+                        magicmerlin_media::understanding::UnderstandingConfig::default(),
+                    );
+                    &fallback_client
+                }
+            };
 
         let mut results = Vec::new();
         for img in images {
@@ -1354,7 +1396,7 @@ impl Tool for PdfTool {
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let pdfs = params
             .get("pdfs")
             .and_then(Value::as_array)
@@ -1379,23 +1421,39 @@ impl Tool for PdfTool {
             _ => None,
         };
 
-        let client = magicmerlin_media::understanding::UnderstandingClient::new(
-            magicmerlin_media::understanding::UnderstandingConfig::default(),
-        );
+        let fallback_client;
+        let client: &magicmerlin_media::understanding::UnderstandingClient =
+            match ctx.understanding_client.as_ref() {
+                Some(c) => c,
+                None => {
+                    fallback_client = magicmerlin_media::understanding::UnderstandingClient::new(
+                        magicmerlin_media::understanding::UnderstandingConfig::default(),
+                    );
+                    &fallback_client
+                }
+            };
 
         let mut results = Vec::new();
         for item in pdfs {
-            let path = item.as_str().ok_or_else(|| ToolError::InvalidParams {
+            let path_str = item.as_str().ok_or_else(|| ToolError::InvalidParams {
                 tool: self.name().to_string(),
                 message: "pdf entries must be strings".to_string(),
             })?;
+            let source =
+                if path_str.starts_with("http://") || path_str.starts_with("https://") {
+                    magicmerlin_media::understanding::MediaSource::Url {
+                        url: path_str.to_string(),
+                    }
+                } else {
+                    magicmerlin_media::understanding::MediaSource::File {
+                        path: PathBuf::from(path_str),
+                    }
+                };
             let analysis = client
                 .analyze_pdf_with_fallback(
                     magicmerlin_media::understanding::AnalysisRequest {
                         media_type: magicmerlin_media::understanding::MediaType::Pdf,
-                        source: magicmerlin_media::understanding::MediaSource::File {
-                            path: PathBuf::from(path),
-                        },
+                        source,
                         prompt: prompt.clone(),
                         preferred_provider: None,
                         metadata: Value::Null,
@@ -1437,18 +1495,13 @@ impl Tool for TtsTool {
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let text = required_string(&params, "text", self.name())?;
         let agent = params
             .get("agent")
             .and_then(Value::as_str)
             .unwrap_or("default")
             .to_string();
-        let path = params
-            .get("path")
-            .and_then(Value::as_str)
-            .map(PathBuf::from)
-            .unwrap_or_else(|| std::env::temp_dir().join(format!("tts-{}.mp3", rand_suffix(6))));
         let format = match params
             .get("format")
             .and_then(Value::as_str)
@@ -1458,9 +1511,29 @@ impl Tool for TtsTool {
             "wav" => magicmerlin_media::tts::OutputFormat::Wav,
             _ => magicmerlin_media::tts::OutputFormat::Mp3,
         };
+        let ext = match format {
+            magicmerlin_media::tts::OutputFormat::Ogg => "ogg",
+            magicmerlin_media::tts::OutputFormat::Wav => "wav",
+            _ => "mp3",
+        };
+        let path = params
+            .get("path")
+            .and_then(Value::as_str)
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                std::env::temp_dir().join(format!("tts-{}.{}", rand_suffix(6), ext))
+            });
 
-        let client =
-            magicmerlin_media::tts::TtsClient::new(magicmerlin_media::tts::TtsConfig::default());
+        let fallback_client;
+        let client: &magicmerlin_media::tts::TtsClient = match ctx.tts_client.as_ref() {
+            Some(c) => c,
+            None => {
+                fallback_client = magicmerlin_media::tts::TtsClient::new(
+                    magicmerlin_media::tts::TtsConfig::default(),
+                );
+                &fallback_client
+            }
+        };
         let bytes = client
             .synthesize_for_agent(&agent, &text, Some(format))
             .await
@@ -1475,6 +1548,7 @@ impl Tool for TtsTool {
                 })?;
         }
 
+        let byte_count = bytes.len();
         tokio::fs::write(&path, bytes)
             .await
             .map_err(|source| ToolError::Io {
@@ -1482,7 +1556,34 @@ impl Tool for TtsTool {
                 source,
             })?;
 
-        Ok(ToolResult::success(json!({"audio_path": path})))
+        Ok(ToolResult::success(json!({
+            "audio_path": path,
+            "bytes": byte_count,
+            "format": ext,
+        })))
+    }
+}
+
+/// Connects to a browser tab, optionally targeting a specific tab by ID.
+async fn browser_client(
+    port: u16,
+    tab_id: Option<&str>,
+) -> Result<magicmerlin_media::browser::BrowserClient> {
+    if let Some(id) = tab_id {
+        let tabs = magicmerlin_media::browser::list_tabs(port)
+            .await
+            .map_err(|e| ToolError::Execution(e.to_string()))?;
+        let tab = tabs
+            .iter()
+            .find(|t| t.id == id)
+            .ok_or_else(|| ToolError::Execution(format!("tab not found: {id}")))?;
+        magicmerlin_media::browser::BrowserClient::connect(&tab.web_socket_debugger_url)
+            .await
+            .map_err(|e| ToolError::Execution(e.to_string()))
+    } else {
+        magicmerlin_media::browser::BrowserClient::from_tab(port)
+            .await
+            .map_err(|e| ToolError::Execution(e.to_string()))
     }
 }
 
@@ -1502,11 +1603,14 @@ impl Tool for BrowserTool {
         json!({
             "type":"object",
             "properties": {
-                "action":{"type":"string"},
+                "action":{"type":"string","enum":["status","start","stop","profiles","tabs","open","close","focus","navigate","snapshot","screenshot","eval","console","act"]},
                 "port":{"type":"integer"},
+                "profile":{"type":"string","enum":["default","relay"]},
                 "url":{"type":"string"},
                 "tab_id":{"type":"string"},
                 "expression":{"type":"string"},
+                "format":{"type":"string","enum":["png","jpeg"]},
+                "quality":{"type":"integer"},
                 "x":{"type":"number"},
                 "y":{"type":"number"},
                 "text":{"type":"string"},
@@ -1516,11 +1620,58 @@ impl Tool for BrowserTool {
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let action = required_string(&params, "action", self.name())?;
         let port = params.get("port").and_then(Value::as_u64).unwrap_or(9222) as u16;
+        let tab_id = params.get("tab_id").and_then(Value::as_str);
 
         match action.as_str() {
+            "status" => {
+                let mgr = ctx.browser_manager.as_ref().ok_or_else(|| {
+                    ToolError::Unavailable("browser manager not initialized".into())
+                })?;
+                let status = mgr
+                    .status(port)
+                    .await
+                    .map_err(|e| ToolError::Execution(e.to_string()))?;
+                Ok(ToolResult::success(serde_json::to_value(status)?))
+            }
+            "start" => {
+                let mgr = ctx.browser_manager.as_ref().ok_or_else(|| {
+                    ToolError::Unavailable("browser manager not initialized".into())
+                })?;
+                let profile = match params
+                    .get("profile")
+                    .and_then(Value::as_str)
+                    .unwrap_or("default")
+                {
+                    "relay" => magicmerlin_media::browser::BrowserProfile::Relay,
+                    _ => magicmerlin_media::browser::BrowserProfile::Default,
+                };
+                let options =
+                    magicmerlin_media::browser::BrowserManager::launch_options_for_profile(
+                        profile,
+                        port,
+                        Duration::from_secs(30),
+                    );
+                let status = mgr
+                    .start(options, profile)
+                    .await
+                    .map_err(|e| ToolError::Execution(e.to_string()))?;
+                Ok(ToolResult::success(serde_json::to_value(status)?))
+            }
+            "stop" => {
+                let mgr = ctx.browser_manager.as_ref().ok_or_else(|| {
+                    ToolError::Unavailable("browser manager not initialized".into())
+                })?;
+                mgr.stop(port)
+                    .await
+                    .map_err(|e| ToolError::Execution(e.to_string()))?;
+                Ok(ToolResult::success(json!({"stopped": port})))
+            }
+            "profiles" => {
+                Ok(ToolResult::success(json!({"profiles": ["default", "relay"]})))
+            }
             "tabs" => {
                 let tabs = magicmerlin_media::browser::list_tabs(port)
                     .await
@@ -1538,24 +1689,22 @@ impl Tool for BrowserTool {
                 Ok(ToolResult::success(json!({"tab": tab})))
             }
             "close" => {
-                let tab_id = required_string(&params, "tab_id", self.name())?;
-                magicmerlin_media::browser::close_tab(port, &tab_id)
+                let id = required_string(&params, "tab_id", self.name())?;
+                magicmerlin_media::browser::close_tab(port, &id)
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
-                Ok(ToolResult::success(json!({"closed": tab_id})))
+                Ok(ToolResult::success(json!({"closed": id})))
             }
             "focus" => {
-                let tab_id = required_string(&params, "tab_id", self.name())?;
-                magicmerlin_media::browser::focus_tab(port, &tab_id)
+                let id = required_string(&params, "tab_id", self.name())?;
+                magicmerlin_media::browser::focus_tab(port, &id)
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
-                Ok(ToolResult::success(json!({"focused": tab_id})))
+                Ok(ToolResult::success(json!({"focused": id})))
             }
             "navigate" => {
                 let url = required_string(&params, "url", self.name())?;
-                let client = magicmerlin_media::browser::BrowserClient::from_tab(port)
-                    .await
-                    .map_err(|e| ToolError::Execution(e.to_string()))?;
+                let client = browser_client(port, tab_id).await?;
                 client
                     .navigate(&url)
                     .await
@@ -1563,44 +1712,85 @@ impl Tool for BrowserTool {
                 Ok(ToolResult::success(json!({"navigated": url})))
             }
             "snapshot" => {
-                let client = magicmerlin_media::browser::BrowserClient::from_tab(port)
-                    .await
-                    .map_err(|e| ToolError::Execution(e.to_string()))?;
-                let shot = client
+                let client = browser_client(port, tab_id).await?;
+                let snap = client
                     .build_snapshot()
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
-                Ok(ToolResult::success(serde_json::to_value(shot)?))
+                Ok(ToolResult::success(serde_json::to_value(snap)?))
             }
             "screenshot" => {
-                let client = magicmerlin_media::browser::BrowserClient::from_tab(port)
+                let client = browser_client(port, tab_id).await?;
+                let fmt = params
+                    .get("format")
+                    .and_then(Value::as_str)
+                    .unwrap_or("png");
+                let quality = params.get("quality").and_then(Value::as_u64).map(|q| q as u8);
+                let bytes = client
+                    .capture_screenshot(fmt, quality, None)
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
-                let png = client
-                    .screenshot_png()
-                    .await
-                    .map_err(|e| ToolError::Execution(e.to_string()))?;
-                Ok(ToolResult::success(json!({"bytes": png.len()})))
+                let b64 = BASE64_STANDARD.encode(&bytes);
+                let mime = if fmt == "jpeg" {
+                    "image/jpeg"
+                } else {
+                    "image/png"
+                };
+                Ok(ToolResult::success(json!({
+                    "data": b64,
+                    "mimeType": mime,
+                    "bytes": bytes.len(),
+                })))
             }
             "eval" => {
                 let expression = required_string(&params, "expression", self.name())?;
-                let client = magicmerlin_media::browser::BrowserClient::from_tab(port)
-                    .await
-                    .map_err(|e| ToolError::Execution(e.to_string()))?;
+                let client = browser_client(port, tab_id).await?;
                 let value = client
                     .evaluate_script(magicmerlin_media::browser::EvaluateOptions {
                         expression,
-                        await_promise: true,
-                        return_by_value: true,
+                        await_promise: params
+                            .get("await_promise")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(true),
+                        return_by_value: params
+                            .get("return_by_value")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(true),
                     })
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
                 Ok(ToolResult::success(json!({"value": value})))
             }
-            "act" => {
-                let client = magicmerlin_media::browser::BrowserClient::from_tab(port)
+            "console" => {
+                let client = browser_client(port, tab_id).await?;
+                let result = client
+                    .evaluate_script(magicmerlin_media::browser::EvaluateOptions {
+                        expression: concat!(
+                            "(function(){",
+                            "if(!window.__mm_console){",
+                            "window.__mm_console=[];",
+                            "var o={log:console.log,warn:console.warn,",
+                            "error:console.error,info:console.info};",
+                            "['log','warn','error','info'].forEach(function(l){",
+                            "console[l]=function(){",
+                            "window.__mm_console.push({level:l,",
+                            "message:Array.prototype.slice.call(arguments)",
+                            ".map(String).join(' '),ts:Date.now()});",
+                            "o[l].apply(console,arguments);};});",
+                            "}",
+                            "var logs=window.__mm_console.splice(0);",
+                            "return logs;})()"
+                        )
+                        .to_string(),
+                        await_promise: false,
+                        return_by_value: true,
+                    })
                     .await
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
+                Ok(ToolResult::success(json!({"logs": result})))
+            }
+            "act" => {
+                let client = browser_client(port, tab_id).await?;
                 if let (Some(x), Some(y)) = (
                     params.get("x").and_then(Value::as_f64),
                     params.get("y").and_then(Value::as_f64),
@@ -1637,7 +1827,7 @@ impl Tool for BrowserTool {
             }
             _ => Err(ToolError::InvalidParams {
                 tool: self.name().to_string(),
-                message: "unsupported browser action".to_string(),
+                message: format!("unsupported browser action: {action}"),
             }),
         }
     }
@@ -1670,11 +1860,12 @@ impl Tool for CanvasTool {
         })
     }
 
-    async fn execute(&self, params: Value, _ctx: &ToolContext) -> Result<ToolResult> {
+    async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let action = required_string(&params, "action", self.name())?;
-        let server = magicmerlin_media::canvas::CanvasServer::new(
-            magicmerlin_media::canvas::CanvasConfig::default(),
-        );
+        let server = ctx
+            .canvas_server
+            .as_ref()
+            .ok_or_else(|| ToolError::Unavailable("canvas server not initialized".into()))?;
 
         match action.as_str() {
             "present" => {
@@ -1721,9 +1912,13 @@ impl Tool for CanvasTool {
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
                 Ok(ToolResult::success(json!({"ok": true})))
             }
+            "a2ui_reset" => {
+                while server.pop_update().await.is_some() {}
+                Ok(ToolResult::success(json!({"ok": true})))
+            }
             _ => Err(ToolError::InvalidParams {
                 tool: self.name().to_string(),
-                message: "unsupported canvas action".to_string(),
+                message: format!("unsupported canvas action: {action}"),
             }),
         }
     }
@@ -2472,6 +2667,7 @@ fn html_to_text(html: &str) -> String {
     normalize_ws(&out)
 }
 
+#[cfg(test)]
 fn html_to_markdown(html: &str) -> String {
     let mut body = html.to_string();
     let replacements = [
@@ -2498,6 +2694,7 @@ fn html_to_markdown(html: &str) -> String {
     normalize_ws(&body)
 }
 
+#[cfg(test)]
 fn replace_tag_open(data: &str, needle: &str, replacement: &str) -> String {
     let mut out = String::with_capacity(data.len());
     let mut cursor = 0usize;
@@ -2561,6 +2758,241 @@ fn rand_suffix(len: usize) -> String {
     out
 }
 
+/// Extracts main content from HTML and converts to markdown using the `scraper` crate.
+/// Removes nav, header, footer, aside, script, style elements.
+/// Prefers article/main content containers when available.
+fn extract_main_content(html: &str) -> String {
+    use scraper::{Html, Selector};
+
+    let doc = Html::parse_document(html);
+    let skip_tags: HashSet<&str> = [
+        "script", "style", "nav", "header", "footer", "aside", "noscript", "iframe", "svg",
+    ]
+    .into_iter()
+    .collect();
+
+    // Try to find a main content container
+    let content_selectors = ["article", "main", "[role=main]"];
+    let body_sel = Selector::parse("body").unwrap();
+    let mut root = None;
+    for sel_str in content_selectors {
+        if let Ok(sel) = Selector::parse(sel_str) {
+            if let Some(el) = doc.select(&sel).next() {
+                root = Some(el);
+                break;
+            }
+        }
+    }
+    let root = root.or_else(|| doc.select(&body_sel).next());
+    let Some(root) = root else {
+        return html_to_text(html);
+    };
+
+    let mut out = String::new();
+    walk_element_to_markdown(root, &skip_tags, &mut out);
+    clean_markdown_output(&out)
+}
+
+/// Extracts plain text from HTML, removing unwanted elements.
+fn extract_text_content(html: &str) -> String {
+    use scraper::{Html, Selector};
+
+    let doc = Html::parse_document(html);
+    let content_selectors = ["article", "main", "[role=main]"];
+    let body_sel = Selector::parse("body").unwrap();
+    let mut root = None;
+    for sel_str in content_selectors {
+        if let Ok(sel) = Selector::parse(sel_str) {
+            if let Some(el) = doc.select(&sel).next() {
+                root = Some(el);
+                break;
+            }
+        }
+    }
+    let root = root.or_else(|| doc.select(&body_sel).next());
+    match root {
+        Some(el) => {
+            let texts: Vec<&str> = el.text().collect();
+            let joined = texts.join(" ");
+            normalize_ws(&joined)
+        }
+        None => html_to_text(html),
+    }
+}
+
+/// Recursively walks an HTML element tree, converting to markdown.
+fn walk_element_to_markdown(
+    el: scraper::ElementRef,
+    skip: &HashSet<&str>,
+    out: &mut String,
+) {
+    for child in el.children() {
+        match child.value() {
+            scraper::Node::Text(t) => {
+                let raw = t.to_string();
+                let trimmed = raw.trim();
+                if !trimmed.is_empty() {
+                    let has_leading_ws =
+                        raw.starts_with(|c: char| c.is_whitespace());
+                    let has_trailing_ws =
+                        raw.ends_with(|c: char| c.is_whitespace());
+                    if has_leading_ws
+                        && !out.is_empty()
+                        && !out.ends_with(|c: char| c.is_whitespace())
+                    {
+                        out.push(' ');
+                    }
+                    out.push_str(trimmed);
+                    if has_trailing_ws {
+                        out.push(' ');
+                    }
+                }
+            }
+            scraper::Node::Element(elem) => {
+                let tag = elem.name.local.to_string();
+                if skip.contains(tag.as_str()) {
+                    continue;
+                }
+                let Some(child_el) = scraper::ElementRef::wrap(child) else {
+                    continue;
+                };
+                match tag.as_str() {
+                    "h1" => {
+                        out.push_str("\n\n# ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "h2" => {
+                        out.push_str("\n\n## ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "h3" => {
+                        out.push_str("\n\n### ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "h4" => {
+                        out.push_str("\n\n#### ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "h5" => {
+                        out.push_str("\n\n##### ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "h6" => {
+                        out.push_str("\n\n###### ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "p" => {
+                        out.push_str("\n\n");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n\n");
+                    }
+                    "br" => out.push('\n'),
+                    "li" => {
+                        out.push_str("\n- ");
+                        walk_element_to_markdown(child_el, skip, out);
+                    }
+                    "pre" => {
+                        out.push_str("\n\n```\n");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str("\n```\n\n");
+                    }
+                    "code" => {
+                        out.push('`');
+                        walk_element_to_markdown(child_el, skip, out);
+                        while out.ends_with(' ') {
+                            out.pop();
+                        }
+                        out.push('`');
+                    }
+                    "strong" | "b" => {
+                        out.push_str("**");
+                        walk_element_to_markdown(child_el, skip, out);
+                        while out.ends_with(' ') {
+                            out.pop();
+                        }
+                        out.push_str("**");
+                    }
+                    "em" | "i" => {
+                        out.push('*');
+                        walk_element_to_markdown(child_el, skip, out);
+                        while out.ends_with(' ') {
+                            out.pop();
+                        }
+                        out.push('*');
+                    }
+                    "a" => {
+                        let href = child_el.attr("href").unwrap_or("");
+                        if href.is_empty()
+                            || href.starts_with('#')
+                            || href.starts_with("javascript:")
+                        {
+                            walk_element_to_markdown(child_el, skip, out);
+                        } else {
+                            out.push('[');
+                            let start = out.len();
+                            walk_element_to_markdown(child_el, skip, out);
+                            while out.len() > start && out.ends_with(' ') {
+                                out.pop();
+                            }
+                            out.push_str("](");
+                            out.push_str(href);
+                            out.push(')');
+                        }
+                    }
+                    "blockquote" => {
+                        out.push_str("\n\n> ");
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push('\n');
+                    }
+                    "img" => {
+                        let alt = child_el.attr("alt").unwrap_or("");
+                        let src = child_el.attr("src").unwrap_or("");
+                        if !src.is_empty() {
+                            out.push_str(&format!("![{alt}]({src})"));
+                        }
+                    }
+                    "tr" => {
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push('\n');
+                    }
+                    "td" | "th" => {
+                        walk_element_to_markdown(child_el, skip, out);
+                        out.push_str(" | ");
+                    }
+                    _ => walk_element_to_markdown(child_el, skip, out),
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Cleans up raw markdown output by collapsing blank lines.
+fn clean_markdown_output(raw: &str) -> String {
+    let lines: Vec<&str> = raw.lines().map(|l| l.trim_end()).collect();
+    let mut result = String::new();
+    let mut prev_blank = false;
+    for line in lines {
+        if line.is_empty() {
+            if !prev_blank && !result.is_empty() {
+                result.push('\n');
+                prev_blank = true;
+            }
+        } else {
+            result.push_str(line);
+            result.push('\n');
+            prev_blank = false;
+        }
+    }
+    result.trim().to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2576,6 +3008,10 @@ mod tests {
             delivery: None,
             process_manager: crate::ProcessManager::new(),
             node_configs: vec![],
+            browser_manager: None,
+            canvas_server: None,
+            tts_client: None,
+            understanding_client: None,
         }
     }
 
@@ -2959,6 +3395,99 @@ mod tests {
         let ctx = make_test_ctx(temp.path());
         let result = AgentsListTool.execute(json!({}), &ctx).await;
         assert!(result.is_err() || !result.as_ref().unwrap().ok);
+    }
+
+    // --- web_search response parsing ---
+    #[test]
+    fn web_search_parses_brave_response() {
+        let raw = json!({
+            "web": {
+                "results": [
+                    {"title": "Rust Lang", "url": "https://rust-lang.org", "description": "A systems programming language"},
+                    {"title": "Rust Book", "url": "https://doc.rust-lang.org/book/", "description": "The Rust Programming Language book"},
+                ],
+                "totalResults": 42
+            }
+        });
+        let results = raw
+            .pointer("/web/results")
+            .and_then(Value::as_array)
+            .unwrap();
+        let parsed: Vec<Value> = results
+            .iter()
+            .map(|item| {
+                json!({
+                    "title": item.get("title").and_then(Value::as_str).unwrap_or_default(),
+                    "url": item.get("url").and_then(Value::as_str).unwrap_or_default(),
+                    "snippet": item.get("description").and_then(Value::as_str).unwrap_or_default(),
+                })
+            })
+            .collect();
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["title"], "Rust Lang");
+        assert_eq!(parsed[0]["snippet"], "A systems programming language");
+        let total = raw
+            .pointer("/web/totalResults")
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+        assert_eq!(total, 42);
+    }
+
+    // --- web_fetch HTML extraction ---
+    #[test]
+    fn extract_main_content_strips_nav_and_keeps_article() {
+        let html = r#"<html><body>
+            <nav><a href="/">Home</a><a href="/about">About</a></nav>
+            <header><h1>Site Header</h1></header>
+            <article>
+                <h1>Article Title</h1>
+                <p>This is the <strong>main</strong> content.</p>
+                <a href="https://example.com">Example link</a>
+            </article>
+            <footer>Copyright 2024</footer>
+        </body></html>"#;
+
+        let md = extract_main_content(html);
+        assert!(
+            md.contains("Article Title"),
+            "should contain article title: {md}"
+        );
+        assert!(md.contains("**main**"), "should have bold formatting: {md}");
+        assert!(!md.contains("Home"), "should not contain nav links: {md}");
+        assert!(
+            !md.contains("Copyright"),
+            "should not contain footer: {md}"
+        );
+        assert!(
+            md.contains("[Example link](https://example.com)"),
+            "should have markdown link: {md}"
+        );
+    }
+
+    #[test]
+    fn extract_text_content_returns_plain_text() {
+        let html = r#"<html><body>
+            <nav>Nav stuff</nav>
+            <main><p>Hello <strong>world</strong>!</p></main>
+            <footer>Footer</footer>
+        </body></html>"#;
+
+        let text = extract_text_content(html);
+        assert!(text.contains("Hello"), "got: {text}");
+        assert!(text.contains("world"), "got: {text}");
+        assert!(!text.contains("<"), "should have no HTML tags: {text}");
+    }
+
+    #[test]
+    fn extract_main_content_handles_no_article() {
+        let html = r#"<html><body>
+            <p>Just a paragraph.</p>
+            <p>Another one.</p>
+        </body></html>"#;
+
+        let md = extract_main_content(html);
+        assert!(md.contains("Just a paragraph"), "got: {md}");
+        assert!(md.contains("Another one"), "got: {md}");
     }
 
     // --- Registry includes new tools ---

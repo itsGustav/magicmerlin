@@ -23,6 +23,8 @@ tokio = { version = "1", features = ["rt", "sync", "process", "io-util", "time",
 portable-pty = "0.9"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 rusqlite = "0.32"
+base64 = "0.22"
+scraper = "0.19"
 
 [dev-dependencies]
 tempfile = "3"

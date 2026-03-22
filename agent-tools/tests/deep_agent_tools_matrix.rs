@@ -13,6 +13,10 @@ fn build_ctx() -> ToolContext {
         delivery: None,
         process_manager: ProcessManager::new(),
         node_configs: vec![],
+        browser_manager: None,
+        canvas_server: None,
+        tts_client: None,
+        understanding_client: None,
     }
 }
 

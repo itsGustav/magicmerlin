@@ -46,6 +46,14 @@ pub struct ToolContext {
     pub process_manager: crate::ProcessManager,
     /// Registered node hosts for remote device control.
     pub node_configs: Vec<NodeConfig>,
+    /// Shared browser manager (CDP browser pool).
+    pub browser_manager: Option<Arc<magicmerlin_media::browser::BrowserManager>>,
+    /// Shared canvas server for A2UI.
+    pub canvas_server: Option<Arc<magicmerlin_media::canvas::CanvasServer>>,
+    /// Shared TTS client.
+    pub tts_client: Option<Arc<magicmerlin_media::tts::TtsClient>>,
+    /// Shared media understanding client.
+    pub understanding_client: Option<Arc<magicmerlin_media::understanding::UnderstandingClient>>,
 }
 
 /// Tool execution result wrapper.
