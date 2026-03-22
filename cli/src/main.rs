@@ -10,6 +10,20 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::aot::{generate, Bash as BashShell, Elvish as ElvishShell, Fish as FishShell, PowerShell as PowerShellShell, Zsh as ZshShell};
+use crossterm::{
+    event::{self, Event, KeyCode, KeyEventKind},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
+};
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
+    Frame, Terminal,
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -55,6 +69,7 @@ enum Command {
     Health,
     Dashboard,
     Tui,
+    #[command(alias = "completions")]
     Completion {
         #[arg(value_enum)]
         shell: Shell,
@@ -160,7 +175,8 @@ enum Command {
         command: NodesCommand,
     },
     Qr {
-        text: String,
+        #[arg(long)]
+        url: Option<String>,
     },
     Browser {
         #[command(subcommand)]
@@ -170,7 +186,9 @@ enum Command {
         #[command(subcommand)]
         command: AcpCommand,
     },
-    Docs,
+    Docs {
+        page: Option<String>,
+    },
     System {
         #[command(subcommand)]
         command: SystemCommand,
@@ -178,6 +196,14 @@ enum Command {
     Run {
         #[command(subcommand)]
         command: RunCommand,
+    },
+    Subagents {
+        #[command(subcommand)]
+        command: SubagentsCommand,
+    },
+    Context {
+        #[command(subcommand)]
+        command: ContextCommand,
     },
     #[command(name = "help-all")]
     HelpAll,
@@ -415,6 +441,7 @@ enum NodesCommand {
     Run { id: String, command: String, #[arg(trailing_var_arg = true)] args: Vec<String> },
     Invoke { id: String, method: String, #[arg(long, default_value = "{}")] params: String },
     Logs { id: String, #[arg(long, default_value_t = 50)] lines: usize },
+    Notify { id: String, #[arg(long)] title: String, #[arg(long)] body: String },
     Status,
 }
 
@@ -499,11 +526,25 @@ enum RunCommand {
     Status { run_id: String },
 }
 
+#[derive(Subcommand, Debug)]
+enum SubagentsCommand {
+    List,
+    Kill { session: String },
+}
+
+#[derive(Subcommand, Debug)]
+enum ContextCommand {
+    Show { session_key: Option<String> },
+}
+
 #[derive(ValueEnum, Copy, Clone, Debug)]
 enum Shell {
     Bash,
     Zsh,
     Fish,
+    Elvish,
+    #[value(name = "powershell")]
+    PowerShell,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -788,41 +829,384 @@ fn open_url(url: &str) -> Result<()> {
 }
 
 fn emit_completion(shell: Shell) {
-    let script = match shell {
-        Shell::Bash => {
-            r#"_magicmerlin_complete() {
-  COMPREPLY=($(compgen -W "status setup configure onboard health doctor dashboard tui completion version update reset uninstall agent agents models gateway daemon channels message directory pairing sessions memory cron logs hooks webhooks config security secrets sandbox approvals plugins skills dns devices nodes qr browser acp docs system run help" -- "${COMP_WORDS[1]}"))
-}
-complete -F _magicmerlin_complete magicmerlin
-"#
-        }
-        Shell::Zsh => {
-            r#"#compdef magicmerlin
-_arguments "1:command:(status setup configure onboard health doctor dashboard tui completion version update reset uninstall agent agents models gateway daemon channels message directory pairing sessions memory cron logs hooks webhooks config security secrets sandbox approvals plugins skills dns devices nodes qr browser acp docs system help)"
-"#
-        }
-        Shell::Fish => {
-            r#"complete -c magicmerlin -f
-for cmd in status setup configure onboard health doctor dashboard tui completion version update reset uninstall agent agents models gateway daemon channels message directory pairing sessions memory cron logs hooks webhooks config security secrets sandbox approvals plugins skills dns devices nodes qr browser acp docs system help
-  complete -c magicmerlin -a $cmd
-end
-"#
-        }
-    };
-    println!("{script}");
+    let mut cmd = Cli::command();
+    let name = "magicmerlin".to_string();
+    match shell {
+        Shell::Bash => generate(BashShell, &mut cmd, &name, &mut io::stdout()),
+        Shell::Zsh => generate(ZshShell, &mut cmd, &name, &mut io::stdout()),
+        Shell::Fish => generate(FishShell, &mut cmd, &name, &mut io::stdout()),
+        Shell::Elvish => generate(ElvishShell, &mut cmd, &name, &mut io::stdout()),
+        Shell::PowerShell => generate(PowerShellShell, &mut cmd, &name, &mut io::stdout()),
+    }
 }
 
-fn run_tui_stub() -> Result<()> {
-    println!("MagicMerlin TUI");
-    println!("Agents | Sessions | Cron | Logs");
-    println!("Press q then Enter to quit.");
-    loop {
-        let mut line = String::new();
-        io::stdin().read_line(&mut line)?;
-        if line.trim() == "q" {
-            break;
+// ── TUI Dashboard ────────────────────────────────────────────────────
+
+#[derive(Debug, Clone)]
+struct AgentInfo {
+    name: String,
+    model: String,
+    online: bool,
+}
+
+#[derive(Debug, Clone)]
+struct SessionInfo {
+    id: String,
+    tokens: u64,
+}
+
+#[derive(Debug, Clone)]
+struct CronInfo {
+    name: String,
+    schedule: String,
+    enabled: bool,
+}
+
+#[derive(Debug, Clone)]
+struct GatewayInfo {
+    online: bool,
+    port: u16,
+    model: String,
+    uptime_secs: u64,
+}
+
+struct TuiApp {
+    tab: usize,
+    agents: Vec<AgentInfo>,
+    sessions: Vec<SessionInfo>,
+    cron_jobs: Vec<CronInfo>,
+    logs: Vec<String>,
+    gateway: GatewayInfo,
+    tick: u64,
+    scroll: usize,
+    gateway_url: String,
+}
+
+impl TuiApp {
+    fn new(gateway_url: String) -> Self {
+        Self {
+            tab: 0,
+            agents: Vec::new(),
+            sessions: Vec::new(),
+            cron_jobs: Vec::new(),
+            logs: vec!["TUI started".to_string()],
+            gateway: GatewayInfo {
+                online: false,
+                port: 18789,
+                model: "unknown".to_string(),
+                uptime_secs: 0,
+            },
+            tick: 0,
+            scroll: 0,
+            gateway_url,
         }
     }
+
+    async fn refresh(&mut self) {
+        let client = Client::new();
+        let url = format!("{}/ws", self.gateway_url);
+
+        let call = |method: &str| {
+            let req = serde_json::json!({
+                "jsonrpc": "2.0",
+                "method": method,
+                "params": {},
+                "id": 1
+            });
+            client.post(&url).json(&req).send()
+        };
+
+        // Health check
+        match call("health").await {
+            Ok(resp) => {
+                if let Ok(body) = resp.json::<Value>().await {
+                    self.gateway.online = true;
+                    if let Some(r) = body.get("result") {
+                        if let Some(m) = r.get("model").and_then(|v| v.as_str()) {
+                            self.gateway.model = m.to_string();
+                        }
+                        if let Some(u) = r.get("uptimeSeconds").and_then(|v| v.as_u64()) {
+                            self.gateway.uptime_secs = u;
+                        }
+                    }
+                }
+            }
+            Err(_) => {
+                self.gateway.online = false;
+                return;
+            }
+        }
+
+        // Agents
+        if let Ok(resp) = call("agents.list").await {
+            if let Ok(body) = resp.json::<Value>().await {
+                if let Some(r) = body.get("result") {
+                    if let Some(arr) = r.get("agents").and_then(|v| v.as_array()) {
+                        self.agents = arr.iter().map(|a| AgentInfo {
+                            name: a.get("name").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                            model: a.get("model").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                            online: a.get("online").and_then(|v| v.as_bool()).unwrap_or(false),
+                        }).collect();
+                    }
+                }
+            }
+        }
+
+        // Sessions
+        if let Ok(resp) = call("sessions.list").await {
+            if let Ok(body) = resp.json::<Value>().await {
+                if let Some(r) = body.get("result") {
+                    if let Some(arr) = r.get("sessions").and_then(|v| v.as_array()) {
+                        self.sessions = arr.iter().map(|s| SessionInfo {
+                            id: s.get("sessionId").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                            tokens: s.get("tokenUsage").and_then(|v| v.as_u64()).unwrap_or(0),
+                        }).collect();
+                    }
+                }
+            }
+        }
+
+        // Cron
+        if let Ok(resp) = call("cron.list").await {
+            if let Ok(body) = resp.json::<Value>().await {
+                if let Some(r) = body.get("result") {
+                    if let Some(arr) = r.get("jobs").and_then(|v| v.as_array()) {
+                        self.cron_jobs = arr.iter().map(|j| CronInfo {
+                            name: j.get("name").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                            schedule: j.get("schedule").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                            enabled: j.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true),
+                        }).collect();
+                    }
+                }
+            }
+        }
+
+        // Logs
+        if let Ok(resp) = call("logs.tail").await {
+            if let Ok(body) = resp.json::<Value>().await {
+                if let Some(r) = body.get("result") {
+                    if let Some(arr) = r.get("lines").and_then(|v| v.as_array()) {
+                        self.logs = arr.iter().filter_map(|l| l.as_str().map(|s| s.to_string())).collect();
+                        if self.logs.is_empty() {
+                            self.logs.push("(no recent logs)".to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn on_key(&mut self, key: KeyCode) -> bool {
+        match key {
+            KeyCode::Char('q') => return true,
+            KeyCode::Char('1') => self.tab = 0,
+            KeyCode::Char('2') => self.tab = 1,
+            KeyCode::Char('3') => self.tab = 2,
+            KeyCode::Char('4') => self.tab = 3,
+            KeyCode::Char('5') => self.tab = 4,
+            KeyCode::Tab => self.tab = (self.tab + 1) % 5,
+            KeyCode::BackTab => self.tab = if self.tab == 0 { 4 } else { self.tab - 1 },
+            KeyCode::Char('r') => self.tick = 0, // force refresh on next cycle
+            KeyCode::Up => self.scroll = self.scroll.saturating_sub(1),
+            KeyCode::Down => self.scroll = self.scroll.saturating_add(1),
+            _ => {}
+        }
+        false
+    }
+}
+
+fn draw_tui(frame: &mut Frame, app: &TuiApp) {
+    let size = frame.size();
+
+    // Main layout: title, tabs, body, status bar
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1),  // tabs
+            Constraint::Min(5),    // body
+            Constraint::Length(1), // status bar
+        ])
+        .split(size);
+
+    // Tab bar
+    let tab_titles: Vec<Line> = ["[1]Overview", "[2]Agents", "[3]Sessions", "[4]Cron", "[5]Logs"]
+        .iter()
+        .map(|t| Line::from(Span::raw(*t)))
+        .collect();
+    let tabs = Tabs::new(tab_titles)
+        .select(app.tab)
+        .style(Style::default().fg(Color::White))
+        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+        .divider(Span::raw(" | "));
+    frame.render_widget(tabs, main_chunks[0]);
+
+    // Body
+    let body_block = Block::default()
+        .title(" Magic Merlin ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(if app.gateway.online { Color::Green } else { Color::Red }));
+
+    let inner = body_block.inner(main_chunks[1]);
+    frame.render_widget(body_block, main_chunks[1]);
+
+    match app.tab {
+        0 => draw_overview(frame, app, inner),
+        1 => draw_agents(frame, app, inner),
+        2 => draw_sessions(frame, app, inner),
+        3 => draw_cron(frame, app, inner),
+        4 => draw_logs(frame, app, inner),
+        _ => {}
+    }
+
+    // Status bar
+    let online_str = if app.gateway.online { "● online" } else { "○ offline" };
+    let uptime = format_uptime(app.gateway.uptime_secs);
+    let status = Paragraph::new(Line::from(vec![
+        Span::styled(
+            format!(" Gateway: {online_str} :{} ", app.gateway.port),
+            Style::default().fg(if app.gateway.online { Color::Green } else { Color::Red }),
+        ),
+        Span::raw(format!("| Model: {} | Uptime: {} | q=quit Tab=switch r=refresh", app.gateway.model, uptime)),
+    ]));
+    frame.render_widget(status, main_chunks[2]);
+}
+
+fn draw_overview(frame: &mut Frame, app: &TuiApp, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(area);
+
+    let left = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(chunks[0]);
+
+    let right = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(chunks[1]);
+
+    // Agents panel
+    let agent_items: Vec<ListItem> = app.agents.iter().map(|a| {
+        let marker = if a.online { "●" } else { "○" };
+        let check = if a.online { "✓" } else { "✗" };
+        ListItem::new(format!(" {marker} {:<16} {:<10} {check}", a.name, a.model))
+            .style(Style::default().fg(if a.online { Color::Green } else { Color::DarkGray }))
+    }).collect();
+    let agents_list = List::new(agent_items)
+        .block(Block::default().title(" AGENTS ").borders(Borders::ALL));
+    frame.render_widget(agents_list, left[0]);
+
+    // Sessions panel
+    let session_items: Vec<ListItem> = app.sessions.iter().map(|s| {
+        ListItem::new(format!(" {} ({}tok)", s.id, s.tokens))
+    }).collect();
+    let sessions_list = List::new(session_items)
+        .block(Block::default().title(" ACTIVE SESSIONS ").borders(Borders::ALL));
+    frame.render_widget(sessions_list, right[0]);
+
+    // Cron panel
+    let cron_items: Vec<ListItem> = app.cron_jobs.iter().map(|c| {
+        let check = if c.enabled { "✓" } else { "✗" };
+        ListItem::new(format!(" {:<16} {:<14} {check}", c.name, c.schedule))
+    }).collect();
+    let cron_list = List::new(cron_items)
+        .block(Block::default().title(" CRON JOBS ").borders(Borders::ALL));
+    frame.render_widget(cron_list, left[1]);
+
+    // Logs panel
+    let log_items: Vec<ListItem> = app.logs.iter().rev().take(20).map(|l| {
+        ListItem::new(format!(" {l}"))
+    }).collect();
+    let logs_list = List::new(log_items)
+        .block(Block::default().title(" RECENT LOGS ").borders(Borders::ALL));
+    frame.render_widget(logs_list, right[1]);
+}
+
+fn draw_agents(frame: &mut Frame, app: &TuiApp, area: Rect) {
+    let items: Vec<ListItem> = app.agents.iter().map(|a| {
+        let marker = if a.online { "●" } else { "○" };
+        let check = if a.online { "✓" } else { "✗" };
+        ListItem::new(format!("  {marker} {:<20} model={:<12} {check}", a.name, a.model))
+            .style(Style::default().fg(if a.online { Color::Green } else { Color::DarkGray }))
+    }).collect();
+    let list = List::new(items)
+        .block(Block::default().title(" Agents ").borders(Borders::NONE));
+    frame.render_widget(list, area);
+}
+
+fn draw_sessions(frame: &mut Frame, app: &TuiApp, area: Rect) {
+    let items: Vec<ListItem> = app.sessions.iter().map(|s| {
+        ListItem::new(format!("  {:<36} tokens={}", s.id, s.tokens))
+    }).collect();
+    let list = List::new(items)
+        .block(Block::default().title(" Sessions ").borders(Borders::NONE));
+    frame.render_widget(list, area);
+}
+
+fn draw_cron(frame: &mut Frame, app: &TuiApp, area: Rect) {
+    let items: Vec<ListItem> = app.cron_jobs.iter().map(|c| {
+        let check = if c.enabled { "✓" } else { "✗" };
+        ListItem::new(format!("  {:<20} {:<16} {check}", c.name, c.schedule))
+    }).collect();
+    let list = List::new(items)
+        .block(Block::default().title(" Cron Jobs ").borders(Borders::NONE));
+    frame.render_widget(list, area);
+}
+
+fn draw_logs(frame: &mut Frame, app: &TuiApp, area: Rect) {
+    let start = app.scroll.min(app.logs.len().saturating_sub(1));
+    let items: Vec<ListItem> = app.logs.iter().skip(start).map(|l| {
+        ListItem::new(format!("  {l}"))
+    }).collect();
+    let list = List::new(items)
+        .block(Block::default().title(" Logs (↑↓ scroll) ").borders(Borders::NONE));
+    frame.render_widget(list, area);
+}
+
+fn format_uptime(secs: u64) -> String {
+    if secs < 60 {
+        format!("{secs}s")
+    } else if secs < 3600 {
+        format!("{}m", secs / 60)
+    } else {
+        format!("{}h{}m", secs / 3600, (secs % 3600) / 60)
+    }
+}
+
+async fn run_tui(gateway_url: &str) -> Result<()> {
+    enable_raw_mode().context("enable raw mode")?;
+    let mut stdout = io::stdout();
+    stdout.execute(EnterAlternateScreen).context("enter alternate screen")?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend).context("create terminal")?;
+
+    let mut app = TuiApp::new(gateway_url.to_string());
+    app.refresh().await;
+
+    loop {
+        terminal.draw(|f| draw_tui(f, &app))?;
+
+        if event::poll(Duration::from_millis(100)).context("poll events")? {
+            if let Event::Key(key) = event::read().context("read event")? {
+                if key.kind == KeyEventKind::Press && app.on_key(key.code) {
+                    break;
+                }
+            }
+        }
+
+        // Refresh every 2s (20 * 100ms)
+        app.tick += 1;
+        if app.tick % 20 == 0 {
+            app.refresh().await;
+        }
+    }
+
+    disable_raw_mode().context("disable raw mode")?;
+    terminal.backend_mut().execute(LeaveAlternateScreen).context("leave alternate screen")?;
+    terminal.show_cursor().context("show cursor")?;
+
     Ok(())
 }
 
@@ -908,7 +1292,7 @@ async fn main() -> Result<()> {
             app.output(json!({"url": app.config.dashboard_url}), || app.config.dashboard_url.clone())?;
         }
 
-        Command::Tui => run_tui_stub()?,
+        Command::Tui => run_tui(&app.gateway_http_url()).await?,
 
         Command::Completion { shell } => emit_completion(*shell),
 
@@ -1359,15 +1743,26 @@ async fn main() -> Result<()> {
                     ("nodes.invoke", json!({"id": id, "method": method, "params": params_json}))
                 }
                 NodesCommand::Logs { id, lines } => ("logs.query", json!({"query": id, "limit": lines})),
+                NodesCommand::Notify { id, title, body } => ("nodes.notify", json!({"id": id, "title": title, "body": body})),
                 NodesCommand::Status => ("nodes.list", json!({})),
             };
             let result = app.call_gateway(method, params).await?;
             app.output(result.clone(), || result.to_string())?;
         }
 
-        Command::Qr { text } => {
-            let result = json!({"text": text, "qr": text});
-            app.output(result.clone(), || result.to_string())?;
+        Command::Qr { url } => {
+            let text = match url {
+                Some(u) => u.clone(),
+                None => format!("http://127.0.0.1:18789/pair"),
+            };
+            let code = qrcode::QrCode::new(text.as_bytes()).context("generate QR code")?;
+            let qr_string = code.render::<char>()
+                .quiet_zone(true)
+                .module_dimensions(2, 1)
+                .build();
+            app.output(json!({"text": text, "qr": qr_string}), || {
+                format!("{qr_string}\n{text}")
+            })?;
         }
 
         Command::Browser { command } => {
@@ -1398,10 +1793,20 @@ async fn main() -> Result<()> {
             app.output(result.clone(), || result.to_string())?;
         }
 
-        Command::Docs => {
-            let url = "https://github.com/openai/codex";
-            open_url(url)?;
-            app.output(json!({"url": url}), || url.to_string())?;
+        Command::Docs { page } => {
+            match page {
+                Some(query) => {
+                    app.ensure_gateway_running().await?;
+                    let result = app.call_gateway("docs.search", json!({"query": query})).await
+                        .unwrap_or_else(|_| json!({"results": [], "query": query}));
+                    app.output(result.clone(), || result.to_string())?;
+                }
+                None => {
+                    let url = "https://docs.magicmerlin.dev";
+                    open_url(url)?;
+                    app.output(json!({"url": url}), || url.to_string())?;
+                }
+            }
         }
 
         Command::System { command } => {
@@ -1427,6 +1832,32 @@ async fn main() -> Result<()> {
             };
             let result = app.call_gateway(method, params).await?;
             app.output(result.clone(), || result.to_string())?;
+        }
+
+        Command::Subagents { command } => {
+            app.ensure_gateway_running().await?;
+            let (method, params) = match command {
+                SubagentsCommand::List => ("subagents.list", json!({})),
+                SubagentsCommand::Kill { session } => ("subagents.kill", json!({"session": session})),
+            };
+            let result = app.call_gateway(method, params).await?;
+            app.output(result.clone(), || result.to_string())?;
+        }
+
+        Command::Context { command } => {
+            app.ensure_gateway_running().await?;
+            let (method, params) = match command {
+                ContextCommand::Show { session_key } => ("sessions.get", json!({"id": session_key})),
+            };
+            let result = app.call_gateway(method, params).await?;
+            app.output(result.clone(), || {
+                let tokens = result.get("tokenUsage").and_then(|v| v.as_u64()).unwrap_or(0);
+                let model = result.get("model").and_then(|v| v.as_str()).unwrap_or("unknown");
+                let compactions = result.get("compactionCount").and_then(|v| v.as_u64()).unwrap_or(0);
+                let limit: u64 = 200_000;
+                let pct = if limit > 0 { (tokens as f64 / limit as f64) * 100.0 } else { 0.0 };
+                format!("Model: {model}\nTokens: {tokens} / {limit} ({pct:.1}%)\nCompactions: {compactions}")
+            })?;
         }
 
         Command::HelpAll => {
