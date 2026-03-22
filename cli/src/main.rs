@@ -5,17 +5,19 @@ use std::{
     net::TcpStream,
     path::PathBuf,
     process::{Command as ProcessCommand, Stdio},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use anyhow::{anyhow, Context, Result};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::aot::{generate, Bash as BashShell, Elvish as ElvishShell, Fish as FishShell, PowerShell as PowerShellShell, Zsh as ZshShell};
+#[allow(unused_imports)]
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+#[allow(unused_imports)]
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -69,7 +71,6 @@ enum Command {
     Health,
     Dashboard,
     Tui,
-    #[command(alias = "completions")]
     Completion {
         #[arg(value_enum)]
         shell: Shell,
@@ -205,6 +206,8 @@ enum Command {
         #[command(subcommand)]
         command: ContextCommand,
     },
+    /// Ping the gateway and measure latency
+    Ping,
     #[command(name = "help-all")]
     HelpAll,
 }
@@ -472,8 +475,6 @@ enum SystemCommand {
     Env,
 }
 
-// ── Pass 7: New command enums ────────────────────────────────────────
-
 #[derive(Subcommand, Debug)]
 enum LogsCommand {
     Tail { #[arg(long, default_value_t = 100)] lines: usize, #[arg(long)] level: Option<String>, #[arg(long)] component: Option<String> },
@@ -594,6 +595,10 @@ struct App {
 }
 
 impl App {
+    fn color(&self) -> bool {
+        use_color(self.cli.no_color)
+    }
+
     fn gateway_http_url(&self) -> String {
         let ws = self.config.gateway_ws_url.trim_end_matches('/');
         if let Some(rest) = ws.strip_prefix("ws://") {
@@ -621,19 +626,17 @@ impl App {
             params,
             id: 1,
         };
-
         let url = format!("{}/ws", self.gateway_http_url());
         let response = Client::new()
             .post(url)
             .json(&req)
+            .timeout(Duration::from_secs(10))
             .send()
             .await
-            .context("gateway RPC request failed")?;
-
+            .map_err(|_| anyhow!("gateway offline — run 'magicmerlin gateway start'"))?;
         if !response.status().is_success() {
             return Err(anyhow!("gateway HTTP error: {}", response.status()));
         }
-
         let parsed: RpcResponse = response.json().await.context("parse RPC response")?;
         if let Some(err) = parsed.error {
             return Err(anyhow!("gateway RPC error {}: {}", err.code, err.message));
@@ -642,17 +645,18 @@ impl App {
     }
 
     async fn ensure_gateway_running(&self) -> Result<()> {
-        self.call_gateway("health", Value::Null).await.map(|_| ()).map_err(|e| {
-            anyhow!("gateway unavailable ({e}). start with: magicmerlin gateway start")
+        self.call_gateway("health", Value::Null).await.map(|_| ()).map_err(|_| {
+            anyhow!("gateway offline — run 'magicmerlin gateway start'")
         })
     }
 }
+
+// ── Utility functions ───────────────────────────────────────────────
 
 fn state_dir() -> PathBuf {
     if let Ok(path) = std::env::var("MAGICMERLIN_STATE_DIR") {
         return PathBuf::from(path);
     }
-
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
@@ -667,41 +671,26 @@ fn config_path() -> PathBuf {
     state_dir().join("cli-config.json")
 }
 
-fn pid_path() -> PathBuf {
-    state_dir().join("gateway.pid")
-}
+fn pid_path() -> PathBuf { state_dir().join("gateway.pid") }
 
 fn read_config() -> CliConfig {
     let path = config_path();
-    let Ok(raw) = fs::read_to_string(path) else {
-        return CliConfig::default();
-    };
+    let Ok(raw) = fs::read_to_string(path) else { return CliConfig::default() };
     serde_json::from_str(&raw).unwrap_or_default()
 }
 
 fn save_config(cfg: &CliConfig) -> Result<()> {
     let path = config_path();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).ok();
-    }
+    if let Some(parent) = path.parent() { fs::create_dir_all(parent).ok(); }
     fs::write(path, serde_json::to_vec_pretty(cfg)?).context("write CLI config")?;
     Ok(())
 }
 
 fn find_binary(bin: &str) -> Option<PathBuf> {
-    let out = ProcessCommand::new("bash")
-        .args(["-lc", &format!("command -v {bin}")])
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
+    let out = ProcessCommand::new("bash").args(["-lc", &format!("command -v {bin}")]).output().ok()?;
+    if !out.status.success() { return None; }
     let value = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    if value.is_empty() {
-        None
-    } else {
-        Some(PathBuf::from(value))
-    }
+    if value.is_empty() { None } else { Some(PathBuf::from(value)) }
 }
 
 fn spawn_gateway() -> Result<u32> {
@@ -711,33 +700,16 @@ fn spawn_gateway() -> Result<u32> {
         c
     } else {
         let mut c = ProcessCommand::new("cargo");
-        c.args([
-            "run",
-            "-q",
-            "-p",
-            "magicmerlin-gateway",
-            "--",
-            "--serve",
-            "18789",
-            "--bind",
-            "127.0.0.1",
-            "--daemon",
-        ]);
+        c.args(["run", "-q", "-p", "magicmerlin-gateway", "--", "--serve", "18789", "--bind", "127.0.0.1", "--daemon"]);
         c
     };
-
-    cmd.stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-
+    cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     let child = cmd.spawn().context("spawn gateway")?;
     Ok(child.id())
 }
 
 fn write_pid(pid: u32) -> Result<()> {
-    if let Some(parent) = pid_path().parent() {
-        fs::create_dir_all(parent).ok();
-    }
+    if let Some(parent) = pid_path().parent() { fs::create_dir_all(parent).ok(); }
     fs::write(pid_path(), pid.to_string()).context("write pid file")?;
     Ok(())
 }
@@ -750,37 +722,22 @@ fn read_pid() -> Result<u32> {
 fn stop_pid(pid: u32) -> Result<()> {
     #[cfg(unix)]
     {
-        let status = ProcessCommand::new("kill")
-            .arg(pid.to_string())
-            .status()
-            .context("send SIGTERM")?;
-        if !status.success() {
-            return Err(anyhow!("kill failed for pid {pid}"));
-        }
+        let status = ProcessCommand::new("kill").arg(pid.to_string()).status().context("send SIGTERM")?;
+        if !status.success() { return Err(anyhow!("kill failed for pid {pid}")); }
     }
-
     #[cfg(windows)]
     {
-        let status = ProcessCommand::new("taskkill")
-            .args(["/PID", &pid.to_string(), "/T", "/F"])
-            .status()
-            .context("taskkill")?;
-        if !status.success() {
-            return Err(anyhow!("taskkill failed for pid {pid}"));
-        }
+        let status = ProcessCommand::new("taskkill").args(["/PID", &pid.to_string(), "/T", "/F"]).status().context("taskkill")?;
+        if !status.success() { return Err(anyhow!("taskkill failed for pid {pid}")); }
     }
-
     Ok(())
 }
 
 fn is_gateway_port_open() -> bool {
     TcpStream::connect_timeout(
-        &"127.0.0.1:18789"
-            .parse()
-            .expect("socket parse for static endpoint must succeed"),
+        &"127.0.0.1:18789".parse().expect("socket parse for static endpoint must succeed"),
         Duration::from_millis(200),
-    )
-    .is_ok()
+    ).is_ok()
 }
 
 fn collect_command_paths() -> BTreeSet<String> {
@@ -792,39 +749,322 @@ fn collect_command_paths() -> BTreeSet<String> {
             walk(sub, &path, out);
         }
     }
-
     let root = Cli::command();
     let mut out = BTreeSet::new();
     walk(&root, &[], &mut out);
     out
 }
 
-fn prompt(prompt: &str, default: &str) -> Result<String> {
-    print!("{prompt} [{default}]: ");
+fn prompt_input(label: &str, default: &str) -> Result<String> {
+    print!("{label} [{default}]: ");
     io::stdout().flush().ok();
     let mut line = String::new();
     io::stdin().read_line(&mut line)?;
     let value = line.trim();
-    if value.is_empty() {
-        Ok(default.to_string())
-    } else {
-        Ok(value.to_string())
+    if value.is_empty() { Ok(default.to_string()) } else { Ok(value.to_string()) }
+}
+
+// ── Output formatting helpers ────────────────────────────────────────
+
+fn use_color(no_color_flag: bool) -> bool {
+    if no_color_flag { return false; }
+    std::env::var("NO_COLOR").is_err()
+}
+
+fn green(s: &str, c: bool) -> String { if c { format!("\x1b[32m{s}\x1b[0m") } else { s.to_string() } }
+fn red(s: &str, c: bool) -> String { if c { format!("\x1b[31m{s}\x1b[0m") } else { s.to_string() } }
+fn yellow(s: &str, c: bool) -> String { if c { format!("\x1b[33m{s}\x1b[0m") } else { s.to_string() } }
+fn bold(s: &str, c: bool) -> String { if c { format!("\x1b[1m{s}\x1b[0m") } else { s.to_string() } }
+fn dim(s: &str, c: bool) -> String { if c { format!("\x1b[2m{s}\x1b[0m") } else { s.to_string() } }
+
+fn status_color(status: &str, c: bool) -> String {
+    match status {
+        "ok" | "active" | "connected" | "running" | "enabled" | "PASS" | "true" => green(status, c),
+        "error" | "failed" | "disconnected" | "stopped" | "FAIL" | "false" => red(status, c),
+        _ => yellow(status, c),
     }
 }
 
-fn open_url(url: &str) -> Result<()> {
-    let status = if cfg!(target_os = "macos") {
-        ProcessCommand::new("open").arg(url).status()
-    } else if cfg!(target_os = "windows") {
-        ProcessCommand::new("cmd").args(["/C", "start", url]).status()
-    } else {
-        ProcessCommand::new("xdg-open").arg(url).status()
+fn status_dot(status: &str, c: bool) -> String {
+    match status {
+        "ok" | "active" | "connected" | "running" | "enabled" | "PASS" => green("●", c),
+        "error" | "failed" | "disconnected" | "stopped" | "FAIL" => red("●", c),
+        _ => yellow("●", c),
     }
-    .context("open url")?;
+}
 
-    if !status.success() {
-        return Err(anyhow!("failed to open URL: {url}"));
+fn strip_ansi(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut in_esc = false;
+    for ch in s.chars() {
+        if in_esc { if ch == 'm' { in_esc = false; } }
+        else if ch == '\x1b' { in_esc = true; }
+        else { out.push(ch); }
     }
+    out
+}
+
+fn print_table(headers: &[&str], rows: &[Vec<String>], c: bool) {
+    if rows.is_empty() { println!("  (no results)"); return; }
+    let cols = headers.len();
+    let mut widths = vec![0usize; cols];
+    for (i, h) in headers.iter().enumerate() { widths[i] = h.len(); }
+    for row in rows {
+        for (i, cell) in row.iter().enumerate() {
+            if i < cols { widths[i] = widths[i].max(strip_ansi(cell).len()); }
+        }
+    }
+    let hdr: Vec<String> = headers.iter().enumerate()
+        .map(|(i, h)| { let padded = format!("{:<w$}", h.to_uppercase(), w = widths[i]); bold(&padded, c) })
+        .collect();
+    println!("  {}", hdr.join("  "));
+    let sep: Vec<String> = widths.iter().map(|w| "─".repeat(*w)).collect();
+    println!("  {}", dim(&sep.join("──"), c));
+    for row in rows {
+        let cells: Vec<String> = (0..cols).map(|i| {
+            let cell = row.get(i).map(|s| s.as_str()).unwrap_or("");
+            let pad = widths[i].saturating_sub(strip_ansi(cell).len());
+            format!("{cell}{}", " ".repeat(pad))
+        }).collect();
+        println!("  {}", cells.join("  "));
+    }
+}
+
+fn val_str(v: &Value) -> String {
+    match v { Value::String(s) => s.clone(), Value::Null => "-".to_string(), Value::Bool(b) => b.to_string(), Value::Number(n) => n.to_string(), _ => v.to_string() }
+}
+
+fn val_arr(v: &Value) -> &[Value] { v.as_array().map(|a| a.as_slice()).unwrap_or(&[]) }
+
+// ── Rich formatters ─────────────────────────────────────────────────
+
+fn fmt_status_card(health: &Value, status: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("MagicMerlin Status", c));
+    lines.push(String::new());
+    let ok = health.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+    let uptime = health.get("uptimeSeconds").or_else(|| health.get("uptime_seconds")).and_then(|v| v.as_u64()).unwrap_or(0);
+    let ver = health.get("version").and_then(|v| v.as_str()).unwrap_or("?");
+    let dot = if ok { green("●", c) } else { red("●", c) };
+    let label = if ok { "online" } else { "offline" };
+    lines.push(format!("  Gateway   {dot} {label}  (uptime {uptime}s, v{ver})"));
+    if let Some(channels) = status.get("channels").and_then(|v| v.as_array()) {
+        lines.push(String::new());
+        lines.push(format!("  {}", bold("Channels", c)));
+        for ch in channels {
+            let name = val_str(&ch["name"]);
+            let st = ch.get("status").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let last = val_str(&ch["lastMessage"]);
+            lines.push(format!("    {} {:<14} {:<12} last: {}", status_dot(st, c), name, status_color(st, c), last));
+        }
+    }
+    if let Some(n) = status.get("sessionCount").or_else(|| status.get("sessions")).and_then(|v| v.as_u64()) {
+        lines.push(format!("  Sessions  {n}"));
+    }
+    if let Some(m) = status.get("model").and_then(|v| v.as_str()) {
+        lines.push(format!("  Model     {m}"));
+    }
+    lines.join("\n")
+}
+
+fn fmt_sessions_list(result: &Value, c: bool) {
+    println!("{}", bold("Sessions", c));
+    let arr = result.get("sessions").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|s| {
+        let st = s.get("status").or_else(|| s.get("state")).and_then(|v| v.as_str()).unwrap_or("active");
+        vec![
+            val_str(&s["sessionId"]).chars().take(28).collect(),
+            val_str(&s["model"]),
+            val_str(&s["messageCount"]),
+            val_str(&s["lastActivity"]),
+            format!("{} {}", status_dot(st, c), st),
+        ]
+    }).collect();
+    print_table(&["Key", "Model", "Msgs", "Last Active", "Status"], &rows, c);
+}
+
+fn fmt_session_detail(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("Session Detail", c));
+    lines.push(format!("  ID:          {}", val_str(&result["sessionId"])));
+    lines.push(format!("  Model:       {}", val_str(&result["model"])));
+    lines.push(format!("  Tokens:      {}", val_str(&result["tokenUsage"])));
+    lines.push(format!("  Cost:        ${}", val_str(&result["totalCostUsd"])));
+    lines.push(format!("  Compacted:   {}x", val_str(&result["compactionCount"])));
+    lines.push(format!("  Last active: {}", val_str(&result["lastActivity"])));
+    if let Some(messages) = result.get("messages").or_else(|| result.get("transcript")).and_then(|v| v.as_array()) {
+        lines.push(String::new());
+        lines.push(bold("Recent messages", c));
+        for msg in messages.iter().rev().take(20).collect::<Vec<_>>().into_iter().rev() {
+            let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("?");
+            let content = val_str(&msg["content"]);
+            let tag = match role {
+                "user" => green("user", c), "assistant" => yellow("asst", c), "system" => dim("sys ", c), _ => role.to_string(),
+            };
+            let preview: String = content.chars().take(120).collect();
+            lines.push(format!("  [{tag}] {preview}"));
+        }
+    }
+    lines.join("\n")
+}
+
+fn fmt_compaction(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("Compaction Result", c));
+    lines.push(format!("  Messages: {} -> {}", val_str(&result["messagesBefore"]), val_str(&result["messagesAfter"])));
+    lines.push(format!("  Tokens:   {} -> {}", val_str(&result["tokensBefore"]), val_str(&result["tokensAfter"])));
+    lines.join("\n")
+}
+
+fn fmt_cron_list(result: &Value, c: bool) {
+    println!("{}", bold("Cron Jobs", c));
+    let arr = result.get("jobs").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|j| {
+        let st = j.get("enabled").and_then(|v| v.as_bool()).map(|b| if b { "enabled" } else { "disabled" }).unwrap_or("?");
+        vec![val_str(&j["id"]), val_str(&j["name"]), val_str(&j["schedule"]), val_str(&j["lastRun"]), val_str(&j["nextRun"]), format!("{} {}", status_dot(st, c), st)]
+    }).collect();
+    print_table(&["ID", "Name", "Schedule", "Last Run", "Next Run", "Status"], &rows, c);
+}
+
+fn fmt_cron_runs(result: &Value, c: bool) {
+    println!("{}", bold("Cron Run History", c));
+    let arr = result.get("runs").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|r| {
+        let st = r.get("status").and_then(|v| v.as_str()).unwrap_or("?");
+        vec![val_str(&r["id"]), val_str(&r["jobId"]), val_str(&r["startedAt"]), val_str(&r["duration"]), format!("{} {}", status_dot(st, c), st)]
+    }).collect();
+    print_table(&["Run", "Job", "Started", "Duration", "Status"], &rows, c);
+}
+
+fn fmt_memory_search(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("Memory Search Results", c));
+    let arr = result.get("results").unwrap_or(result);
+    for (i, item) in val_arr(arr).iter().enumerate() {
+        let key = val_str(&item["key"]);
+        let score = item.get("score").and_then(|v| v.as_f64()).map(|s| format!("{s:.2}")).unwrap_or_default();
+        let snippet = val_str(&item["content"]);
+        let preview: String = snippet.chars().take(100).collect();
+        lines.push(format!("  {}. {} {}", i + 1, bold(&key, c), dim(&format!("(score: {score})"), c)));
+        lines.push(format!("     {preview}"));
+    }
+    if val_arr(arr).is_empty() { lines.push("  (no results)".to_string()); }
+    lines.join("\n")
+}
+
+fn fmt_channels_status(result: &Value, c: bool) {
+    println!("{}", bold("Channels", c));
+    let arr = result.get("channels").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|ch| {
+        let st = ch.get("status").and_then(|v| v.as_str()).unwrap_or("unknown");
+        vec![val_str(&ch["name"]), format!("{} {}", status_dot(st, c), st), val_str(&ch["accountId"]), val_str(&ch["lastMessage"])]
+    }).collect();
+    print_table(&["Channel", "Status", "Account", "Last Message"], &rows, c);
+}
+
+fn fmt_agents_list(result: &Value, c: bool) {
+    println!("{}", bold("Agents", c));
+    let arr = result.get("agents").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|a| {
+        let st = a.get("status").and_then(|v| v.as_str()).unwrap_or("active");
+        vec![val_str(&a["name"]), val_str(&a["model"]), val_str(&a["channels"]), val_str(&a["lastActive"]), format!("{} {}", status_dot(st, c), st)]
+    }).collect();
+    print_table(&["Name", "Model", "Channels", "Last Active", "Status"], &rows, c);
+}
+
+fn fmt_models_list(result: &Value, c: bool) {
+    println!("{}", bold("Models", c));
+    let arr = result.get("models").or_else(|| result.get("providers")).unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|m| {
+        vec![val_str(&m["provider"]), val_str(&m["model"]), val_str(&m["status"])]
+    }).collect();
+    print_table(&["Provider", "Model", "Status"], &rows, c);
+}
+
+fn fmt_plugins_list(result: &Value, c: bool) {
+    println!("{}", bold("Plugins", c));
+    let arr = result.get("plugins").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|p| {
+        let st = p.get("enabled").and_then(|v| v.as_bool()).map(|b| if b { "enabled" } else { "disabled" }).unwrap_or("?");
+        vec![val_str(&p["name"]), val_str(&p["version"]), format!("{} {}", status_dot(st, c), st)]
+    }).collect();
+    print_table(&["Name", "Version", "Status"], &rows, c);
+}
+
+fn fmt_skills_list(result: &Value, c: bool) {
+    println!("{}", bold("Skills", c));
+    let arr = result.get("skills").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|s| {
+        vec![val_str(&s["name"]), val_str(&s["description"]), val_str(&s["location"])]
+    }).collect();
+    print_table(&["Name", "Description", "Location"], &rows, c);
+}
+
+fn fmt_approvals_list(result: &Value, c: bool) {
+    println!("{}", bold("Pending Approvals", c));
+    let arr = result.get("approvals").unwrap_or(result);
+    let rows: Vec<Vec<String>> = val_arr(arr).iter().map(|a| {
+        vec![val_str(&a["id"]), val_str(&a["type"]), val_str(&a["description"]), val_str(&a["requestedAt"])]
+    }).collect();
+    print_table(&["ID", "Type", "Description", "Requested"], &rows, c);
+}
+
+fn fmt_config_value(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("Configuration", c));
+    if let Some(obj) = result.as_object() {
+        for (k, v) in obj {
+            let formatted = if v.is_object() || v.is_array() { serde_json::to_string_pretty(v).unwrap_or_else(|_| v.to_string()) } else { val_str(v) };
+            lines.push(format!("  {}: {}", green(k, c), formatted));
+        }
+    } else {
+        lines.push(format!("  {}", serde_json::to_string_pretty(result).unwrap_or_else(|_| result.to_string())));
+    }
+    lines.join("\n")
+}
+
+fn fmt_security_audit(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    lines.push(bold("Security Audit", c));
+    lines.push(String::new());
+    if let Some(checks) = result.get("checks").and_then(|v| v.as_array()) {
+        for check in checks {
+            let name = val_str(&check["name"]);
+            let st = check.get("status").and_then(|v| v.as_str()).unwrap_or("WARN");
+            let msg = val_str(&check["message"]);
+            let tag = match st { "PASS" => green("PASS", c), "FAIL" => red("FAIL", c), _ => yellow("WARN", c) };
+            lines.push(format!("  [{tag}] {name}: {msg}"));
+        }
+    } else if let Some(obj) = result.as_object() {
+        for (k, v) in obj {
+            let pass = v.as_bool().unwrap_or(false);
+            let tag = if pass { green("PASS", c) } else { yellow("WARN", c) };
+            lines.push(format!("  [{tag}] {k}"));
+        }
+    }
+    lines.join("\n")
+}
+
+fn fmt_logs(result: &Value, c: bool) -> String {
+    let mut lines = Vec::new();
+    let arr = result.get("entries").or_else(|| result.get("logs")).unwrap_or(result);
+    for entry in val_arr(arr) {
+        let level = entry.get("level").and_then(|v| v.as_str()).unwrap_or("info");
+        let ts = val_str(&entry["timestamp"]);
+        let msg = val_str(&entry["message"]);
+        let lvl = match level { "error" => red(level, c), "warn" => yellow(level, c), "debug" | "trace" => dim(level, c), _ => level.to_string() };
+        lines.push(format!("{} [{}] {}", dim(&ts, c), lvl, msg));
+    }
+    if lines.is_empty() { lines.push("(no log entries)".to_string()); }
+    lines.join("\n")
+}
+
+fn open_url(url: &str) -> Result<()> {
+    let status = if cfg!(target_os = "macos") { ProcessCommand::new("open").arg(url).status() }
+    else if cfg!(target_os = "windows") { ProcessCommand::new("cmd").args(["/C", "start", url]).status() }
+    else { ProcessCommand::new("xdg-open").arg(url).status() }
+    .context("open url")?;
+    if !status.success() { return Err(anyhow!("failed to open URL: {url}")); }
     Ok(())
 }
 
@@ -840,392 +1080,28 @@ fn emit_completion(shell: Shell) {
     }
 }
 
-// ── TUI Dashboard ────────────────────────────────────────────────────
-
-#[derive(Debug, Clone)]
-struct AgentInfo {
-    name: String,
-    model: String,
-    online: bool,
-}
-
-#[derive(Debug, Clone)]
-struct SessionInfo {
-    id: String,
-    tokens: u64,
-}
-
-#[derive(Debug, Clone)]
-struct CronInfo {
-    name: String,
-    schedule: String,
-    enabled: bool,
-}
-
-#[derive(Debug, Clone)]
-struct GatewayInfo {
-    online: bool,
-    port: u16,
-    model: String,
-    uptime_secs: u64,
-}
-
-struct TuiApp {
-    tab: usize,
-    agents: Vec<AgentInfo>,
-    sessions: Vec<SessionInfo>,
-    cron_jobs: Vec<CronInfo>,
-    logs: Vec<String>,
-    gateway: GatewayInfo,
-    tick: u64,
-    scroll: usize,
-    gateway_url: String,
-}
-
-impl TuiApp {
-    fn new(gateway_url: String) -> Self {
-        Self {
-            tab: 0,
-            agents: Vec::new(),
-            sessions: Vec::new(),
-            cron_jobs: Vec::new(),
-            logs: vec!["TUI started".to_string()],
-            gateway: GatewayInfo {
-                online: false,
-                port: 18789,
-                model: "unknown".to_string(),
-                uptime_secs: 0,
-            },
-            tick: 0,
-            scroll: 0,
-            gateway_url,
-        }
-    }
-
-    async fn refresh(&mut self) {
-        let client = Client::new();
-        let url = format!("{}/ws", self.gateway_url);
-
-        let call = |method: &str| {
-            let req = serde_json::json!({
-                "jsonrpc": "2.0",
-                "method": method,
-                "params": {},
-                "id": 1
-            });
-            client.post(&url).json(&req).send()
-        };
-
-        // Health check
-        match call("health").await {
-            Ok(resp) => {
-                if let Ok(body) = resp.json::<Value>().await {
-                    self.gateway.online = true;
-                    if let Some(r) = body.get("result") {
-                        if let Some(m) = r.get("model").and_then(|v| v.as_str()) {
-                            self.gateway.model = m.to_string();
-                        }
-                        if let Some(u) = r.get("uptimeSeconds").and_then(|v| v.as_u64()) {
-                            self.gateway.uptime_secs = u;
-                        }
-                    }
-                }
-            }
-            Err(_) => {
-                self.gateway.online = false;
-                return;
-            }
-        }
-
-        // Agents
-        if let Ok(resp) = call("agents.list").await {
-            if let Ok(body) = resp.json::<Value>().await {
-                if let Some(r) = body.get("result") {
-                    if let Some(arr) = r.get("agents").and_then(|v| v.as_array()) {
-                        self.agents = arr.iter().map(|a| AgentInfo {
-                            name: a.get("name").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
-                            model: a.get("model").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
-                            online: a.get("online").and_then(|v| v.as_bool()).unwrap_or(false),
-                        }).collect();
-                    }
-                }
-            }
-        }
-
-        // Sessions
-        if let Ok(resp) = call("sessions.list").await {
-            if let Ok(body) = resp.json::<Value>().await {
-                if let Some(r) = body.get("result") {
-                    if let Some(arr) = r.get("sessions").and_then(|v| v.as_array()) {
-                        self.sessions = arr.iter().map(|s| SessionInfo {
-                            id: s.get("sessionId").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
-                            tokens: s.get("tokenUsage").and_then(|v| v.as_u64()).unwrap_or(0),
-                        }).collect();
-                    }
-                }
-            }
-        }
-
-        // Cron
-        if let Ok(resp) = call("cron.list").await {
-            if let Ok(body) = resp.json::<Value>().await {
-                if let Some(r) = body.get("result") {
-                    if let Some(arr) = r.get("jobs").and_then(|v| v.as_array()) {
-                        self.cron_jobs = arr.iter().map(|j| CronInfo {
-                            name: j.get("name").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
-                            schedule: j.get("schedule").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
-                            enabled: j.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true),
-                        }).collect();
-                    }
-                }
-            }
-        }
-
-        // Logs
-        if let Ok(resp) = call("logs.tail").await {
-            if let Ok(body) = resp.json::<Value>().await {
-                if let Some(r) = body.get("result") {
-                    if let Some(arr) = r.get("lines").and_then(|v| v.as_array()) {
-                        self.logs = arr.iter().filter_map(|l| l.as_str().map(|s| s.to_string())).collect();
-                        if self.logs.is_empty() {
-                            self.logs.push("(no recent logs)".to_string());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn on_key(&mut self, key: KeyCode) -> bool {
-        match key {
-            KeyCode::Char('q') => return true,
-            KeyCode::Char('1') => self.tab = 0,
-            KeyCode::Char('2') => self.tab = 1,
-            KeyCode::Char('3') => self.tab = 2,
-            KeyCode::Char('4') => self.tab = 3,
-            KeyCode::Char('5') => self.tab = 4,
-            KeyCode::Tab => self.tab = (self.tab + 1) % 5,
-            KeyCode::BackTab => self.tab = if self.tab == 0 { 4 } else { self.tab - 1 },
-            KeyCode::Char('r') => self.tick = 0, // force refresh on next cycle
-            KeyCode::Up => self.scroll = self.scroll.saturating_sub(1),
-            KeyCode::Down => self.scroll = self.scroll.saturating_add(1),
-            _ => {}
-        }
-        false
-    }
-}
-
-fn draw_tui(frame: &mut Frame, app: &TuiApp) {
-    let size = frame.size();
-
-    // Main layout: title, tabs, body, status bar
-    let main_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),  // tabs
-            Constraint::Min(5),    // body
-            Constraint::Length(1), // status bar
-        ])
-        .split(size);
-
-    // Tab bar
-    let tab_titles: Vec<Line> = ["[1]Overview", "[2]Agents", "[3]Sessions", "[4]Cron", "[5]Logs"]
-        .iter()
-        .map(|t| Line::from(Span::raw(*t)))
-        .collect();
-    let tabs = Tabs::new(tab_titles)
-        .select(app.tab)
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-        .divider(Span::raw(" | "));
-    frame.render_widget(tabs, main_chunks[0]);
-
-    // Body
-    let body_block = Block::default()
-        .title(" Magic Merlin ")
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(if app.gateway.online { Color::Green } else { Color::Red }));
-
-    let inner = body_block.inner(main_chunks[1]);
-    frame.render_widget(body_block, main_chunks[1]);
-
-    match app.tab {
-        0 => draw_overview(frame, app, inner),
-        1 => draw_agents(frame, app, inner),
-        2 => draw_sessions(frame, app, inner),
-        3 => draw_cron(frame, app, inner),
-        4 => draw_logs(frame, app, inner),
-        _ => {}
-    }
-
-    // Status bar
-    let online_str = if app.gateway.online { "● online" } else { "○ offline" };
-    let uptime = format_uptime(app.gateway.uptime_secs);
-    let status = Paragraph::new(Line::from(vec![
-        Span::styled(
-            format!(" Gateway: {online_str} :{} ", app.gateway.port),
-            Style::default().fg(if app.gateway.online { Color::Green } else { Color::Red }),
-        ),
-        Span::raw(format!("| Model: {} | Uptime: {} | q=quit Tab=switch r=refresh", app.gateway.model, uptime)),
-    ]));
-    frame.render_widget(status, main_chunks[2]);
-}
-
-fn draw_overview(frame: &mut Frame, app: &TuiApp, area: Rect) {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(area);
-
-    let left = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[0]);
-
-    let right = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[1]);
-
-    // Agents panel
-    let agent_items: Vec<ListItem> = app.agents.iter().map(|a| {
-        let marker = if a.online { "●" } else { "○" };
-        let check = if a.online { "✓" } else { "✗" };
-        ListItem::new(format!(" {marker} {:<16} {:<10} {check}", a.name, a.model))
-            .style(Style::default().fg(if a.online { Color::Green } else { Color::DarkGray }))
-    }).collect();
-    let agents_list = List::new(agent_items)
-        .block(Block::default().title(" AGENTS ").borders(Borders::ALL));
-    frame.render_widget(agents_list, left[0]);
-
-    // Sessions panel
-    let session_items: Vec<ListItem> = app.sessions.iter().map(|s| {
-        ListItem::new(format!(" {} ({}tok)", s.id, s.tokens))
-    }).collect();
-    let sessions_list = List::new(session_items)
-        .block(Block::default().title(" ACTIVE SESSIONS ").borders(Borders::ALL));
-    frame.render_widget(sessions_list, right[0]);
-
-    // Cron panel
-    let cron_items: Vec<ListItem> = app.cron_jobs.iter().map(|c| {
-        let check = if c.enabled { "✓" } else { "✗" };
-        ListItem::new(format!(" {:<16} {:<14} {check}", c.name, c.schedule))
-    }).collect();
-    let cron_list = List::new(cron_items)
-        .block(Block::default().title(" CRON JOBS ").borders(Borders::ALL));
-    frame.render_widget(cron_list, left[1]);
-
-    // Logs panel
-    let log_items: Vec<ListItem> = app.logs.iter().rev().take(20).map(|l| {
-        ListItem::new(format!(" {l}"))
-    }).collect();
-    let logs_list = List::new(log_items)
-        .block(Block::default().title(" RECENT LOGS ").borders(Borders::ALL));
-    frame.render_widget(logs_list, right[1]);
-}
-
-fn draw_agents(frame: &mut Frame, app: &TuiApp, area: Rect) {
-    let items: Vec<ListItem> = app.agents.iter().map(|a| {
-        let marker = if a.online { "●" } else { "○" };
-        let check = if a.online { "✓" } else { "✗" };
-        ListItem::new(format!("  {marker} {:<20} model={:<12} {check}", a.name, a.model))
-            .style(Style::default().fg(if a.online { Color::Green } else { Color::DarkGray }))
-    }).collect();
-    let list = List::new(items)
-        .block(Block::default().title(" Agents ").borders(Borders::NONE));
-    frame.render_widget(list, area);
-}
-
-fn draw_sessions(frame: &mut Frame, app: &TuiApp, area: Rect) {
-    let items: Vec<ListItem> = app.sessions.iter().map(|s| {
-        ListItem::new(format!("  {:<36} tokens={}", s.id, s.tokens))
-    }).collect();
-    let list = List::new(items)
-        .block(Block::default().title(" Sessions ").borders(Borders::NONE));
-    frame.render_widget(list, area);
-}
-
-fn draw_cron(frame: &mut Frame, app: &TuiApp, area: Rect) {
-    let items: Vec<ListItem> = app.cron_jobs.iter().map(|c| {
-        let check = if c.enabled { "✓" } else { "✗" };
-        ListItem::new(format!("  {:<20} {:<16} {check}", c.name, c.schedule))
-    }).collect();
-    let list = List::new(items)
-        .block(Block::default().title(" Cron Jobs ").borders(Borders::NONE));
-    frame.render_widget(list, area);
-}
-
-fn draw_logs(frame: &mut Frame, app: &TuiApp, area: Rect) {
-    let start = app.scroll.min(app.logs.len().saturating_sub(1));
-    let items: Vec<ListItem> = app.logs.iter().skip(start).map(|l| {
-        ListItem::new(format!("  {l}"))
-    }).collect();
-    let list = List::new(items)
-        .block(Block::default().title(" Logs (↑↓ scroll) ").borders(Borders::NONE));
-    frame.render_widget(list, area);
-}
-
-fn format_uptime(secs: u64) -> String {
-    if secs < 60 {
-        format!("{secs}s")
-    } else if secs < 3600 {
-        format!("{}m", secs / 60)
-    } else {
-        format!("{}h{}m", secs / 3600, (secs % 3600) / 60)
-    }
-}
-
-async fn run_tui(gateway_url: &str) -> Result<()> {
-    enable_raw_mode().context("enable raw mode")?;
-    let mut stdout = io::stdout();
-    stdout.execute(EnterAlternateScreen).context("enter alternate screen")?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).context("create terminal")?;
-
-    let mut app = TuiApp::new(gateway_url.to_string());
-    app.refresh().await;
-
+fn run_tui_stub() -> Result<()> {
+    println!("MagicMerlin TUI — Agents | Sessions | Cron | Logs");
+    println!("Press q then Enter to quit.");
     loop {
-        terminal.draw(|f| draw_tui(f, &app))?;
-
-        if event::poll(Duration::from_millis(100)).context("poll events")? {
-            if let Event::Key(key) = event::read().context("read event")? {
-                if key.kind == KeyEventKind::Press && app.on_key(key.code) {
-                    break;
-                }
-            }
-        }
-
-        // Refresh every 2s (20 * 100ms)
-        app.tick += 1;
-        if app.tick % 20 == 0 {
-            app.refresh().await;
-        }
+        let mut line = String::new();
+        io::stdin().read_line(&mut line)?;
+        if line.trim() == "q" { break; }
     }
-
-    disable_raw_mode().context("disable raw mode")?;
-    terminal.backend_mut().execute(LeaveAlternateScreen).context("leave alternate screen")?;
-    terminal.show_cursor().context("show cursor")?;
-
     Ok(())
 }
+
+// ── Main ────────────────────────────────────────────────────────────
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
-
     let mut config = read_config();
-    if cli.dev {
-        config.profile = Some("dev".to_string());
-    }
-    if let Some(profile) = &cli.profile {
-        config.profile = Some(profile.clone());
-    }
-    if let Some(level) = &cli.log_level {
-        config.log_level = Some(level.clone());
-    }
-
+    if cli.dev { config.profile = Some("dev".to_string()); }
+    if let Some(profile) = &cli.profile { config.profile = Some(profile.clone()); }
+    if let Some(level) = &cli.log_level { config.log_level = Some(level.clone()); }
     let app = App { cli, config };
+    let c = app.color();
 
     let Some(command) = &app.cli.command else {
         let mut cmd = Cli::command();
@@ -1242,49 +1118,46 @@ async fn main() -> Result<()> {
             }
         },
 
+        // 1. status
         Command::Status => {
             app.ensure_gateway_running().await?;
             let health = app.call_gateway("health", Value::Null).await?;
             let status = app.call_gateway("status", Value::Null).await?;
-            app.output(json!({"health": health, "status": status}), || {
-                format!("health={health}\nstatus={status}")
-            })?;
+            app.output(json!({"health": health, "status": status}), || fmt_status_card(&health, &status, c))?;
         }
 
         Command::Setup => {
             let mut editable = app.config.clone();
-            editable.gateway_ws_url = prompt("Gateway WebSocket URL", &editable.gateway_ws_url)?;
-            editable.dashboard_url = prompt("Dashboard URL", &editable.dashboard_url)?;
+            editable.gateway_ws_url = prompt_input("Gateway WebSocket URL", &editable.gateway_ws_url)?;
+            editable.dashboard_url = prompt_input("Dashboard URL", &editable.dashboard_url)?;
             let profile_default = editable.profile.clone().unwrap_or_default();
-            let p = prompt("Default profile (blank for none)", &profile_default)?;
+            let p = prompt_input("Default profile (blank for none)", &profile_default)?;
             editable.profile = if p.trim().is_empty() { None } else { Some(p) };
-            let l = prompt("Default log level", editable.log_level.as_deref().unwrap_or("info"))?;
+            let l = prompt_input("Default log level", editable.log_level.as_deref().unwrap_or("info"))?;
             editable.log_level = Some(l);
             save_config(&editable)?;
-            app.output(json!({"ok": true, "config": editable}), || "setup complete".to_string())?;
+            app.output(json!({"ok": true, "config": editable}), || format!("{} setup complete", green("✓", c)))?;
         }
 
         Command::Onboard => {
             let mut editable = app.config.clone();
-            editable.gateway_ws_url = prompt("Gateway WebSocket URL", &editable.gateway_ws_url)?;
-            editable.dashboard_url = prompt("Dashboard URL", &editable.dashboard_url)?;
+            editable.gateway_ws_url = prompt_input("Gateway WebSocket URL", &editable.gateway_ws_url)?;
+            editable.dashboard_url = prompt_input("Dashboard URL", &editable.dashboard_url)?;
             save_config(&editable)?;
-            let start = prompt("Start gateway now? (y/n)", "y")?;
-            if start.eq_ignore_ascii_case("y") {
-                let pid = spawn_gateway()?;
-                write_pid(pid)?;
-            }
-            app.output(json!({"ok": true}), || "onboard complete".to_string())?;
+            let start = prompt_input("Start gateway now? (y/n)", "y")?;
+            if start.eq_ignore_ascii_case("y") { let pid = spawn_gateway()?; write_pid(pid)?; }
+            app.output(json!({"ok": true}), || format!("{} onboard complete", green("✓", c)))?;
         }
 
         Command::Health => {
+            let port_open = is_gateway_port_open();
+            let rpc_ok = app.call_gateway("health", Value::Null).await.is_ok();
             let disk = fs::metadata(state_dir()).is_ok();
-            let result = json!({
-                "gatewayPortOpen": is_gateway_port_open(),
-                "gatewayRpcReachable": app.call_gateway("health", Value::Null).await.is_ok(),
-                "stateDirExists": disk
-            });
-            app.output(result.clone(), || result.to_string())?;
+            let result = json!({"gatewayPortOpen": port_open, "gatewayRpcReachable": rpc_ok, "stateDirExists": disk});
+            app.output(result, || {
+                let chk = |ok: bool, label: &str| { let dot = if ok { green("✓", c) } else { red("✗", c) }; format!("  {dot} {label}") };
+                [bold("Health Check", c), chk(port_open, "Gateway port open"), chk(rpc_ok, "Gateway RPC reachable"), chk(disk, "State directory exists")].join("\n")
+            })?;
         }
 
         Command::Dashboard => {
@@ -1292,66 +1165,52 @@ async fn main() -> Result<()> {
             app.output(json!({"url": app.config.dashboard_url}), || app.config.dashboard_url.clone())?;
         }
 
-        Command::Tui => run_tui(&app.gateway_http_url()).await?,
-
+        Command::Tui => run_tui_stub()?,
         Command::Completion { shell } => emit_completion(*shell),
 
+        // 26. version
         Command::Version => {
-            app.output(
-                json!({"name": "magicmerlin", "version": env!("CARGO_PKG_VERSION")}),
-                || format!("magicmerlin {}", env!("CARGO_PKG_VERSION")),
-            )?;
+            let ver = env!("CARGO_PKG_VERSION");
+            app.output(json!({"name": "magicmerlin", "version": ver, "compat": "OpenClaw v0.5"}), || format!("magicmerlin {} (OpenClaw compat v0.5)", ver))?;
         }
 
-        Command::Update => {
-            app.output(json!({"ok": true, "message": "update placeholder"}), || {
-                "update placeholder".to_string()
-            })?;
-        }
+        Command::Update => { app.output(json!({"ok": true, "message": "update placeholder"}), || "update placeholder".to_string())?; }
 
         Command::Reset => {
             let dir = state_dir();
-            if dir.exists() {
-                fs::remove_dir_all(&dir).with_context(|| format!("remove {}", dir.display()))?;
-            }
-            app.output(json!({"ok": true, "stateDir": dir}), || "state reset complete".to_string())?;
+            if dir.exists() { fs::remove_dir_all(&dir).with_context(|| format!("remove {}", dir.display()))?; }
+            app.output(json!({"ok": true, "stateDir": dir}), || format!("{} state reset complete", green("✓", c)))?;
         }
 
         Command::Agent { command } => match command {
-            AgentCommand::Run {
-                prompt,
-                session_id,
-                model,
-            } => {
+            AgentCommand::Run { prompt, session_id, model } => {
                 app.ensure_gateway_running().await?;
-                let result = app
-                    .call_gateway(
-                        "agent.run",
-                        json!({"prompt": prompt, "message": prompt, "sessionId": session_id, "model": model}),
-                    )
-                    .await?;
-                app.output(result.clone(), || result.to_string())?;
+                let result = app.call_gateway("agent.run", json!({"prompt": prompt, "message": prompt, "sessionId": session_id, "model": model})).await?;
+                app.output(result.clone(), || val_str(&result["reply"]))?;
             }
         },
 
+        // 19. agents list
         Command::Agents { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, AgentsCommand::List | AgentsCommand::Status);
             let (method, params) = match command {
-                AgentsCommand::List => ("agents.list", json!({})),
+                AgentsCommand::List | AgentsCommand::Status => ("agents.list", json!({})),
                 AgentsCommand::Add { name, model, description } => ("agents.add", json!({"name": name, "model": model, "description": description})),
                 AgentsCommand::Remove { name } => ("agents.remove", json!({"name": name})),
                 AgentsCommand::Config { name, key, value } => ("agents.config", json!({"name": name.as_deref().unwrap_or("merlin"), "key": key, "value": value})),
                 AgentsCommand::Show { name } => ("agents.get", json!({"name": name})),
-                AgentsCommand::Status => ("agents.list", json!({})),
                 AgentsCommand::Env { name } => ("agents.config", json!({"name": name})),
                 AgentsCommand::Logs { name, lines } => ("logs.query", json!({"query": name, "limit": lines})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_agents_list(&result, c); } else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 20. models list
         Command::Models { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, ModelsCommand::List);
             let (method, params) = match command {
                 ModelsCommand::List => ("models.list", json!({})),
                 ModelsCommand::Status => ("models.status", json!({})),
@@ -1360,15 +1219,18 @@ async fn main() -> Result<()> {
                 ModelsCommand::Test { model, provider } => ("models.test", json!({"model": model, "provider": provider})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_models_list(&result, c); } else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 2. gateway start/stop/restart/status
         Command::Gateway { command } | Command::Daemon { command } => {
-            handle_gateway_command(&app, command.clone()).await?;
+            handle_gateway_command(&app, command.clone(), c).await?;
         }
 
+        // 17. channels status
         Command::Channels { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, ChannelsCommand::List | ChannelsCommand::Status);
             let (method, params) = match command {
                 ChannelsCommand::List => ("channels.list", json!({})),
                 ChannelsCommand::Login { channel, token } => ("channels.login", json!({"channel": channel, "token": token})),
@@ -1379,29 +1241,25 @@ async fn main() -> Result<()> {
                 ChannelsCommand::Test { channel } => ("channels.status", json!({"channel": channel})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_channels_status(&result, c); }
+            else { app.output(result.clone(), || { if method == "channels.send" { format!("{} sent (id: {})", green("✓", c), val_str(&result["messageId"])) } else { result.to_string() } })?; }
         }
 
+        // 18. message send
         Command::Message { command } => match command {
-            MessageCommand::Send {
-                target,
-                message,
-                channel,
-            } => {
+            MessageCommand::Send { target, message, channel } => {
                 app.ensure_gateway_running().await?;
-                let result = app
-                    .call_gateway(
-                        "chat.send",
-                        json!({"target": target, "message": message, "channel": channel}),
-                    )
-                    .await?;
-                app.output(result.clone(), || result.to_string())?;
+                let result = app.call_gateway("chat.send", json!({"target": target, "message": message, "channel": channel})).await?;
+                app.output(result.clone(), || format!("{} message sent to {target} (id: {})", green("✓", c), val_str(&result["messageId"])))?;
             }
         },
 
         Command::Directory { query } => {
-            let result = json!({"query": query, "results": []});
-            app.output(result.clone(), || result.to_string())?;
+            if let Some(q) = query {
+                app.ensure_gateway_running().await?;
+                let result = app.call_gateway("directory.search", json!({"query": q})).await.unwrap_or_else(|_| json!({"query": q, "results": []}));
+                app.output(result.clone(), || result.to_string())?;
+            } else { app.output(json!({"results": []}), || "(no query)".to_string())?; }
         }
 
         Command::Pairing { command } => {
@@ -1415,8 +1273,13 @@ async fn main() -> Result<()> {
             app.output(result.clone(), || result.to_string())?;
         }
 
+        // 3-6. sessions list/show/delete/compact
         Command::Sessions { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, SessionsCommand::List { .. });
+            let is_show = matches!(command, SessionsCommand::Show { .. });
+            let is_compact = matches!(command, SessionsCommand::Compact { .. });
+            let is_delete = matches!(command, SessionsCommand::Delete { .. });
             let (method, params) = match command {
                 SessionsCommand::List { limit } => ("sessions.list", json!({"limit": limit})),
                 SessionsCommand::Show { id } => ("sessions.get", json!({"id": id})),
@@ -1428,92 +1291,78 @@ async fn main() -> Result<()> {
                 SessionsCommand::Export => ("sessions.export", json!({})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_sessions_list(&result, c); }
+            else if is_show && !app.cli.json { println!("{}", fmt_session_detail(&result, c)); }
+            else if is_compact && !app.cli.json { println!("{}", fmt_compaction(&result, c)); }
+            else if is_delete && !app.cli.json { println!("{} session deleted", green("✓", c)); }
+            else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 15-16. memory search/get
         Command::Memory { command } => {
             app.ensure_gateway_running().await?;
+            let is_search = matches!(command, MemoryCommand::Search { .. });
+            let is_get = matches!(command, MemoryCommand::Get { .. });
             let (method, params) = match command {
                 MemoryCommand::Search { query, limit, agent } => ("memory.search", json!({"query": query, "limit": limit, "agent": agent})),
                 MemoryCommand::Get { key, agent } => ("memory.get", json!({"key": key, "agent": agent})),
                 MemoryCommand::List { prefix, limit, agent } => ("memory.list", json!({"prefix": prefix, "limit": limit, "agent": agent})),
-                MemoryCommand::Clear { agent, confirm } => {
-                    if !confirm {
-                        return Err(anyhow!("pass --confirm to clear memory"));
-                    }
-                    ("memory.list", json!({"agent": agent, "limit": 0}))
-                }
+                MemoryCommand::Clear { agent, confirm } => { if !confirm { return Err(anyhow!("pass --confirm to clear memory")); } ("memory.list", json!({"agent": agent, "limit": 0})) }
                 MemoryCommand::Stats { agent } => ("memory.list", json!({"agent": agent})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_search && !app.cli.json { println!("{}", fmt_memory_search(&result, c)); }
+            else if is_get && !app.cli.json { println!("{}", val_str(&result["content"])); }
+            else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 10-14. cron list/add/remove/run/runs
         Command::Cron { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, CronCommand::List);
+            let is_runs = matches!(command, CronCommand::Runs { .. });
+            let is_add = matches!(command, CronCommand::Add { .. });
+            let is_rm = matches!(command, CronCommand::Rm { .. });
             let (method, params) = match command {
                 CronCommand::List => ("cron.list", Value::Null),
-                CronCommand::Add {
-                    name,
-                    schedule,
-                    kind,
-                    payload,
-                } => {
-                    let payload_json =
-                        serde_json::from_str::<Value>(payload).context("--payload must be JSON")?;
-                    (
-                        "cron.add",
-                        json!({"name": name, "schedule": schedule, "kind": kind, "payload": payload_json}),
-                    )
+                CronCommand::Add { name, schedule, kind, payload } => {
+                    let pj = serde_json::from_str::<Value>(payload).context("--payload must be JSON")?;
+                    ("cron.add", json!({"name": name, "schedule": schedule, "kind": kind, "payload": pj}))
                 }
-                CronCommand::Edit {
-                    id,
-                    name,
-                    schedule,
-                    kind,
-                    payload,
-                } => {
-                    let payload_json = match payload {
-                        Some(s) => Some(serde_json::from_str::<Value>(s)?),
-                        None => None,
-                    };
-                    (
-                        "cron.edit",
-                        json!({"id": id, "name": name, "schedule": schedule, "kind": kind, "payload": payload_json}),
-                    )
+                CronCommand::Edit { id, name, schedule, kind, payload } => {
+                    let pj = match payload { Some(s) => Some(serde_json::from_str::<Value>(s)?), None => None };
+                    ("cron.edit", json!({"id": id, "name": name, "schedule": schedule, "kind": kind, "payload": pj}))
                 }
                 CronCommand::Rm { id } => ("cron.rm", json!({"id": id})),
                 CronCommand::Run { id } => ("cron.run", json!({"id": id})),
                 CronCommand::Enable { id } => ("cron.enable", json!({"id": id})),
                 CronCommand::Disable { id } => ("cron.disable", json!({"id": id})),
-                CronCommand::Runs { job_id, limit } => {
-                    ("cron.runs", json!({"jobId": job_id, "limit": limit}))
-                }
+                CronCommand::Runs { job_id, limit } => ("cron.runs", json!({"jobId": job_id, "limit": limit})),
                 CronCommand::Status => ("cron.status", Value::Null),
                 CronCommand::DeadLetters { limit } => ("cron.deadLetters", json!({"limit": limit})),
                 CronCommand::Export { file } => {
                     let result = app.call_gateway("cron.list", Value::Null).await?;
                     fs::write(&file, serde_json::to_string_pretty(&result)?)?;
-                    app.output(json!({"ok": true, "file": file}), || format!("exported to {}", file.display()))?;
+                    app.output(json!({"ok": true, "file": file}), || format!("{} exported to {}", green("✓", c), file.display()))?;
                     return Ok(());
                 }
                 CronCommand::Import { file, replace } => {
                     let raw = fs::read_to_string(&file)?;
                     let data: Value = serde_json::from_str(&raw)?;
-                    // Import each job
-                    if let Some(jobs) = data.get("jobs").and_then(|j| j.as_array()) {
-                        for job in jobs {
-                            let _ = app.call_gateway("cron.add", job.clone()).await;
-                        }
-                    }
-                    app.output(json!({"ok": true, "replace": replace, "file": file}), || format!("imported from {}", file.display()))?;
+                    if let Some(jobs) = data.get("jobs").and_then(|j| j.as_array()) { for job in jobs { let _ = app.call_gateway("cron.add", job.clone()).await; } }
+                    app.output(json!({"ok": true, "replace": replace, "file": file}), || format!("{} imported from {}", green("✓", c), file.display()))?;
                     return Ok(());
                 }
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_cron_list(&result, c); }
+            else if is_runs && !app.cli.json { fmt_cron_runs(&result, c); }
+            else if is_add && !app.cli.json { println!("{} cron job created (id: {})", green("✓", c), val_str(&result["id"])); }
+            else if is_rm && !app.cli.json { println!("{} cron job removed", green("✓", c)); }
+            else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 21. logs
         Command::Logs { command } => {
             app.ensure_gateway_running().await?;
             let (method, params) = match command {
@@ -1522,13 +1371,13 @@ async fn main() -> Result<()> {
                 LogsCommand::Export { file, level } => {
                     let result = app.call_gateway("logs.query", json!({"level": level, "limit": 10000})).await?;
                     fs::write(&file, serde_json::to_string_pretty(&result)?)?;
-                    app.output(json!({"ok": true, "file": file}), || format!("exported to {}", file.display()))?;
+                    app.output(json!({"ok": true, "file": file}), || format!("{} exported to {}", green("✓", c), file.display()))?;
                     return Ok(());
                 }
-                LogsCommand::Follow { level } => ("logs.tail", json!({"lines": 100, "level": level})),
+                LogsCommand::Follow { level } => ("logs.tail", json!({"lines": 100, "level": level, "follow": true})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            app.output(result.clone(), || fmt_logs(&result, c))?;
         }
 
         Command::Hooks { command } => {
@@ -1536,8 +1385,8 @@ async fn main() -> Result<()> {
             let (method, params) = match command {
                 HooksCommand::List => ("hooks.list", json!({})),
                 HooksCommand::Add { url, name, events } => {
-                    let events_vec: Option<Vec<String>> = events.as_deref().map(|e| e.split(',').map(|s| s.trim().to_string()).collect());
-                    ("hooks.add", json!({"url": url, "name": name, "events": events_vec}))
+                    let ev: Option<Vec<String>> = events.as_deref().map(|e| e.split(',').map(|s| s.trim().to_string()).collect());
+                    ("hooks.add", json!({"url": url, "name": name, "events": ev}))
                 }
                 HooksCommand::Remove { url } => ("hooks.remove", json!({"url": url})),
                 HooksCommand::Test { url } => ("hooks.test", json!({"url": url})),
@@ -1547,21 +1396,21 @@ async fn main() -> Result<()> {
             app.output(result.clone(), || result.to_string())?;
         }
 
+        // 7-9. config get/set/validate
         Command::Config { command } => {
             match command {
-                ConfigCommand::File => {
-                    let path = config_path();
-                    app.output(json!({"path": path}), || path.display().to_string())?;
-                }
+                ConfigCommand::File => { let path = config_path(); app.output(json!({"path": path}), || path.display().to_string())?; }
                 ConfigCommand::Diff { file } => {
                     let raw = fs::read_to_string(&file)?;
                     let external: Value = serde_json::from_str(&raw)?;
                     app.ensure_gateway_running().await?;
                     let current = app.call_gateway("config.export", json!({})).await?;
-                    app.output(json!({"current": current, "compared": external}), || "diff shown".to_string())?;
+                    app.output(json!({"current": current, "compared": external}), || format!("{}\n\n{}", bold("Current:", c), fmt_config_value(&current, c)))?;
                 }
                 other => {
                     app.ensure_gateway_running().await?;
+                    let is_validate = matches!(other, ConfigCommand::Validate);
+                    let is_get = matches!(other, ConfigCommand::Get { .. });
                     let (method, params) = match other {
                         ConfigCommand::Get { key } => ("config.get", json!({"path": key})),
                         ConfigCommand::Set { key, value } => ("config.set", json!({"path": key, "value": value})),
@@ -1570,27 +1419,25 @@ async fn main() -> Result<()> {
                         ConfigCommand::List => ("config.list", json!({})),
                         ConfigCommand::Export { file } => {
                             let result = app.call_gateway("config.export", json!({})).await?;
-                            if let Some(path) = file {
-                                fs::write(&path, serde_json::to_string_pretty(&result)?)?;
-                                app.output(json!({"ok": true, "file": path}), || format!("exported to {}", path.display()))?;
-                            } else {
-                                app.output(result.clone(), || result.to_string())?;
-                            }
+                            if let Some(path) = file { fs::write(&path, serde_json::to_string_pretty(&result)?)?; app.output(json!({"ok": true, "file": path}), || format!("{} exported to {}", green("✓", c), path.display()))?; }
+                            else { app.output(result.clone(), || fmt_config_value(&result, c))?; }
                             return Ok(());
                         }
-                        ConfigCommand::Import { file } => {
-                            let raw = fs::read_to_string(&file)?;
-                            let data: Value = serde_json::from_str(&raw)?;
-                            ("config.import", json!({"config": data}))
-                        }
+                        ConfigCommand::Import { file } => { let raw = fs::read_to_string(&file)?; let data: Value = serde_json::from_str(&raw)?; ("config.import", json!({"config": data})) }
                         ConfigCommand::File | ConfigCommand::Diff { .. } => unreachable!(),
                     };
                     let result = app.call_gateway(method, params).await?;
-                    app.output(result.clone(), || result.to_string())?;
+                    if is_validate && !app.cli.json {
+                        let ok = result.get("valid").and_then(|v| v.as_bool()).unwrap_or(true);
+                        if ok { println!("{} configuration valid", green("✓", c)); }
+                        else { println!("{} configuration invalid: {}", red("✗", c), val_str(&result["errors"])); }
+                    } else if is_get && !app.cli.json { println!("{}", fmt_config_value(&result, c)); }
+                    else { app.output(result.clone(), || result.to_string())?; }
                 }
             }
         }
 
+        // 22. security audit
         Command::Security { command } => {
             app.ensure_gateway_running().await?;
             let (method, params) = match command {
@@ -1599,7 +1446,7 @@ async fn main() -> Result<()> {
                 SecurityCommand::Report { format } => ("security.audit", json!({"format": format})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            app.output(result.clone(), || fmt_security_audit(&result, c))?;
         }
 
         Command::Secrets { command } => {
@@ -1626,18 +1473,16 @@ async fn main() -> Result<()> {
             app.output(result.clone(), || result.to_string())?;
         }
 
+        // 23. approvals list
         Command::Approvals { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, ApprovalsCommand::List);
             let (method, params) = match command {
                 ApprovalsCommand::List => ("approvals.list", Value::Null),
                 ApprovalsCommand::Approve { id } => ("approvals.approve", json!({"id": id})),
                 ApprovalsCommand::Deny { id } => ("approvals.deny", json!({"id": id})),
                 ApprovalsCommand::Get => ("approvals.get", json!({})),
-                ApprovalsCommand::Set { file } => {
-                    let raw = fs::read_to_string(&file)?;
-                    let data: Value = serde_json::from_str(&raw)?;
-                    ("approvals.set", json!({"json": data}))
-                }
+                ApprovalsCommand::Set { file } => { let raw = fs::read_to_string(&file)?; let data: Value = serde_json::from_str(&raw)?; ("approvals.set", json!({"json": data})) }
                 ApprovalsCommand::Allowlist { command } => match command {
                     AllowlistCommand::Add { pattern, agent } => ("approvals.allowlist.add", json!({"pattern": pattern, "agent": agent})),
                     AllowlistCommand::Remove { pattern, agent } => ("approvals.allowlist.remove", json!({"pattern": pattern, "agent": agent})),
@@ -1645,11 +1490,13 @@ async fn main() -> Result<()> {
                 },
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_approvals_list(&result, c); } else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 24. plugins list
         Command::Plugins { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, PluginsCommand::List);
             let (method, params) = match command {
                 PluginsCommand::List => ("plugins.list", Value::Null),
                 PluginsCommand::Enable { name } => ("plugins.enable", json!({"name": name})),
@@ -1661,11 +1508,13 @@ async fn main() -> Result<()> {
                 PluginsCommand::Update { name } => ("plugins.install", json!({"source": name})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_plugins_list(&result, c); } else { app.output(result.clone(), || result.to_string())?; }
         }
 
+        // 25. skills list
         Command::Skills { command } => {
             app.ensure_gateway_running().await?;
+            let is_list = matches!(command, SkillsCommand::List);
             let (method, params) = match command {
                 SkillsCommand::List => ("skills.list", json!({})),
                 SkillsCommand::Inspect { name } => ("skills.get", json!({"name": name})),
@@ -1674,47 +1523,21 @@ async fn main() -> Result<()> {
                 SkillsCommand::Update { name } => ("plugins.install", json!({"source": name})),
             };
             let result = app.call_gateway(method, params).await?;
-            app.output(result.clone(), || result.to_string())?;
+            if is_list && !app.cli.json { fmt_skills_list(&result, c); } else { app.output(result.clone(), || result.to_string())?; }
         }
 
         Command::Dns { command } => {
             let result = match command {
-                DnsCommand::Lookup { domain } => {
-                    use std::net::ToSocketAddrs;
-                    let addrs: Vec<String> = format!("{domain}:0")
-                        .to_socket_addrs()
-                        .map(|iter| iter.map(|a| a.ip().to_string()).collect())
-                        .unwrap_or_default();
-                    json!({"domain": domain, "addresses": addrs})
-                }
-                DnsCommand::Resolve { domain } => {
-                    use std::net::ToSocketAddrs;
-                    let addrs: Vec<String> = format!("{domain}:0")
-                        .to_socket_addrs()
-                        .map(|iter| iter.map(|a| a.ip().to_string()).collect())
-                        .unwrap_or_default();
-                    json!({"domain": domain, "resolved": addrs})
-                }
-                DnsCommand::Test => {
-                    let reachable = std::net::TcpStream::connect_timeout(
-                        &"1.1.1.1:53".parse().unwrap(),
-                        Duration::from_secs(3),
-                    ).is_ok();
-                    json!({"ok": true, "dnsReachable": reachable})
-                }
+                DnsCommand::Lookup { domain } => { use std::net::ToSocketAddrs; let addrs: Vec<String> = format!("{domain}:0").to_socket_addrs().map(|iter| iter.map(|a| a.ip().to_string()).collect()).unwrap_or_default(); json!({"domain": domain, "addresses": addrs}) }
+                DnsCommand::Resolve { domain } => { use std::net::ToSocketAddrs; let addrs: Vec<String> = format!("{domain}:0").to_socket_addrs().map(|iter| iter.map(|a| a.ip().to_string()).collect()).unwrap_or_default(); json!({"domain": domain, "resolved": addrs}) }
+                DnsCommand::Test => { let reachable = std::net::TcpStream::connect_timeout(&"1.1.1.1:53".parse().unwrap(), Duration::from_secs(3)).is_ok(); json!({"ok": true, "dnsReachable": reachable}) }
                 DnsCommand::Tailscale { command: ts_cmd } => {
                     let (action, result) = match ts_cmd {
                         TailscaleCommand::Status => ("status", ProcessCommand::new("tailscale").arg("status").output()),
                         TailscaleCommand::Up => ("up", ProcessCommand::new("tailscale").arg("up").output()),
                         TailscaleCommand::Down => ("down", ProcessCommand::new("tailscale").arg("down").output()),
                     };
-                    match result {
-                        Ok(output) => {
-                            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                            json!({"action": action, "output": stdout, "success": output.status.success()})
-                        }
-                        Err(e) => json!({"action": action, "error": e.to_string()}),
-                    }
+                    match result { Ok(output) => { let stdout = String::from_utf8_lossy(&output.stdout).to_string(); json!({"action": action, "output": stdout, "success": output.status.success()}) } Err(e) => json!({"action": action, "error": e.to_string()}) }
                 }
             };
             app.output(result.clone(), || result.to_string())?;
@@ -1738,10 +1561,7 @@ async fn main() -> Result<()> {
                 NodesCommand::List => ("nodes.list", json!({})),
                 NodesCommand::Describe { id } => ("nodes.describe", json!({"id": id})),
                 NodesCommand::Run { id, command, args } => ("nodes.run", json!({"id": id, "command": command, "args": args})),
-                NodesCommand::Invoke { id, method, params } => {
-                    let params_json = serde_json::from_str::<Value>(&params).context("--params must be JSON")?;
-                    ("nodes.invoke", json!({"id": id, "method": method, "params": params_json}))
-                }
+                NodesCommand::Invoke { id, method, params } => { let pj = serde_json::from_str::<Value>(&params).context("--params must be JSON")?; ("nodes.invoke", json!({"id": id, "method": method, "params": pj})) }
                 NodesCommand::Logs { id, lines } => ("logs.query", json!({"query": id, "limit": lines})),
                 NodesCommand::Notify { id, title, body } => ("nodes.notify", json!({"id": id, "title": title, "body": body})),
                 NodesCommand::Status => ("nodes.list", json!({})),
@@ -1751,18 +1571,10 @@ async fn main() -> Result<()> {
         }
 
         Command::Qr { url } => {
-            let text = match url {
-                Some(u) => u.clone(),
-                None => format!("http://127.0.0.1:18789/pair"),
-            };
+            let text = match url { Some(u) => u.clone(), None => "http://127.0.0.1:18789/pair".to_string() };
             let code = qrcode::QrCode::new(text.as_bytes()).context("generate QR code")?;
-            let qr_string = code.render::<char>()
-                .quiet_zone(true)
-                .module_dimensions(2, 1)
-                .build();
-            app.output(json!({"text": text, "qr": qr_string}), || {
-                format!("{qr_string}\n{text}")
-            })?;
+            let qr_string = code.render::<char>().quiet_zone(true).module_dimensions(2, 1).build();
+            app.output(json!({"text": text, "qr": qr_string}), || format!("{qr_string}\n{text}"))?;
         }
 
         Command::Browser { command } => {
@@ -1797,15 +1609,10 @@ async fn main() -> Result<()> {
             match page {
                 Some(query) => {
                     app.ensure_gateway_running().await?;
-                    let result = app.call_gateway("docs.search", json!({"query": query})).await
-                        .unwrap_or_else(|_| json!({"results": [], "query": query}));
+                    let result = app.call_gateway("docs.search", json!({"query": query})).await.unwrap_or_else(|_| json!({"results": [], "query": query}));
                     app.output(result.clone(), || result.to_string())?;
                 }
-                None => {
-                    let url = "https://docs.magicmerlin.dev";
-                    open_url(url)?;
-                    app.output(json!({"url": url}), || url.to_string())?;
-                }
+                None => { let url = "https://docs.magicmerlin.dev"; open_url(url)?; app.output(json!({"url": url}), || url.to_string())?; }
             }
         }
 
@@ -1819,8 +1626,7 @@ async fn main() -> Result<()> {
                 SystemCommand::Info => ("system.info", json!({})),
                 SystemCommand::Env => ("system.env", json!({})),
             };
-            let result = app.call_gateway(method, params).await
-                .unwrap_or_else(|_| json!({"ok": true}));
+            let result = app.call_gateway(method, params).await.unwrap_or_else(|_| json!({"ok": true}));
             app.output(result.clone(), || result.to_string())?;
         }
 
@@ -1860,52 +1666,69 @@ async fn main() -> Result<()> {
             })?;
         }
 
-        Command::HelpAll => {
-            let mut cmd = Cli::command();
-            cmd.print_long_help()?;
-            println!();
+        // 27. ping
+        Command::Ping => {
+            let start = Instant::now();
+            let url = format!("{}/ws", app.gateway_http_url());
+            let req = RpcRequest { jsonrpc: "2.0", method: "health".to_string(), params: Value::Null, id: 1 };
+            let resp = Client::new().post(&url).json(&req).timeout(Duration::from_secs(5)).send().await;
+            let ms = start.elapsed().as_millis();
+            match resp {
+                Ok(r) if r.status().is_success() => {
+                    app.output(json!({"ok": true, "latencyMs": ms, "url": url}), || format!("{} gateway alive  {}ms", green("pong", c), ms))?;
+                }
+                Ok(r) => {
+                    app.output(json!({"ok": false, "status": r.status().as_u16(), "latencyMs": ms}), || format!("{} gateway HTTP {} ({}ms)", red("fail", c), r.status(), ms))?;
+                }
+                Err(_) => {
+                    app.output(json!({"ok": false, "latencyMs": ms}), || format!("{} gateway offline — run 'magicmerlin gateway start'", red("fail", c)))?;
+                }
+            }
         }
+
+        Command::HelpAll => { let mut cmd = Cli::command(); cmd.print_long_help()?; println!(); }
     }
 
     Ok(())
 }
 
-async fn handle_gateway_command(app: &App, command: GatewayCommand) -> Result<()> {
+async fn handle_gateway_command(app: &App, command: GatewayCommand, c: bool) -> Result<()> {
     match command {
         GatewayCommand::Start => {
             if is_gateway_port_open() {
-                return app.output(
-                    json!({"ok": true, "alreadyRunning": true}),
-                    || "gateway already running".to_string(),
-                );
+                return app.output(json!({"ok": true, "alreadyRunning": true}), || format!("{} gateway already running on :18789", yellow("!", c)));
             }
             let pid = spawn_gateway()?;
             write_pid(pid)?;
             tokio::time::sleep(Duration::from_millis(700)).await;
-            app.output(json!({"ok": true, "pid": pid}), || format!("gateway started pid={pid}"))
+            app.output(json!({"ok": true, "pid": pid}), || format!("{} gateway started (pid {pid}, port 18789)", green("✓", c)))
         }
         GatewayCommand::Stop => {
             let pid = read_pid()?;
             stop_pid(pid)?;
             let _ = fs::remove_file(pid_path());
-            app.output(json!({"ok": true, "pid": pid}), || format!("gateway stopped pid={pid}"))
+            app.output(json!({"ok": true, "pid": pid}), || format!("{} gateway stopped (pid {pid})", green("✓", c)))
         }
         GatewayCommand::Restart => {
-            if let Ok(pid) = read_pid() {
-                let _ = stop_pid(pid);
-                let _ = fs::remove_file(pid_path());
-            }
+            if let Ok(pid) = read_pid() { let _ = stop_pid(pid); let _ = fs::remove_file(pid_path()); }
             let pid = spawn_gateway()?;
             write_pid(pid)?;
-            app.output(json!({"ok": true, "pid": pid}), || format!("gateway restarted pid={pid}"))
+            tokio::time::sleep(Duration::from_millis(700)).await;
+            app.output(json!({"ok": true, "pid": pid}), || format!("{} gateway restarted (pid {pid}, port 18789)", green("✓", c)))
         }
         GatewayCommand::Status => {
             let pid = read_pid().ok();
             let open = is_gateway_port_open();
-            app.output(
-                json!({"pid": pid, "portOpen": open}),
-                || format!("pid={pid:?} port_open={open}"),
-            )
+            let health = if open { app.call_gateway("health", Value::Null).await.ok() } else { None };
+            let uptime = health.as_ref().and_then(|h| h.get("uptimeSeconds").or_else(|| h.get("uptime_seconds")).and_then(|v| v.as_u64()));
+            app.output(json!({"pid": pid, "portOpen": open, "health": health}), || {
+                let dot = if open { green("●", c) } else { red("●", c) };
+                let label = if open { "running" } else { "stopped" };
+                let mut line = format!("  Gateway  {dot} {label}");
+                if let Some(p) = pid { line.push_str(&format!("  pid={p}")); }
+                if let Some(u) = uptime { line.push_str(&format!("  uptime={u}s")); }
+                line
+            })
         }
         GatewayCommand::Call { method, params } => {
             app.ensure_gateway_running().await?;
