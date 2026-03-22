@@ -18,8 +18,8 @@ pub use heartbeat::{
 };
 pub use queue::{MessageQueue, QueueStats, QueuedMessage};
 pub use registry::{AgentConfig, AgentDescriptor, AgentRegistry, RouteDecision};
-pub use session::{SessionKey, SessionManager, SessionMetadata, SessionRecord};
+pub use session::{CompactionResult, SessionKey, SessionManager, SessionMetadata, SessionRecord};
 pub use system_prompt::{
     discover_skills, smart_clip_markdown, InboundContext, PromptRuntimeMetadata,
-    SystemPromptAssembler, ToolSchemaDescriptor,
+    SkillDescriptor, SystemPromptAssembler, ToolSchemaDescriptor,
 };

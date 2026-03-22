@@ -12,6 +12,21 @@ use serde_json::Value;
 
 use crate::error::{AgentError, Result};
 
+/// Result of a session compaction operation.
+#[derive(Debug, Clone)]
+pub struct CompactionResult {
+    /// Number of transcript messages before compaction.
+    pub messages_before: usize,
+    /// Number of transcript messages after compaction.
+    pub messages_after: usize,
+    /// Estimated tokens before compaction.
+    pub tokens_before: u64,
+    /// Estimated tokens after compaction.
+    pub tokens_after: u64,
+    /// Content flushed to daily memory, if any.
+    pub memory_extracted: Option<String>,
+}
+
 /// Canonical session key.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SessionKey(pub String);
@@ -253,44 +268,60 @@ impl SessionManager {
     }
 
     /// Compacts transcript when nearing context limit and writes memory note first.
+    /// Returns `None` if compaction was not needed, or `Some(CompactionResult)` with stats.
     pub fn compact_if_needed(
         &self,
         session: &mut SessionRecord,
         context_limit: u64,
         threshold_percent: u64,
-    ) -> Result<bool> {
+    ) -> Result<Option<CompactionResult>> {
         if context_limit == 0 {
-            return Ok(false);
+            return Ok(None);
         }
 
         let used_pct = (session.token_count.saturating_mul(100)) / context_limit;
         if used_pct < threshold_percent {
-            return Ok(false);
+            return Ok(None);
         }
 
-        self.pre_compaction_memory_flush(session, used_pct)?;
-        let _lock = self.acquire_transcript_lock(&session.transcript)?;
-        session.transcript.compact(self.compaction_keep_last)?;
+        Ok(Some(self.do_compact(session, used_pct)?))
+    }
 
-        let entries = session.transcript.read(0, None)?;
-        session.token_count = entries
+    /// Forces transcript compaction regardless of thresholds.
+    pub fn compact_now(&self, session: &mut SessionRecord) -> Result<CompactionResult> {
+        self.do_compact(session, 100)
+    }
+
+    fn do_compact(&self, session: &mut SessionRecord, used_pct: u64) -> Result<CompactionResult> {
+        let entries_before = session.transcript.read(0, None)?;
+        let messages_before = entries_before.len();
+        let tokens_before = entries_before
             .iter()
             .map(magicmerlin_storage::approx_token_count)
             .sum::<usize>() as u64;
 
-        session.metadata.compaction_count = session.metadata.compaction_count.saturating_add(1);
-        self.save_metadata(session)?;
-        Ok(true)
-    }
-
-    /// Forces transcript compaction regardless of thresholds.
-    pub fn compact_now(&self, session: &mut SessionRecord) -> Result<()> {
-        self.pre_compaction_memory_flush(session, 100)?;
+        let memory_extracted = self.pre_compaction_memory_flush(session, used_pct)?;
         let _lock = self.acquire_transcript_lock(&session.transcript)?;
         session.transcript.compact(self.compaction_keep_last)?;
+
+        let entries_after = session.transcript.read(0, None)?;
+        let messages_after = entries_after.len();
+        let tokens_after = entries_after
+            .iter()
+            .map(magicmerlin_storage::approx_token_count)
+            .sum::<usize>() as u64;
+
+        session.token_count = tokens_after;
         session.metadata.compaction_count = session.metadata.compaction_count.saturating_add(1);
         self.save_metadata(session)?;
-        Ok(())
+
+        Ok(CompactionResult {
+            messages_before,
+            messages_after,
+            tokens_before,
+            tokens_after,
+            memory_extracted,
+        })
     }
 
     /// Checks whether current token usage exceeds a context-threshold percentage.
@@ -324,6 +355,21 @@ impl SessionManager {
         session.transcript.read(0, None).map_err(AgentError::from)
     }
 
+    /// Estimates context window utilization as a 0.0..1.0 float.
+    ///
+    /// Uses the session's running token count and divides by `context_window`.
+    /// If `context_window` is 0, returns 0.0.
+    pub fn estimate_context_percent(
+        &self,
+        session: &SessionRecord,
+        context_window: u64,
+    ) -> f32 {
+        if context_window == 0 {
+            return 0.0;
+        }
+        (session.token_count as f32) / (context_window as f32)
+    }
+
     /// Returns sessions root directory.
     pub fn sessions_dir(&self) -> &Path {
         &self.sessions_dir
@@ -341,7 +387,11 @@ impl SessionManager {
         SessionFileLock::acquire(transcript.path(), self.lock_timeout).map_err(AgentError::from)
     }
 
-    fn pre_compaction_memory_flush(&self, session: &SessionRecord, used_pct: u64) -> Result<()> {
+    fn pre_compaction_memory_flush(
+        &self,
+        session: &SessionRecord,
+        used_pct: u64,
+    ) -> Result<Option<String>> {
         let lines = extract_memory_candidates(&session.transcript.read(0, None)?)
             .into_iter()
             .take(12)
@@ -357,11 +407,14 @@ impl SessionManager {
             .append_daily_entry(Utc::now().date_naive(), &note)
             .map_err(AgentError::from)?;
 
-        if !lines.is_empty() {
-            self.write_memory_summary(Utc::now().date_naive(), &session.key.0, &lines)?;
+        if lines.is_empty() {
+            return Ok(None);
         }
 
-        Ok(())
+        self.write_memory_summary(Utc::now().date_naive(), &session.key.0, &lines)?;
+
+        let summary = lines.join("\n");
+        Ok(Some(summary))
     }
 
     fn write_memory_summary(
@@ -476,10 +529,14 @@ mod tests {
                 .expect("append");
         }
 
-        let compacted = manager
+        let result = manager
             .compact_if_needed(&mut session, 100, 50)
             .expect("compact");
-        assert!(compacted);
+        assert!(result.is_some());
+        let compaction = result.expect("compaction result");
+        assert!(compaction.messages_before >= 120);
+        assert!(compaction.messages_after < compaction.messages_before);
+        assert!(compaction.tokens_before > compaction.tokens_after);
         assert!(session.metadata.compaction_count >= 1);
 
         let (tokens, count) = manager.token_summary(&session).expect("summary");

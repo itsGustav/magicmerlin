@@ -1933,9 +1933,9 @@ fn heartbeat_and_session_matrix() {
             .expect("append");
     }
 
-    let compacted = sessions
+    let compaction = sessions
         .compact_if_needed(&mut session, 200, 60)
         .expect("compact");
-    assert!(compacted);
+    assert!(compaction.is_some());
     assert!(session.metadata.compaction_count > 0);
 }

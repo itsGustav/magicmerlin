@@ -4,7 +4,7 @@ pub mod framework;
 
 #[cfg(feature = "discord")]
 pub mod discord;
-#[cfg(feature = "imessage")]
+#[cfg(all(feature = "imessage", target_os = "macos"))]
 pub mod imessage;
 #[cfg(feature = "line")]
 pub mod line;

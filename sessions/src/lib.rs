@@ -29,6 +29,19 @@ pub struct ResolutionContext {
     pub custom_pattern: Option<String>,
 }
 
+/// Result of a session compaction operation.
+#[derive(Debug, Clone)]
+pub struct CompactionResult {
+    /// Number of transcript messages before compaction.
+    pub messages_before: usize,
+    /// Number of transcript messages after compaction.
+    pub messages_after: usize,
+    /// Estimated tokens before compaction.
+    pub tokens_before: u64,
+    /// Estimated tokens after compaction.
+    pub tokens_after: u64,
+}
+
 /// One persisted session state record.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,34 +122,68 @@ impl SessionEngine {
     }
 
     /// Compacts the transcript when token usage exceeds the threshold percentage.
+    /// Returns `None` if compaction was not needed, or `Some(CompactionResult)` with stats.
     pub fn compact_if_needed(
         &self,
         session_id: &str,
         context_window: u64,
         threshold_percent: u64,
-    ) -> Result<bool> {
+    ) -> Result<Option<CompactionResult>> {
         if context_window == 0 {
-            return Ok(false);
+            return Ok(None);
         }
 
         let store = self.transcript_store(session_id)?;
-        let entries = store.read(0, None)?;
-        let token_usage = entries
+        let entries_before = store.read(0, None)?;
+        let messages_before = entries_before.len();
+        let tokens_before = entries_before
             .iter()
             .map(magicmerlin_storage::approx_token_count)
             .sum::<usize>() as u64;
-        let used_pct = token_usage.saturating_mul(100) / context_window;
+        let used_pct = tokens_before.saturating_mul(100) / context_window;
         if used_pct < threshold_percent {
-            return Ok(false);
+            return Ok(None);
         }
 
         store.compact(30)?;
+
+        let entries_after = store.read(0, None)?;
+        let messages_after = entries_after.len();
+        let tokens_after = entries_after
+            .iter()
+            .map(magicmerlin_storage::approx_token_count)
+            .sum::<usize>() as u64;
+
         let conn = rusqlite::Connection::open(&self.db_path)?;
         conn.execute(
             "UPDATE session_state SET compaction_count = compaction_count + 1, last_activity_at = ?2 WHERE session_id = ?1",
             params![session_id, Utc::now().timestamp()],
         )?;
-        Ok(true)
+
+        Ok(Some(CompactionResult {
+            messages_before,
+            messages_after,
+            tokens_before,
+            tokens_after,
+        }))
+    }
+
+    /// Estimates context window utilization as a 0.0..1.0 float.
+    pub fn estimate_context_percent(
+        &self,
+        session_id: &str,
+        context_window: u64,
+    ) -> Result<f32> {
+        if context_window == 0 {
+            return Ok(0.0);
+        }
+        let store = self.transcript_store(session_id)?;
+        let entries = store.read(0, None)?;
+        let token_usage: u64 = entries
+            .iter()
+            .map(magicmerlin_storage::approx_token_count)
+            .sum::<usize>() as u64;
+        Ok((token_usage as f32) / (context_window as f32))
     }
 
     /// Repairs broken tool use/result pairs and returns a repair report.
@@ -378,5 +425,62 @@ mod tests {
         let report = engine.repair_transcript("telegram:123").expect("repair");
         assert_eq!(report.orphan_tool_results_removed, 1);
         assert_eq!(report.synthesized_tool_results, 1);
+    }
+
+    #[test]
+    fn estimate_context_percent_works() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let engine = SessionEngine::new(
+            temp.path().join("db.sqlite"),
+            temp.path().join("transcripts"),
+        )
+        .expect("engine");
+        engine.load_or_create("test:ctx", None).expect("create");
+
+        // Empty session should be ~0%
+        let pct = engine.estimate_context_percent("test:ctx", 128_000).expect("pct");
+        assert!(pct < 0.01);
+
+        // Zero context window returns 0.0
+        let pct_zero = engine.estimate_context_percent("test:ctx", 0).expect("pct");
+        assert_eq!(pct_zero, 0.0);
+
+        // Add some messages and check it rises
+        for _ in 0..50 {
+            engine
+                .append_message("test:ctx", &serde_json::json!({"role":"user","content":"hello world this is a message with some content"}))
+                .expect("append");
+        }
+        let pct_after = engine.estimate_context_percent("test:ctx", 128_000).expect("pct");
+        assert!(pct_after > 0.0);
+    }
+
+    #[test]
+    fn compact_if_needed_returns_result() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let engine = SessionEngine::new(
+            temp.path().join("db.sqlite"),
+            temp.path().join("transcripts"),
+        )
+        .expect("engine");
+        engine.load_or_create("test:compact", None).expect("create");
+
+        // Under threshold returns None
+        let result = engine.compact_if_needed("test:compact", 128_000, 80).expect("compact");
+        assert!(result.is_none());
+
+        // Add many messages to exceed threshold with tiny context window
+        for _ in 0..100 {
+            engine
+                .append_message("test:compact", &serde_json::json!({"role":"user","content":"remember TODO: follow up on deployment deadline"}))
+                .expect("append");
+        }
+
+        let result = engine.compact_if_needed("test:compact", 100, 50).expect("compact");
+        assert!(result.is_some());
+        let cr = result.expect("compaction result");
+        assert!(cr.messages_before >= 100);
+        assert!(cr.messages_after < cr.messages_before);
+        assert!(cr.tokens_before > cr.tokens_after);
     }
 }

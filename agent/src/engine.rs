@@ -209,11 +209,22 @@ impl AgentEngine {
     ) -> Result<AgentReply> {
         self.check_abort(abort_signal)?;
 
-        self.sessions.compact_if_needed(
+        // Pre-turn compaction check with context % logging
+        let ctx_pct = self.sessions.estimate_context_percent(session, self.config.context_window);
+        if let Some(compaction) = self.sessions.compact_if_needed(
             session,
             self.config.context_window,
             self.config.compact_threshold_pct,
-        )?;
+        )? {
+            tracing::info!(
+                "Context at {:.0}%, compacted: {} msgs → {}, {} tokens → {}",
+                ctx_pct * 100.0,
+                compaction.messages_before,
+                compaction.messages_after,
+                compaction.tokens_before,
+                compaction.tokens_after,
+            );
+        }
 
         self.sessions
             .append_message(session, json!({"role":"user","content":user_message}))?;
