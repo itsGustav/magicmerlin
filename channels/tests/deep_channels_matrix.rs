@@ -24,7 +24,7 @@ fn telegram_escape_smoke() {
 #[test]
 fn framework_split_case_1() {
     let base = "lorem ipsum dolor sit amet 1".repeat(20);
-    let limit = (1%40)+10;
+    let limit = (1 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -33,7 +33,7 @@ fn framework_split_case_1() {
 #[test]
 fn framework_split_case_2() {
     let base = "lorem ipsum dolor sit amet 2".repeat(20);
-    let limit = (2%40)+10;
+    let limit = (2 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -42,7 +42,7 @@ fn framework_split_case_2() {
 #[test]
 fn framework_split_case_3() {
     let base = "lorem ipsum dolor sit amet 3".repeat(20);
-    let limit = (3%40)+10;
+    let limit = (3 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -51,7 +51,7 @@ fn framework_split_case_3() {
 #[test]
 fn framework_split_case_4() {
     let base = "lorem ipsum dolor sit amet 4".repeat(20);
-    let limit = (4%40)+10;
+    let limit = (4 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -60,7 +60,7 @@ fn framework_split_case_4() {
 #[test]
 fn framework_split_case_5() {
     let base = "lorem ipsum dolor sit amet 5".repeat(20);
-    let limit = (5%40)+10;
+    let limit = (5 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -69,7 +69,7 @@ fn framework_split_case_5() {
 #[test]
 fn framework_split_case_6() {
     let base = "lorem ipsum dolor sit amet 6".repeat(20);
-    let limit = (6%40)+10;
+    let limit = (6 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -78,7 +78,7 @@ fn framework_split_case_6() {
 #[test]
 fn framework_split_case_7() {
     let base = "lorem ipsum dolor sit amet 7".repeat(20);
-    let limit = (7%40)+10;
+    let limit = (7 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -87,7 +87,7 @@ fn framework_split_case_7() {
 #[test]
 fn framework_split_case_8() {
     let base = "lorem ipsum dolor sit amet 8".repeat(20);
-    let limit = (8%40)+10;
+    let limit = (8 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -96,7 +96,7 @@ fn framework_split_case_8() {
 #[test]
 fn framework_split_case_9() {
     let base = "lorem ipsum dolor sit amet 9".repeat(20);
-    let limit = (9%40)+10;
+    let limit = (9 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -105,7 +105,7 @@ fn framework_split_case_9() {
 #[test]
 fn framework_split_case_10() {
     let base = "lorem ipsum dolor sit amet 10".repeat(20);
-    let limit = (10%40)+10;
+    let limit = (10 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -114,7 +114,7 @@ fn framework_split_case_10() {
 #[test]
 fn framework_split_case_11() {
     let base = "lorem ipsum dolor sit amet 11".repeat(20);
-    let limit = (11%40)+10;
+    let limit = (11 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -123,7 +123,7 @@ fn framework_split_case_11() {
 #[test]
 fn framework_split_case_12() {
     let base = "lorem ipsum dolor sit amet 12".repeat(20);
-    let limit = (12%40)+10;
+    let limit = (12 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -132,7 +132,7 @@ fn framework_split_case_12() {
 #[test]
 fn framework_split_case_13() {
     let base = "lorem ipsum dolor sit amet 13".repeat(20);
-    let limit = (13%40)+10;
+    let limit = (13 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -141,7 +141,7 @@ fn framework_split_case_13() {
 #[test]
 fn framework_split_case_14() {
     let base = "lorem ipsum dolor sit amet 14".repeat(20);
-    let limit = (14%40)+10;
+    let limit = (14 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -150,7 +150,7 @@ fn framework_split_case_14() {
 #[test]
 fn framework_split_case_15() {
     let base = "lorem ipsum dolor sit amet 15".repeat(20);
-    let limit = (15%40)+10;
+    let limit = (15 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -159,7 +159,7 @@ fn framework_split_case_15() {
 #[test]
 fn framework_split_case_16() {
     let base = "lorem ipsum dolor sit amet 16".repeat(20);
-    let limit = (16%40)+10;
+    let limit = (16 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -168,7 +168,7 @@ fn framework_split_case_16() {
 #[test]
 fn framework_split_case_17() {
     let base = "lorem ipsum dolor sit amet 17".repeat(20);
-    let limit = (17%40)+10;
+    let limit = (17 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -177,7 +177,7 @@ fn framework_split_case_17() {
 #[test]
 fn framework_split_case_18() {
     let base = "lorem ipsum dolor sit amet 18".repeat(20);
-    let limit = (18%40)+10;
+    let limit = (18 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -186,7 +186,7 @@ fn framework_split_case_18() {
 #[test]
 fn framework_split_case_19() {
     let base = "lorem ipsum dolor sit amet 19".repeat(20);
-    let limit = (19%40)+10;
+    let limit = (19 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -195,7 +195,7 @@ fn framework_split_case_19() {
 #[test]
 fn framework_split_case_20() {
     let base = "lorem ipsum dolor sit amet 20".repeat(20);
-    let limit = (20%40)+10;
+    let limit = (20 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -204,7 +204,7 @@ fn framework_split_case_20() {
 #[test]
 fn framework_split_case_21() {
     let base = "lorem ipsum dolor sit amet 21".repeat(20);
-    let limit = (21%40)+10;
+    let limit = (21 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -213,7 +213,7 @@ fn framework_split_case_21() {
 #[test]
 fn framework_split_case_22() {
     let base = "lorem ipsum dolor sit amet 22".repeat(20);
-    let limit = (22%40)+10;
+    let limit = (22 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -222,7 +222,7 @@ fn framework_split_case_22() {
 #[test]
 fn framework_split_case_23() {
     let base = "lorem ipsum dolor sit amet 23".repeat(20);
-    let limit = (23%40)+10;
+    let limit = (23 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -231,7 +231,7 @@ fn framework_split_case_23() {
 #[test]
 fn framework_split_case_24() {
     let base = "lorem ipsum dolor sit amet 24".repeat(20);
-    let limit = (24%40)+10;
+    let limit = (24 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -240,7 +240,7 @@ fn framework_split_case_24() {
 #[test]
 fn framework_split_case_25() {
     let base = "lorem ipsum dolor sit amet 25".repeat(20);
-    let limit = (25%40)+10;
+    let limit = (25 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -249,7 +249,7 @@ fn framework_split_case_25() {
 #[test]
 fn framework_split_case_26() {
     let base = "lorem ipsum dolor sit amet 26".repeat(20);
-    let limit = (26%40)+10;
+    let limit = (26 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -258,7 +258,7 @@ fn framework_split_case_26() {
 #[test]
 fn framework_split_case_27() {
     let base = "lorem ipsum dolor sit amet 27".repeat(20);
-    let limit = (27%40)+10;
+    let limit = (27 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -267,7 +267,7 @@ fn framework_split_case_27() {
 #[test]
 fn framework_split_case_28() {
     let base = "lorem ipsum dolor sit amet 28".repeat(20);
-    let limit = (28%40)+10;
+    let limit = (28 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -276,7 +276,7 @@ fn framework_split_case_28() {
 #[test]
 fn framework_split_case_29() {
     let base = "lorem ipsum dolor sit amet 29".repeat(20);
-    let limit = (29%40)+10;
+    let limit = (29 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -285,7 +285,7 @@ fn framework_split_case_29() {
 #[test]
 fn framework_split_case_30() {
     let base = "lorem ipsum dolor sit amet 30".repeat(20);
-    let limit = (30%40)+10;
+    let limit = (30 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -294,7 +294,7 @@ fn framework_split_case_30() {
 #[test]
 fn framework_split_case_31() {
     let base = "lorem ipsum dolor sit amet 31".repeat(20);
-    let limit = (31%40)+10;
+    let limit = (31 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -303,7 +303,7 @@ fn framework_split_case_31() {
 #[test]
 fn framework_split_case_32() {
     let base = "lorem ipsum dolor sit amet 32".repeat(20);
-    let limit = (32%40)+10;
+    let limit = (32 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -312,7 +312,7 @@ fn framework_split_case_32() {
 #[test]
 fn framework_split_case_33() {
     let base = "lorem ipsum dolor sit amet 33".repeat(20);
-    let limit = (33%40)+10;
+    let limit = (33 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -321,7 +321,7 @@ fn framework_split_case_33() {
 #[test]
 fn framework_split_case_34() {
     let base = "lorem ipsum dolor sit amet 34".repeat(20);
-    let limit = (34%40)+10;
+    let limit = (34 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -330,7 +330,7 @@ fn framework_split_case_34() {
 #[test]
 fn framework_split_case_35() {
     let base = "lorem ipsum dolor sit amet 35".repeat(20);
-    let limit = (35%40)+10;
+    let limit = (35 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -339,7 +339,7 @@ fn framework_split_case_35() {
 #[test]
 fn framework_split_case_36() {
     let base = "lorem ipsum dolor sit amet 36".repeat(20);
-    let limit = (36%40)+10;
+    let limit = (36 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -348,7 +348,7 @@ fn framework_split_case_36() {
 #[test]
 fn framework_split_case_37() {
     let base = "lorem ipsum dolor sit amet 37".repeat(20);
-    let limit = (37%40)+10;
+    let limit = (37 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -357,7 +357,7 @@ fn framework_split_case_37() {
 #[test]
 fn framework_split_case_38() {
     let base = "lorem ipsum dolor sit amet 38".repeat(20);
-    let limit = (38%40)+10;
+    let limit = (38 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -366,7 +366,7 @@ fn framework_split_case_38() {
 #[test]
 fn framework_split_case_39() {
     let base = "lorem ipsum dolor sit amet 39".repeat(20);
-    let limit = (39%40)+10;
+    let limit = (39 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -375,7 +375,7 @@ fn framework_split_case_39() {
 #[test]
 fn framework_split_case_40() {
     let base = "lorem ipsum dolor sit amet 40".repeat(20);
-    let limit = (40%40)+10;
+    let limit = (40 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -384,7 +384,7 @@ fn framework_split_case_40() {
 #[test]
 fn framework_split_case_41() {
     let base = "lorem ipsum dolor sit amet 41".repeat(20);
-    let limit = (41%40)+10;
+    let limit = (41 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -393,7 +393,7 @@ fn framework_split_case_41() {
 #[test]
 fn framework_split_case_42() {
     let base = "lorem ipsum dolor sit amet 42".repeat(20);
-    let limit = (42%40)+10;
+    let limit = (42 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -402,7 +402,7 @@ fn framework_split_case_42() {
 #[test]
 fn framework_split_case_43() {
     let base = "lorem ipsum dolor sit amet 43".repeat(20);
-    let limit = (43%40)+10;
+    let limit = (43 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -411,7 +411,7 @@ fn framework_split_case_43() {
 #[test]
 fn framework_split_case_44() {
     let base = "lorem ipsum dolor sit amet 44".repeat(20);
-    let limit = (44%40)+10;
+    let limit = (44 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -420,7 +420,7 @@ fn framework_split_case_44() {
 #[test]
 fn framework_split_case_45() {
     let base = "lorem ipsum dolor sit amet 45".repeat(20);
-    let limit = (45%40)+10;
+    let limit = (45 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -429,7 +429,7 @@ fn framework_split_case_45() {
 #[test]
 fn framework_split_case_46() {
     let base = "lorem ipsum dolor sit amet 46".repeat(20);
-    let limit = (46%40)+10;
+    let limit = (46 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -438,7 +438,7 @@ fn framework_split_case_46() {
 #[test]
 fn framework_split_case_47() {
     let base = "lorem ipsum dolor sit amet 47".repeat(20);
-    let limit = (47%40)+10;
+    let limit = (47 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -447,7 +447,7 @@ fn framework_split_case_47() {
 #[test]
 fn framework_split_case_48() {
     let base = "lorem ipsum dolor sit amet 48".repeat(20);
-    let limit = (48%40)+10;
+    let limit = (48 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -456,7 +456,7 @@ fn framework_split_case_48() {
 #[test]
 fn framework_split_case_49() {
     let base = "lorem ipsum dolor sit amet 49".repeat(20);
-    let limit = (49%40)+10;
+    let limit = (49 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -465,7 +465,7 @@ fn framework_split_case_49() {
 #[test]
 fn framework_split_case_50() {
     let base = "lorem ipsum dolor sit amet 50".repeat(20);
-    let limit = (50%40)+10;
+    let limit = (50 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -474,7 +474,7 @@ fn framework_split_case_50() {
 #[test]
 fn framework_split_case_51() {
     let base = "lorem ipsum dolor sit amet 51".repeat(20);
-    let limit = (51%40)+10;
+    let limit = (51 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -483,7 +483,7 @@ fn framework_split_case_51() {
 #[test]
 fn framework_split_case_52() {
     let base = "lorem ipsum dolor sit amet 52".repeat(20);
-    let limit = (52%40)+10;
+    let limit = (52 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -492,7 +492,7 @@ fn framework_split_case_52() {
 #[test]
 fn framework_split_case_53() {
     let base = "lorem ipsum dolor sit amet 53".repeat(20);
-    let limit = (53%40)+10;
+    let limit = (53 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -501,7 +501,7 @@ fn framework_split_case_53() {
 #[test]
 fn framework_split_case_54() {
     let base = "lorem ipsum dolor sit amet 54".repeat(20);
-    let limit = (54%40)+10;
+    let limit = (54 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -510,7 +510,7 @@ fn framework_split_case_54() {
 #[test]
 fn framework_split_case_55() {
     let base = "lorem ipsum dolor sit amet 55".repeat(20);
-    let limit = (55%40)+10;
+    let limit = (55 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -519,7 +519,7 @@ fn framework_split_case_55() {
 #[test]
 fn framework_split_case_56() {
     let base = "lorem ipsum dolor sit amet 56".repeat(20);
-    let limit = (56%40)+10;
+    let limit = (56 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -528,7 +528,7 @@ fn framework_split_case_56() {
 #[test]
 fn framework_split_case_57() {
     let base = "lorem ipsum dolor sit amet 57".repeat(20);
-    let limit = (57%40)+10;
+    let limit = (57 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -537,7 +537,7 @@ fn framework_split_case_57() {
 #[test]
 fn framework_split_case_58() {
     let base = "lorem ipsum dolor sit amet 58".repeat(20);
-    let limit = (58%40)+10;
+    let limit = (58 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -546,7 +546,7 @@ fn framework_split_case_58() {
 #[test]
 fn framework_split_case_59() {
     let base = "lorem ipsum dolor sit amet 59".repeat(20);
-    let limit = (59%40)+10;
+    let limit = (59 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -555,7 +555,7 @@ fn framework_split_case_59() {
 #[test]
 fn framework_split_case_60() {
     let base = "lorem ipsum dolor sit amet 60".repeat(20);
-    let limit = (60%40)+10;
+    let limit = (60 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -564,7 +564,7 @@ fn framework_split_case_60() {
 #[test]
 fn framework_split_case_61() {
     let base = "lorem ipsum dolor sit amet 61".repeat(20);
-    let limit = (61%40)+10;
+    let limit = (61 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -573,7 +573,7 @@ fn framework_split_case_61() {
 #[test]
 fn framework_split_case_62() {
     let base = "lorem ipsum dolor sit amet 62".repeat(20);
-    let limit = (62%40)+10;
+    let limit = (62 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -582,7 +582,7 @@ fn framework_split_case_62() {
 #[test]
 fn framework_split_case_63() {
     let base = "lorem ipsum dolor sit amet 63".repeat(20);
-    let limit = (63%40)+10;
+    let limit = (63 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -591,7 +591,7 @@ fn framework_split_case_63() {
 #[test]
 fn framework_split_case_64() {
     let base = "lorem ipsum dolor sit amet 64".repeat(20);
-    let limit = (64%40)+10;
+    let limit = (64 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -600,7 +600,7 @@ fn framework_split_case_64() {
 #[test]
 fn framework_split_case_65() {
     let base = "lorem ipsum dolor sit amet 65".repeat(20);
-    let limit = (65%40)+10;
+    let limit = (65 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -609,7 +609,7 @@ fn framework_split_case_65() {
 #[test]
 fn framework_split_case_66() {
     let base = "lorem ipsum dolor sit amet 66".repeat(20);
-    let limit = (66%40)+10;
+    let limit = (66 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -618,7 +618,7 @@ fn framework_split_case_66() {
 #[test]
 fn framework_split_case_67() {
     let base = "lorem ipsum dolor sit amet 67".repeat(20);
-    let limit = (67%40)+10;
+    let limit = (67 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -627,7 +627,7 @@ fn framework_split_case_67() {
 #[test]
 fn framework_split_case_68() {
     let base = "lorem ipsum dolor sit amet 68".repeat(20);
-    let limit = (68%40)+10;
+    let limit = (68 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -636,7 +636,7 @@ fn framework_split_case_68() {
 #[test]
 fn framework_split_case_69() {
     let base = "lorem ipsum dolor sit amet 69".repeat(20);
-    let limit = (69%40)+10;
+    let limit = (69 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -645,7 +645,7 @@ fn framework_split_case_69() {
 #[test]
 fn framework_split_case_70() {
     let base = "lorem ipsum dolor sit amet 70".repeat(20);
-    let limit = (70%40)+10;
+    let limit = (70 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -654,7 +654,7 @@ fn framework_split_case_70() {
 #[test]
 fn framework_split_case_71() {
     let base = "lorem ipsum dolor sit amet 71".repeat(20);
-    let limit = (71%40)+10;
+    let limit = (71 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -663,7 +663,7 @@ fn framework_split_case_71() {
 #[test]
 fn framework_split_case_72() {
     let base = "lorem ipsum dolor sit amet 72".repeat(20);
-    let limit = (72%40)+10;
+    let limit = (72 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -672,7 +672,7 @@ fn framework_split_case_72() {
 #[test]
 fn framework_split_case_73() {
     let base = "lorem ipsum dolor sit amet 73".repeat(20);
-    let limit = (73%40)+10;
+    let limit = (73 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -681,7 +681,7 @@ fn framework_split_case_73() {
 #[test]
 fn framework_split_case_74() {
     let base = "lorem ipsum dolor sit amet 74".repeat(20);
-    let limit = (74%40)+10;
+    let limit = (74 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -690,7 +690,7 @@ fn framework_split_case_74() {
 #[test]
 fn framework_split_case_75() {
     let base = "lorem ipsum dolor sit amet 75".repeat(20);
-    let limit = (75%40)+10;
+    let limit = (75 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -699,7 +699,7 @@ fn framework_split_case_75() {
 #[test]
 fn framework_split_case_76() {
     let base = "lorem ipsum dolor sit amet 76".repeat(20);
-    let limit = (76%40)+10;
+    let limit = (76 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -708,7 +708,7 @@ fn framework_split_case_76() {
 #[test]
 fn framework_split_case_77() {
     let base = "lorem ipsum dolor sit amet 77".repeat(20);
-    let limit = (77%40)+10;
+    let limit = (77 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -717,7 +717,7 @@ fn framework_split_case_77() {
 #[test]
 fn framework_split_case_78() {
     let base = "lorem ipsum dolor sit amet 78".repeat(20);
-    let limit = (78%40)+10;
+    let limit = (78 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -726,7 +726,7 @@ fn framework_split_case_78() {
 #[test]
 fn framework_split_case_79() {
     let base = "lorem ipsum dolor sit amet 79".repeat(20);
-    let limit = (79%40)+10;
+    let limit = (79 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -735,7 +735,7 @@ fn framework_split_case_79() {
 #[test]
 fn framework_split_case_80() {
     let base = "lorem ipsum dolor sit amet 80".repeat(20);
-    let limit = (80%40)+10;
+    let limit = (80 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -744,7 +744,7 @@ fn framework_split_case_80() {
 #[test]
 fn framework_split_case_81() {
     let base = "lorem ipsum dolor sit amet 81".repeat(20);
-    let limit = (81%40)+10;
+    let limit = (81 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -753,7 +753,7 @@ fn framework_split_case_81() {
 #[test]
 fn framework_split_case_82() {
     let base = "lorem ipsum dolor sit amet 82".repeat(20);
-    let limit = (82%40)+10;
+    let limit = (82 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -762,7 +762,7 @@ fn framework_split_case_82() {
 #[test]
 fn framework_split_case_83() {
     let base = "lorem ipsum dolor sit amet 83".repeat(20);
-    let limit = (83%40)+10;
+    let limit = (83 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -771,7 +771,7 @@ fn framework_split_case_83() {
 #[test]
 fn framework_split_case_84() {
     let base = "lorem ipsum dolor sit amet 84".repeat(20);
-    let limit = (84%40)+10;
+    let limit = (84 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -780,7 +780,7 @@ fn framework_split_case_84() {
 #[test]
 fn framework_split_case_85() {
     let base = "lorem ipsum dolor sit amet 85".repeat(20);
-    let limit = (85%40)+10;
+    let limit = (85 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -789,7 +789,7 @@ fn framework_split_case_85() {
 #[test]
 fn framework_split_case_86() {
     let base = "lorem ipsum dolor sit amet 86".repeat(20);
-    let limit = (86%40)+10;
+    let limit = (86 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -798,7 +798,7 @@ fn framework_split_case_86() {
 #[test]
 fn framework_split_case_87() {
     let base = "lorem ipsum dolor sit amet 87".repeat(20);
-    let limit = (87%40)+10;
+    let limit = (87 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -807,7 +807,7 @@ fn framework_split_case_87() {
 #[test]
 fn framework_split_case_88() {
     let base = "lorem ipsum dolor sit amet 88".repeat(20);
-    let limit = (88%40)+10;
+    let limit = (88 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -816,7 +816,7 @@ fn framework_split_case_88() {
 #[test]
 fn framework_split_case_89() {
     let base = "lorem ipsum dolor sit amet 89".repeat(20);
-    let limit = (89%40)+10;
+    let limit = (89 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -825,7 +825,7 @@ fn framework_split_case_89() {
 #[test]
 fn framework_split_case_90() {
     let base = "lorem ipsum dolor sit amet 90".repeat(20);
-    let limit = (90%40)+10;
+    let limit = (90 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -834,7 +834,7 @@ fn framework_split_case_90() {
 #[test]
 fn framework_split_case_91() {
     let base = "lorem ipsum dolor sit amet 91".repeat(20);
-    let limit = (91%40)+10;
+    let limit = (91 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -843,7 +843,7 @@ fn framework_split_case_91() {
 #[test]
 fn framework_split_case_92() {
     let base = "lorem ipsum dolor sit amet 92".repeat(20);
-    let limit = (92%40)+10;
+    let limit = (92 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -852,7 +852,7 @@ fn framework_split_case_92() {
 #[test]
 fn framework_split_case_93() {
     let base = "lorem ipsum dolor sit amet 93".repeat(20);
-    let limit = (93%40)+10;
+    let limit = (93 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -861,7 +861,7 @@ fn framework_split_case_93() {
 #[test]
 fn framework_split_case_94() {
     let base = "lorem ipsum dolor sit amet 94".repeat(20);
-    let limit = (94%40)+10;
+    let limit = (94 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -870,7 +870,7 @@ fn framework_split_case_94() {
 #[test]
 fn framework_split_case_95() {
     let base = "lorem ipsum dolor sit amet 95".repeat(20);
-    let limit = (95%40)+10;
+    let limit = (95 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -879,7 +879,7 @@ fn framework_split_case_95() {
 #[test]
 fn framework_split_case_96() {
     let base = "lorem ipsum dolor sit amet 96".repeat(20);
-    let limit = (96%40)+10;
+    let limit = (96 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -888,7 +888,7 @@ fn framework_split_case_96() {
 #[test]
 fn framework_split_case_97() {
     let base = "lorem ipsum dolor sit amet 97".repeat(20);
-    let limit = (97%40)+10;
+    let limit = (97 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -897,7 +897,7 @@ fn framework_split_case_97() {
 #[test]
 fn framework_split_case_98() {
     let base = "lorem ipsum dolor sit amet 98".repeat(20);
-    let limit = (98%40)+10;
+    let limit = (98 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -906,7 +906,7 @@ fn framework_split_case_98() {
 #[test]
 fn framework_split_case_99() {
     let base = "lorem ipsum dolor sit amet 99".repeat(20);
-    let limit = (99%40)+10;
+    let limit = (99 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -915,7 +915,7 @@ fn framework_split_case_99() {
 #[test]
 fn framework_split_case_100() {
     let base = "lorem ipsum dolor sit amet 100".repeat(20);
-    let limit = (100%40)+10;
+    let limit = (100 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -924,7 +924,7 @@ fn framework_split_case_100() {
 #[test]
 fn framework_split_case_101() {
     let base = "lorem ipsum dolor sit amet 101".repeat(20);
-    let limit = (101%40)+10;
+    let limit = (101 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -933,7 +933,7 @@ fn framework_split_case_101() {
 #[test]
 fn framework_split_case_102() {
     let base = "lorem ipsum dolor sit amet 102".repeat(20);
-    let limit = (102%40)+10;
+    let limit = (102 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -942,7 +942,7 @@ fn framework_split_case_102() {
 #[test]
 fn framework_split_case_103() {
     let base = "lorem ipsum dolor sit amet 103".repeat(20);
-    let limit = (103%40)+10;
+    let limit = (103 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -951,7 +951,7 @@ fn framework_split_case_103() {
 #[test]
 fn framework_split_case_104() {
     let base = "lorem ipsum dolor sit amet 104".repeat(20);
-    let limit = (104%40)+10;
+    let limit = (104 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -960,7 +960,7 @@ fn framework_split_case_104() {
 #[test]
 fn framework_split_case_105() {
     let base = "lorem ipsum dolor sit amet 105".repeat(20);
-    let limit = (105%40)+10;
+    let limit = (105 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -969,7 +969,7 @@ fn framework_split_case_105() {
 #[test]
 fn framework_split_case_106() {
     let base = "lorem ipsum dolor sit amet 106".repeat(20);
-    let limit = (106%40)+10;
+    let limit = (106 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -978,7 +978,7 @@ fn framework_split_case_106() {
 #[test]
 fn framework_split_case_107() {
     let base = "lorem ipsum dolor sit amet 107".repeat(20);
-    let limit = (107%40)+10;
+    let limit = (107 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -987,7 +987,7 @@ fn framework_split_case_107() {
 #[test]
 fn framework_split_case_108() {
     let base = "lorem ipsum dolor sit amet 108".repeat(20);
-    let limit = (108%40)+10;
+    let limit = (108 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -996,7 +996,7 @@ fn framework_split_case_108() {
 #[test]
 fn framework_split_case_109() {
     let base = "lorem ipsum dolor sit amet 109".repeat(20);
-    let limit = (109%40)+10;
+    let limit = (109 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1005,7 +1005,7 @@ fn framework_split_case_109() {
 #[test]
 fn framework_split_case_110() {
     let base = "lorem ipsum dolor sit amet 110".repeat(20);
-    let limit = (110%40)+10;
+    let limit = (110 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1014,7 +1014,7 @@ fn framework_split_case_110() {
 #[test]
 fn framework_split_case_111() {
     let base = "lorem ipsum dolor sit amet 111".repeat(20);
-    let limit = (111%40)+10;
+    let limit = (111 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1023,7 +1023,7 @@ fn framework_split_case_111() {
 #[test]
 fn framework_split_case_112() {
     let base = "lorem ipsum dolor sit amet 112".repeat(20);
-    let limit = (112%40)+10;
+    let limit = (112 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1032,7 +1032,7 @@ fn framework_split_case_112() {
 #[test]
 fn framework_split_case_113() {
     let base = "lorem ipsum dolor sit amet 113".repeat(20);
-    let limit = (113%40)+10;
+    let limit = (113 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1041,7 +1041,7 @@ fn framework_split_case_113() {
 #[test]
 fn framework_split_case_114() {
     let base = "lorem ipsum dolor sit amet 114".repeat(20);
-    let limit = (114%40)+10;
+    let limit = (114 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1050,7 +1050,7 @@ fn framework_split_case_114() {
 #[test]
 fn framework_split_case_115() {
     let base = "lorem ipsum dolor sit amet 115".repeat(20);
-    let limit = (115%40)+10;
+    let limit = (115 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1059,7 +1059,7 @@ fn framework_split_case_115() {
 #[test]
 fn framework_split_case_116() {
     let base = "lorem ipsum dolor sit amet 116".repeat(20);
-    let limit = (116%40)+10;
+    let limit = (116 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1068,7 +1068,7 @@ fn framework_split_case_116() {
 #[test]
 fn framework_split_case_117() {
     let base = "lorem ipsum dolor sit amet 117".repeat(20);
-    let limit = (117%40)+10;
+    let limit = (117 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1077,7 +1077,7 @@ fn framework_split_case_117() {
 #[test]
 fn framework_split_case_118() {
     let base = "lorem ipsum dolor sit amet 118".repeat(20);
-    let limit = (118%40)+10;
+    let limit = (118 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1086,7 +1086,7 @@ fn framework_split_case_118() {
 #[test]
 fn framework_split_case_119() {
     let base = "lorem ipsum dolor sit amet 119".repeat(20);
-    let limit = (119%40)+10;
+    let limit = (119 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1095,7 +1095,7 @@ fn framework_split_case_119() {
 #[test]
 fn framework_split_case_120() {
     let base = "lorem ipsum dolor sit amet 120".repeat(20);
-    let limit = (120%40)+10;
+    let limit = (120 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1104,7 +1104,7 @@ fn framework_split_case_120() {
 #[test]
 fn framework_split_case_121() {
     let base = "lorem ipsum dolor sit amet 121".repeat(20);
-    let limit = (121%40)+10;
+    let limit = (121 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1113,7 +1113,7 @@ fn framework_split_case_121() {
 #[test]
 fn framework_split_case_122() {
     let base = "lorem ipsum dolor sit amet 122".repeat(20);
-    let limit = (122%40)+10;
+    let limit = (122 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1122,7 +1122,7 @@ fn framework_split_case_122() {
 #[test]
 fn framework_split_case_123() {
     let base = "lorem ipsum dolor sit amet 123".repeat(20);
-    let limit = (123%40)+10;
+    let limit = (123 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1131,7 +1131,7 @@ fn framework_split_case_123() {
 #[test]
 fn framework_split_case_124() {
     let base = "lorem ipsum dolor sit amet 124".repeat(20);
-    let limit = (124%40)+10;
+    let limit = (124 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1140,7 +1140,7 @@ fn framework_split_case_124() {
 #[test]
 fn framework_split_case_125() {
     let base = "lorem ipsum dolor sit amet 125".repeat(20);
-    let limit = (125%40)+10;
+    let limit = (125 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1149,7 +1149,7 @@ fn framework_split_case_125() {
 #[test]
 fn framework_split_case_126() {
     let base = "lorem ipsum dolor sit amet 126".repeat(20);
-    let limit = (126%40)+10;
+    let limit = (126 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1158,7 +1158,7 @@ fn framework_split_case_126() {
 #[test]
 fn framework_split_case_127() {
     let base = "lorem ipsum dolor sit amet 127".repeat(20);
-    let limit = (127%40)+10;
+    let limit = (127 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1167,7 +1167,7 @@ fn framework_split_case_127() {
 #[test]
 fn framework_split_case_128() {
     let base = "lorem ipsum dolor sit amet 128".repeat(20);
-    let limit = (128%40)+10;
+    let limit = (128 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1176,7 +1176,7 @@ fn framework_split_case_128() {
 #[test]
 fn framework_split_case_129() {
     let base = "lorem ipsum dolor sit amet 129".repeat(20);
-    let limit = (129%40)+10;
+    let limit = (129 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1185,7 +1185,7 @@ fn framework_split_case_129() {
 #[test]
 fn framework_split_case_130() {
     let base = "lorem ipsum dolor sit amet 130".repeat(20);
-    let limit = (130%40)+10;
+    let limit = (130 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1194,7 +1194,7 @@ fn framework_split_case_130() {
 #[test]
 fn framework_split_case_131() {
     let base = "lorem ipsum dolor sit amet 131".repeat(20);
-    let limit = (131%40)+10;
+    let limit = (131 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1203,7 +1203,7 @@ fn framework_split_case_131() {
 #[test]
 fn framework_split_case_132() {
     let base = "lorem ipsum dolor sit amet 132".repeat(20);
-    let limit = (132%40)+10;
+    let limit = (132 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1212,7 +1212,7 @@ fn framework_split_case_132() {
 #[test]
 fn framework_split_case_133() {
     let base = "lorem ipsum dolor sit amet 133".repeat(20);
-    let limit = (133%40)+10;
+    let limit = (133 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1221,7 +1221,7 @@ fn framework_split_case_133() {
 #[test]
 fn framework_split_case_134() {
     let base = "lorem ipsum dolor sit amet 134".repeat(20);
-    let limit = (134%40)+10;
+    let limit = (134 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1230,7 +1230,7 @@ fn framework_split_case_134() {
 #[test]
 fn framework_split_case_135() {
     let base = "lorem ipsum dolor sit amet 135".repeat(20);
-    let limit = (135%40)+10;
+    let limit = (135 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1239,7 +1239,7 @@ fn framework_split_case_135() {
 #[test]
 fn framework_split_case_136() {
     let base = "lorem ipsum dolor sit amet 136".repeat(20);
-    let limit = (136%40)+10;
+    let limit = (136 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1248,7 +1248,7 @@ fn framework_split_case_136() {
 #[test]
 fn framework_split_case_137() {
     let base = "lorem ipsum dolor sit amet 137".repeat(20);
-    let limit = (137%40)+10;
+    let limit = (137 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1257,7 +1257,7 @@ fn framework_split_case_137() {
 #[test]
 fn framework_split_case_138() {
     let base = "lorem ipsum dolor sit amet 138".repeat(20);
-    let limit = (138%40)+10;
+    let limit = (138 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1266,7 +1266,7 @@ fn framework_split_case_138() {
 #[test]
 fn framework_split_case_139() {
     let base = "lorem ipsum dolor sit amet 139".repeat(20);
-    let limit = (139%40)+10;
+    let limit = (139 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1275,7 +1275,7 @@ fn framework_split_case_139() {
 #[test]
 fn framework_split_case_140() {
     let base = "lorem ipsum dolor sit amet 140".repeat(20);
-    let limit = (140%40)+10;
+    let limit = (140 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1284,7 +1284,7 @@ fn framework_split_case_140() {
 #[test]
 fn framework_split_case_141() {
     let base = "lorem ipsum dolor sit amet 141".repeat(20);
-    let limit = (141%40)+10;
+    let limit = (141 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1293,7 +1293,7 @@ fn framework_split_case_141() {
 #[test]
 fn framework_split_case_142() {
     let base = "lorem ipsum dolor sit amet 142".repeat(20);
-    let limit = (142%40)+10;
+    let limit = (142 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1302,7 +1302,7 @@ fn framework_split_case_142() {
 #[test]
 fn framework_split_case_143() {
     let base = "lorem ipsum dolor sit amet 143".repeat(20);
-    let limit = (143%40)+10;
+    let limit = (143 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1311,7 +1311,7 @@ fn framework_split_case_143() {
 #[test]
 fn framework_split_case_144() {
     let base = "lorem ipsum dolor sit amet 144".repeat(20);
-    let limit = (144%40)+10;
+    let limit = (144 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1320,7 +1320,7 @@ fn framework_split_case_144() {
 #[test]
 fn framework_split_case_145() {
     let base = "lorem ipsum dolor sit amet 145".repeat(20);
-    let limit = (145%40)+10;
+    let limit = (145 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1329,7 +1329,7 @@ fn framework_split_case_145() {
 #[test]
 fn framework_split_case_146() {
     let base = "lorem ipsum dolor sit amet 146".repeat(20);
-    let limit = (146%40)+10;
+    let limit = (146 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1338,7 +1338,7 @@ fn framework_split_case_146() {
 #[test]
 fn framework_split_case_147() {
     let base = "lorem ipsum dolor sit amet 147".repeat(20);
-    let limit = (147%40)+10;
+    let limit = (147 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1347,7 +1347,7 @@ fn framework_split_case_147() {
 #[test]
 fn framework_split_case_148() {
     let base = "lorem ipsum dolor sit amet 148".repeat(20);
-    let limit = (148%40)+10;
+    let limit = (148 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1356,7 +1356,7 @@ fn framework_split_case_148() {
 #[test]
 fn framework_split_case_149() {
     let base = "lorem ipsum dolor sit amet 149".repeat(20);
-    let limit = (149%40)+10;
+    let limit = (149 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1365,7 +1365,7 @@ fn framework_split_case_149() {
 #[test]
 fn framework_split_case_150() {
     let base = "lorem ipsum dolor sit amet 150".repeat(20);
-    let limit = (150%40)+10;
+    let limit = (150 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1374,7 +1374,7 @@ fn framework_split_case_150() {
 #[test]
 fn framework_split_case_151() {
     let base = "lorem ipsum dolor sit amet 151".repeat(20);
-    let limit = (151%40)+10;
+    let limit = (151 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1383,7 +1383,7 @@ fn framework_split_case_151() {
 #[test]
 fn framework_split_case_152() {
     let base = "lorem ipsum dolor sit amet 152".repeat(20);
-    let limit = (152%40)+10;
+    let limit = (152 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1392,7 +1392,7 @@ fn framework_split_case_152() {
 #[test]
 fn framework_split_case_153() {
     let base = "lorem ipsum dolor sit amet 153".repeat(20);
-    let limit = (153%40)+10;
+    let limit = (153 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1401,7 +1401,7 @@ fn framework_split_case_153() {
 #[test]
 fn framework_split_case_154() {
     let base = "lorem ipsum dolor sit amet 154".repeat(20);
-    let limit = (154%40)+10;
+    let limit = (154 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1410,7 +1410,7 @@ fn framework_split_case_154() {
 #[test]
 fn framework_split_case_155() {
     let base = "lorem ipsum dolor sit amet 155".repeat(20);
-    let limit = (155%40)+10;
+    let limit = (155 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1419,7 +1419,7 @@ fn framework_split_case_155() {
 #[test]
 fn framework_split_case_156() {
     let base = "lorem ipsum dolor sit amet 156".repeat(20);
-    let limit = (156%40)+10;
+    let limit = (156 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1428,7 +1428,7 @@ fn framework_split_case_156() {
 #[test]
 fn framework_split_case_157() {
     let base = "lorem ipsum dolor sit amet 157".repeat(20);
-    let limit = (157%40)+10;
+    let limit = (157 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1437,7 +1437,7 @@ fn framework_split_case_157() {
 #[test]
 fn framework_split_case_158() {
     let base = "lorem ipsum dolor sit amet 158".repeat(20);
-    let limit = (158%40)+10;
+    let limit = (158 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1446,7 +1446,7 @@ fn framework_split_case_158() {
 #[test]
 fn framework_split_case_159() {
     let base = "lorem ipsum dolor sit amet 159".repeat(20);
-    let limit = (159%40)+10;
+    let limit = (159 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1455,7 +1455,7 @@ fn framework_split_case_159() {
 #[test]
 fn framework_split_case_160() {
     let base = "lorem ipsum dolor sit amet 160".repeat(20);
-    let limit = (160%40)+10;
+    let limit = (160 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1464,7 +1464,7 @@ fn framework_split_case_160() {
 #[test]
 fn framework_split_case_161() {
     let base = "lorem ipsum dolor sit amet 161".repeat(20);
-    let limit = (161%40)+10;
+    let limit = (161 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1473,7 +1473,7 @@ fn framework_split_case_161() {
 #[test]
 fn framework_split_case_162() {
     let base = "lorem ipsum dolor sit amet 162".repeat(20);
-    let limit = (162%40)+10;
+    let limit = (162 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1482,7 +1482,7 @@ fn framework_split_case_162() {
 #[test]
 fn framework_split_case_163() {
     let base = "lorem ipsum dolor sit amet 163".repeat(20);
-    let limit = (163%40)+10;
+    let limit = (163 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1491,7 +1491,7 @@ fn framework_split_case_163() {
 #[test]
 fn framework_split_case_164() {
     let base = "lorem ipsum dolor sit amet 164".repeat(20);
-    let limit = (164%40)+10;
+    let limit = (164 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1500,7 +1500,7 @@ fn framework_split_case_164() {
 #[test]
 fn framework_split_case_165() {
     let base = "lorem ipsum dolor sit amet 165".repeat(20);
-    let limit = (165%40)+10;
+    let limit = (165 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1509,7 +1509,7 @@ fn framework_split_case_165() {
 #[test]
 fn framework_split_case_166() {
     let base = "lorem ipsum dolor sit amet 166".repeat(20);
-    let limit = (166%40)+10;
+    let limit = (166 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1518,7 +1518,7 @@ fn framework_split_case_166() {
 #[test]
 fn framework_split_case_167() {
     let base = "lorem ipsum dolor sit amet 167".repeat(20);
-    let limit = (167%40)+10;
+    let limit = (167 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1527,7 +1527,7 @@ fn framework_split_case_167() {
 #[test]
 fn framework_split_case_168() {
     let base = "lorem ipsum dolor sit amet 168".repeat(20);
-    let limit = (168%40)+10;
+    let limit = (168 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1536,7 +1536,7 @@ fn framework_split_case_168() {
 #[test]
 fn framework_split_case_169() {
     let base = "lorem ipsum dolor sit amet 169".repeat(20);
-    let limit = (169%40)+10;
+    let limit = (169 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1545,7 +1545,7 @@ fn framework_split_case_169() {
 #[test]
 fn framework_split_case_170() {
     let base = "lorem ipsum dolor sit amet 170".repeat(20);
-    let limit = (170%40)+10;
+    let limit = (170 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1554,7 +1554,7 @@ fn framework_split_case_170() {
 #[test]
 fn framework_split_case_171() {
     let base = "lorem ipsum dolor sit amet 171".repeat(20);
-    let limit = (171%40)+10;
+    let limit = (171 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1563,7 +1563,7 @@ fn framework_split_case_171() {
 #[test]
 fn framework_split_case_172() {
     let base = "lorem ipsum dolor sit amet 172".repeat(20);
-    let limit = (172%40)+10;
+    let limit = (172 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1572,7 +1572,7 @@ fn framework_split_case_172() {
 #[test]
 fn framework_split_case_173() {
     let base = "lorem ipsum dolor sit amet 173".repeat(20);
-    let limit = (173%40)+10;
+    let limit = (173 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1581,7 +1581,7 @@ fn framework_split_case_173() {
 #[test]
 fn framework_split_case_174() {
     let base = "lorem ipsum dolor sit amet 174".repeat(20);
-    let limit = (174%40)+10;
+    let limit = (174 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1590,7 +1590,7 @@ fn framework_split_case_174() {
 #[test]
 fn framework_split_case_175() {
     let base = "lorem ipsum dolor sit amet 175".repeat(20);
-    let limit = (175%40)+10;
+    let limit = (175 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1599,7 +1599,7 @@ fn framework_split_case_175() {
 #[test]
 fn framework_split_case_176() {
     let base = "lorem ipsum dolor sit amet 176".repeat(20);
-    let limit = (176%40)+10;
+    let limit = (176 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1608,7 +1608,7 @@ fn framework_split_case_176() {
 #[test]
 fn framework_split_case_177() {
     let base = "lorem ipsum dolor sit amet 177".repeat(20);
-    let limit = (177%40)+10;
+    let limit = (177 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1617,7 +1617,7 @@ fn framework_split_case_177() {
 #[test]
 fn framework_split_case_178() {
     let base = "lorem ipsum dolor sit amet 178".repeat(20);
-    let limit = (178%40)+10;
+    let limit = (178 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1626,7 +1626,7 @@ fn framework_split_case_178() {
 #[test]
 fn framework_split_case_179() {
     let base = "lorem ipsum dolor sit amet 179".repeat(20);
-    let limit = (179%40)+10;
+    let limit = (179 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1635,7 +1635,7 @@ fn framework_split_case_179() {
 #[test]
 fn framework_split_case_180() {
     let base = "lorem ipsum dolor sit amet 180".repeat(20);
-    let limit = (180%40)+10;
+    let limit = (180 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1644,7 +1644,7 @@ fn framework_split_case_180() {
 #[test]
 fn framework_split_case_181() {
     let base = "lorem ipsum dolor sit amet 181".repeat(20);
-    let limit = (181%40)+10;
+    let limit = (181 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1653,7 +1653,7 @@ fn framework_split_case_181() {
 #[test]
 fn framework_split_case_182() {
     let base = "lorem ipsum dolor sit amet 182".repeat(20);
-    let limit = (182%40)+10;
+    let limit = (182 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1662,7 +1662,7 @@ fn framework_split_case_182() {
 #[test]
 fn framework_split_case_183() {
     let base = "lorem ipsum dolor sit amet 183".repeat(20);
-    let limit = (183%40)+10;
+    let limit = (183 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1671,7 +1671,7 @@ fn framework_split_case_183() {
 #[test]
 fn framework_split_case_184() {
     let base = "lorem ipsum dolor sit amet 184".repeat(20);
-    let limit = (184%40)+10;
+    let limit = (184 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1680,7 +1680,7 @@ fn framework_split_case_184() {
 #[test]
 fn framework_split_case_185() {
     let base = "lorem ipsum dolor sit amet 185".repeat(20);
-    let limit = (185%40)+10;
+    let limit = (185 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1689,7 +1689,7 @@ fn framework_split_case_185() {
 #[test]
 fn framework_split_case_186() {
     let base = "lorem ipsum dolor sit amet 186".repeat(20);
-    let limit = (186%40)+10;
+    let limit = (186 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1698,7 +1698,7 @@ fn framework_split_case_186() {
 #[test]
 fn framework_split_case_187() {
     let base = "lorem ipsum dolor sit amet 187".repeat(20);
-    let limit = (187%40)+10;
+    let limit = (187 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1707,7 +1707,7 @@ fn framework_split_case_187() {
 #[test]
 fn framework_split_case_188() {
     let base = "lorem ipsum dolor sit amet 188".repeat(20);
-    let limit = (188%40)+10;
+    let limit = (188 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1716,7 +1716,7 @@ fn framework_split_case_188() {
 #[test]
 fn framework_split_case_189() {
     let base = "lorem ipsum dolor sit amet 189".repeat(20);
-    let limit = (189%40)+10;
+    let limit = (189 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1725,7 +1725,7 @@ fn framework_split_case_189() {
 #[test]
 fn framework_split_case_190() {
     let base = "lorem ipsum dolor sit amet 190".repeat(20);
-    let limit = (190%40)+10;
+    let limit = (190 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1734,7 +1734,7 @@ fn framework_split_case_190() {
 #[test]
 fn framework_split_case_191() {
     let base = "lorem ipsum dolor sit amet 191".repeat(20);
-    let limit = (191%40)+10;
+    let limit = (191 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1743,7 +1743,7 @@ fn framework_split_case_191() {
 #[test]
 fn framework_split_case_192() {
     let base = "lorem ipsum dolor sit amet 192".repeat(20);
-    let limit = (192%40)+10;
+    let limit = (192 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1752,7 +1752,7 @@ fn framework_split_case_192() {
 #[test]
 fn framework_split_case_193() {
     let base = "lorem ipsum dolor sit amet 193".repeat(20);
-    let limit = (193%40)+10;
+    let limit = (193 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1761,7 +1761,7 @@ fn framework_split_case_193() {
 #[test]
 fn framework_split_case_194() {
     let base = "lorem ipsum dolor sit amet 194".repeat(20);
-    let limit = (194%40)+10;
+    let limit = (194 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1770,7 +1770,7 @@ fn framework_split_case_194() {
 #[test]
 fn framework_split_case_195() {
     let base = "lorem ipsum dolor sit amet 195".repeat(20);
-    let limit = (195%40)+10;
+    let limit = (195 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1779,7 +1779,7 @@ fn framework_split_case_195() {
 #[test]
 fn framework_split_case_196() {
     let base = "lorem ipsum dolor sit amet 196".repeat(20);
-    let limit = (196%40)+10;
+    let limit = (196 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1788,7 +1788,7 @@ fn framework_split_case_196() {
 #[test]
 fn framework_split_case_197() {
     let base = "lorem ipsum dolor sit amet 197".repeat(20);
-    let limit = (197%40)+10;
+    let limit = (197 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1797,7 +1797,7 @@ fn framework_split_case_197() {
 #[test]
 fn framework_split_case_198() {
     let base = "lorem ipsum dolor sit amet 198".repeat(20);
-    let limit = (198%40)+10;
+    let limit = (198 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1806,7 +1806,7 @@ fn framework_split_case_198() {
 #[test]
 fn framework_split_case_199() {
     let base = "lorem ipsum dolor sit amet 199".repeat(20);
-    let limit = (199%40)+10;
+    let limit = (199 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1815,7 +1815,7 @@ fn framework_split_case_199() {
 #[test]
 fn framework_split_case_200() {
     let base = "lorem ipsum dolor sit amet 200".repeat(20);
-    let limit = (200%40)+10;
+    let limit = (200 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1824,7 +1824,7 @@ fn framework_split_case_200() {
 #[test]
 fn framework_split_case_201() {
     let base = "lorem ipsum dolor sit amet 201".repeat(20);
-    let limit = (201%40)+10;
+    let limit = (201 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1833,7 +1833,7 @@ fn framework_split_case_201() {
 #[test]
 fn framework_split_case_202() {
     let base = "lorem ipsum dolor sit amet 202".repeat(20);
-    let limit = (202%40)+10;
+    let limit = (202 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1842,7 +1842,7 @@ fn framework_split_case_202() {
 #[test]
 fn framework_split_case_203() {
     let base = "lorem ipsum dolor sit amet 203".repeat(20);
-    let limit = (203%40)+10;
+    let limit = (203 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1851,7 +1851,7 @@ fn framework_split_case_203() {
 #[test]
 fn framework_split_case_204() {
     let base = "lorem ipsum dolor sit amet 204".repeat(20);
-    let limit = (204%40)+10;
+    let limit = (204 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1860,7 +1860,7 @@ fn framework_split_case_204() {
 #[test]
 fn framework_split_case_205() {
     let base = "lorem ipsum dolor sit amet 205".repeat(20);
-    let limit = (205%40)+10;
+    let limit = (205 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1869,7 +1869,7 @@ fn framework_split_case_205() {
 #[test]
 fn framework_split_case_206() {
     let base = "lorem ipsum dolor sit amet 206".repeat(20);
-    let limit = (206%40)+10;
+    let limit = (206 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1878,7 +1878,7 @@ fn framework_split_case_206() {
 #[test]
 fn framework_split_case_207() {
     let base = "lorem ipsum dolor sit amet 207".repeat(20);
-    let limit = (207%40)+10;
+    let limit = (207 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1887,7 +1887,7 @@ fn framework_split_case_207() {
 #[test]
 fn framework_split_case_208() {
     let base = "lorem ipsum dolor sit amet 208".repeat(20);
-    let limit = (208%40)+10;
+    let limit = (208 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1896,7 +1896,7 @@ fn framework_split_case_208() {
 #[test]
 fn framework_split_case_209() {
     let base = "lorem ipsum dolor sit amet 209".repeat(20);
-    let limit = (209%40)+10;
+    let limit = (209 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1905,7 +1905,7 @@ fn framework_split_case_209() {
 #[test]
 fn framework_split_case_210() {
     let base = "lorem ipsum dolor sit amet 210".repeat(20);
-    let limit = (210%40)+10;
+    let limit = (210 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1914,7 +1914,7 @@ fn framework_split_case_210() {
 #[test]
 fn framework_split_case_211() {
     let base = "lorem ipsum dolor sit amet 211".repeat(20);
-    let limit = (211%40)+10;
+    let limit = (211 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1923,7 +1923,7 @@ fn framework_split_case_211() {
 #[test]
 fn framework_split_case_212() {
     let base = "lorem ipsum dolor sit amet 212".repeat(20);
-    let limit = (212%40)+10;
+    let limit = (212 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1932,7 +1932,7 @@ fn framework_split_case_212() {
 #[test]
 fn framework_split_case_213() {
     let base = "lorem ipsum dolor sit amet 213".repeat(20);
-    let limit = (213%40)+10;
+    let limit = (213 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1941,7 +1941,7 @@ fn framework_split_case_213() {
 #[test]
 fn framework_split_case_214() {
     let base = "lorem ipsum dolor sit amet 214".repeat(20);
-    let limit = (214%40)+10;
+    let limit = (214 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1950,7 +1950,7 @@ fn framework_split_case_214() {
 #[test]
 fn framework_split_case_215() {
     let base = "lorem ipsum dolor sit amet 215".repeat(20);
-    let limit = (215%40)+10;
+    let limit = (215 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1959,7 +1959,7 @@ fn framework_split_case_215() {
 #[test]
 fn framework_split_case_216() {
     let base = "lorem ipsum dolor sit amet 216".repeat(20);
-    let limit = (216%40)+10;
+    let limit = (216 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1968,7 +1968,7 @@ fn framework_split_case_216() {
 #[test]
 fn framework_split_case_217() {
     let base = "lorem ipsum dolor sit amet 217".repeat(20);
-    let limit = (217%40)+10;
+    let limit = (217 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1977,7 +1977,7 @@ fn framework_split_case_217() {
 #[test]
 fn framework_split_case_218() {
     let base = "lorem ipsum dolor sit amet 218".repeat(20);
-    let limit = (218%40)+10;
+    let limit = (218 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1986,7 +1986,7 @@ fn framework_split_case_218() {
 #[test]
 fn framework_split_case_219() {
     let base = "lorem ipsum dolor sit amet 219".repeat(20);
-    let limit = (219%40)+10;
+    let limit = (219 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -1995,7 +1995,7 @@ fn framework_split_case_219() {
 #[test]
 fn framework_split_case_220() {
     let base = "lorem ipsum dolor sit amet 220".repeat(20);
-    let limit = (220%40)+10;
+    let limit = (220 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2004,7 +2004,7 @@ fn framework_split_case_220() {
 #[test]
 fn framework_split_case_221() {
     let base = "lorem ipsum dolor sit amet 221".repeat(20);
-    let limit = (221%40)+10;
+    let limit = (221 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2013,7 +2013,7 @@ fn framework_split_case_221() {
 #[test]
 fn framework_split_case_222() {
     let base = "lorem ipsum dolor sit amet 222".repeat(20);
-    let limit = (222%40)+10;
+    let limit = (222 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2022,7 +2022,7 @@ fn framework_split_case_222() {
 #[test]
 fn framework_split_case_223() {
     let base = "lorem ipsum dolor sit amet 223".repeat(20);
-    let limit = (223%40)+10;
+    let limit = (223 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2031,7 +2031,7 @@ fn framework_split_case_223() {
 #[test]
 fn framework_split_case_224() {
     let base = "lorem ipsum dolor sit amet 224".repeat(20);
-    let limit = (224%40)+10;
+    let limit = (224 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2040,7 +2040,7 @@ fn framework_split_case_224() {
 #[test]
 fn framework_split_case_225() {
     let base = "lorem ipsum dolor sit amet 225".repeat(20);
-    let limit = (225%40)+10;
+    let limit = (225 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2049,7 +2049,7 @@ fn framework_split_case_225() {
 #[test]
 fn framework_split_case_226() {
     let base = "lorem ipsum dolor sit amet 226".repeat(20);
-    let limit = (226%40)+10;
+    let limit = (226 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2058,7 +2058,7 @@ fn framework_split_case_226() {
 #[test]
 fn framework_split_case_227() {
     let base = "lorem ipsum dolor sit amet 227".repeat(20);
-    let limit = (227%40)+10;
+    let limit = (227 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2067,7 +2067,7 @@ fn framework_split_case_227() {
 #[test]
 fn framework_split_case_228() {
     let base = "lorem ipsum dolor sit amet 228".repeat(20);
-    let limit = (228%40)+10;
+    let limit = (228 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2076,7 +2076,7 @@ fn framework_split_case_228() {
 #[test]
 fn framework_split_case_229() {
     let base = "lorem ipsum dolor sit amet 229".repeat(20);
-    let limit = (229%40)+10;
+    let limit = (229 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2085,7 +2085,7 @@ fn framework_split_case_229() {
 #[test]
 fn framework_split_case_230() {
     let base = "lorem ipsum dolor sit amet 230".repeat(20);
-    let limit = (230%40)+10;
+    let limit = (230 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2094,7 +2094,7 @@ fn framework_split_case_230() {
 #[test]
 fn framework_split_case_231() {
     let base = "lorem ipsum dolor sit amet 231".repeat(20);
-    let limit = (231%40)+10;
+    let limit = (231 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2103,7 +2103,7 @@ fn framework_split_case_231() {
 #[test]
 fn framework_split_case_232() {
     let base = "lorem ipsum dolor sit amet 232".repeat(20);
-    let limit = (232%40)+10;
+    let limit = (232 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2112,7 +2112,7 @@ fn framework_split_case_232() {
 #[test]
 fn framework_split_case_233() {
     let base = "lorem ipsum dolor sit amet 233".repeat(20);
-    let limit = (233%40)+10;
+    let limit = (233 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2121,7 +2121,7 @@ fn framework_split_case_233() {
 #[test]
 fn framework_split_case_234() {
     let base = "lorem ipsum dolor sit amet 234".repeat(20);
-    let limit = (234%40)+10;
+    let limit = (234 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2130,7 +2130,7 @@ fn framework_split_case_234() {
 #[test]
 fn framework_split_case_235() {
     let base = "lorem ipsum dolor sit amet 235".repeat(20);
-    let limit = (235%40)+10;
+    let limit = (235 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2139,7 +2139,7 @@ fn framework_split_case_235() {
 #[test]
 fn framework_split_case_236() {
     let base = "lorem ipsum dolor sit amet 236".repeat(20);
-    let limit = (236%40)+10;
+    let limit = (236 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2148,7 +2148,7 @@ fn framework_split_case_236() {
 #[test]
 fn framework_split_case_237() {
     let base = "lorem ipsum dolor sit amet 237".repeat(20);
-    let limit = (237%40)+10;
+    let limit = (237 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2157,7 +2157,7 @@ fn framework_split_case_237() {
 #[test]
 fn framework_split_case_238() {
     let base = "lorem ipsum dolor sit amet 238".repeat(20);
-    let limit = (238%40)+10;
+    let limit = (238 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2166,7 +2166,7 @@ fn framework_split_case_238() {
 #[test]
 fn framework_split_case_239() {
     let base = "lorem ipsum dolor sit amet 239".repeat(20);
-    let limit = (239%40)+10;
+    let limit = (239 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2175,7 +2175,7 @@ fn framework_split_case_239() {
 #[test]
 fn framework_split_case_240() {
     let base = "lorem ipsum dolor sit amet 240".repeat(20);
-    let limit = (240%40)+10;
+    let limit = (240 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2184,7 +2184,7 @@ fn framework_split_case_240() {
 #[test]
 fn framework_split_case_241() {
     let base = "lorem ipsum dolor sit amet 241".repeat(20);
-    let limit = (241%40)+10;
+    let limit = (241 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2193,7 +2193,7 @@ fn framework_split_case_241() {
 #[test]
 fn framework_split_case_242() {
     let base = "lorem ipsum dolor sit amet 242".repeat(20);
-    let limit = (242%40)+10;
+    let limit = (242 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2202,7 +2202,7 @@ fn framework_split_case_242() {
 #[test]
 fn framework_split_case_243() {
     let base = "lorem ipsum dolor sit amet 243".repeat(20);
-    let limit = (243%40)+10;
+    let limit = (243 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2211,7 +2211,7 @@ fn framework_split_case_243() {
 #[test]
 fn framework_split_case_244() {
     let base = "lorem ipsum dolor sit amet 244".repeat(20);
-    let limit = (244%40)+10;
+    let limit = (244 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2220,7 +2220,7 @@ fn framework_split_case_244() {
 #[test]
 fn framework_split_case_245() {
     let base = "lorem ipsum dolor sit amet 245".repeat(20);
-    let limit = (245%40)+10;
+    let limit = (245 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2229,7 +2229,7 @@ fn framework_split_case_245() {
 #[test]
 fn framework_split_case_246() {
     let base = "lorem ipsum dolor sit amet 246".repeat(20);
-    let limit = (246%40)+10;
+    let limit = (246 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2238,7 +2238,7 @@ fn framework_split_case_246() {
 #[test]
 fn framework_split_case_247() {
     let base = "lorem ipsum dolor sit amet 247".repeat(20);
-    let limit = (247%40)+10;
+    let limit = (247 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2247,7 +2247,7 @@ fn framework_split_case_247() {
 #[test]
 fn framework_split_case_248() {
     let base = "lorem ipsum dolor sit amet 248".repeat(20);
-    let limit = (248%40)+10;
+    let limit = (248 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2256,7 +2256,7 @@ fn framework_split_case_248() {
 #[test]
 fn framework_split_case_249() {
     let base = "lorem ipsum dolor sit amet 249".repeat(20);
-    let limit = (249%40)+10;
+    let limit = (249 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2265,7 +2265,7 @@ fn framework_split_case_249() {
 #[test]
 fn framework_split_case_250() {
     let base = "lorem ipsum dolor sit amet 250".repeat(20);
-    let limit = (250%40)+10;
+    let limit = (250 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2274,7 +2274,7 @@ fn framework_split_case_250() {
 #[test]
 fn framework_split_case_251() {
     let base = "lorem ipsum dolor sit amet 251".repeat(20);
-    let limit = (251%40)+10;
+    let limit = (251 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2283,7 +2283,7 @@ fn framework_split_case_251() {
 #[test]
 fn framework_split_case_252() {
     let base = "lorem ipsum dolor sit amet 252".repeat(20);
-    let limit = (252%40)+10;
+    let limit = (252 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2292,7 +2292,7 @@ fn framework_split_case_252() {
 #[test]
 fn framework_split_case_253() {
     let base = "lorem ipsum dolor sit amet 253".repeat(20);
-    let limit = (253%40)+10;
+    let limit = (253 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2301,7 +2301,7 @@ fn framework_split_case_253() {
 #[test]
 fn framework_split_case_254() {
     let base = "lorem ipsum dolor sit amet 254".repeat(20);
-    let limit = (254%40)+10;
+    let limit = (254 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2310,7 +2310,7 @@ fn framework_split_case_254() {
 #[test]
 fn framework_split_case_255() {
     let base = "lorem ipsum dolor sit amet 255".repeat(20);
-    let limit = (255%40)+10;
+    let limit = (255 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2319,7 +2319,7 @@ fn framework_split_case_255() {
 #[test]
 fn framework_split_case_256() {
     let base = "lorem ipsum dolor sit amet 256".repeat(20);
-    let limit = (256%40)+10;
+    let limit = (256 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2328,7 +2328,7 @@ fn framework_split_case_256() {
 #[test]
 fn framework_split_case_257() {
     let base = "lorem ipsum dolor sit amet 257".repeat(20);
-    let limit = (257%40)+10;
+    let limit = (257 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2337,7 +2337,7 @@ fn framework_split_case_257() {
 #[test]
 fn framework_split_case_258() {
     let base = "lorem ipsum dolor sit amet 258".repeat(20);
-    let limit = (258%40)+10;
+    let limit = (258 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2346,7 +2346,7 @@ fn framework_split_case_258() {
 #[test]
 fn framework_split_case_259() {
     let base = "lorem ipsum dolor sit amet 259".repeat(20);
-    let limit = (259%40)+10;
+    let limit = (259 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2355,7 +2355,7 @@ fn framework_split_case_259() {
 #[test]
 fn framework_split_case_260() {
     let base = "lorem ipsum dolor sit amet 260".repeat(20);
-    let limit = (260%40)+10;
+    let limit = (260 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2364,7 +2364,7 @@ fn framework_split_case_260() {
 #[test]
 fn framework_split_case_261() {
     let base = "lorem ipsum dolor sit amet 261".repeat(20);
-    let limit = (261%40)+10;
+    let limit = (261 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2373,7 +2373,7 @@ fn framework_split_case_261() {
 #[test]
 fn framework_split_case_262() {
     let base = "lorem ipsum dolor sit amet 262".repeat(20);
-    let limit = (262%40)+10;
+    let limit = (262 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2382,7 +2382,7 @@ fn framework_split_case_262() {
 #[test]
 fn framework_split_case_263() {
     let base = "lorem ipsum dolor sit amet 263".repeat(20);
-    let limit = (263%40)+10;
+    let limit = (263 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2391,7 +2391,7 @@ fn framework_split_case_263() {
 #[test]
 fn framework_split_case_264() {
     let base = "lorem ipsum dolor sit amet 264".repeat(20);
-    let limit = (264%40)+10;
+    let limit = (264 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2400,7 +2400,7 @@ fn framework_split_case_264() {
 #[test]
 fn framework_split_case_265() {
     let base = "lorem ipsum dolor sit amet 265".repeat(20);
-    let limit = (265%40)+10;
+    let limit = (265 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2409,7 +2409,7 @@ fn framework_split_case_265() {
 #[test]
 fn framework_split_case_266() {
     let base = "lorem ipsum dolor sit amet 266".repeat(20);
-    let limit = (266%40)+10;
+    let limit = (266 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2418,7 +2418,7 @@ fn framework_split_case_266() {
 #[test]
 fn framework_split_case_267() {
     let base = "lorem ipsum dolor sit amet 267".repeat(20);
-    let limit = (267%40)+10;
+    let limit = (267 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2427,7 +2427,7 @@ fn framework_split_case_267() {
 #[test]
 fn framework_split_case_268() {
     let base = "lorem ipsum dolor sit amet 268".repeat(20);
-    let limit = (268%40)+10;
+    let limit = (268 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2436,7 +2436,7 @@ fn framework_split_case_268() {
 #[test]
 fn framework_split_case_269() {
     let base = "lorem ipsum dolor sit amet 269".repeat(20);
-    let limit = (269%40)+10;
+    let limit = (269 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2445,7 +2445,7 @@ fn framework_split_case_269() {
 #[test]
 fn framework_split_case_270() {
     let base = "lorem ipsum dolor sit amet 270".repeat(20);
-    let limit = (270%40)+10;
+    let limit = (270 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2454,7 +2454,7 @@ fn framework_split_case_270() {
 #[test]
 fn framework_split_case_271() {
     let base = "lorem ipsum dolor sit amet 271".repeat(20);
-    let limit = (271%40)+10;
+    let limit = (271 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2463,7 +2463,7 @@ fn framework_split_case_271() {
 #[test]
 fn framework_split_case_272() {
     let base = "lorem ipsum dolor sit amet 272".repeat(20);
-    let limit = (272%40)+10;
+    let limit = (272 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2472,7 +2472,7 @@ fn framework_split_case_272() {
 #[test]
 fn framework_split_case_273() {
     let base = "lorem ipsum dolor sit amet 273".repeat(20);
-    let limit = (273%40)+10;
+    let limit = (273 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2481,7 +2481,7 @@ fn framework_split_case_273() {
 #[test]
 fn framework_split_case_274() {
     let base = "lorem ipsum dolor sit amet 274".repeat(20);
-    let limit = (274%40)+10;
+    let limit = (274 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2490,7 +2490,7 @@ fn framework_split_case_274() {
 #[test]
 fn framework_split_case_275() {
     let base = "lorem ipsum dolor sit amet 275".repeat(20);
-    let limit = (275%40)+10;
+    let limit = (275 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2499,7 +2499,7 @@ fn framework_split_case_275() {
 #[test]
 fn framework_split_case_276() {
     let base = "lorem ipsum dolor sit amet 276".repeat(20);
-    let limit = (276%40)+10;
+    let limit = (276 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2508,7 +2508,7 @@ fn framework_split_case_276() {
 #[test]
 fn framework_split_case_277() {
     let base = "lorem ipsum dolor sit amet 277".repeat(20);
-    let limit = (277%40)+10;
+    let limit = (277 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2517,7 +2517,7 @@ fn framework_split_case_277() {
 #[test]
 fn framework_split_case_278() {
     let base = "lorem ipsum dolor sit amet 278".repeat(20);
-    let limit = (278%40)+10;
+    let limit = (278 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2526,7 +2526,7 @@ fn framework_split_case_278() {
 #[test]
 fn framework_split_case_279() {
     let base = "lorem ipsum dolor sit amet 279".repeat(20);
-    let limit = (279%40)+10;
+    let limit = (279 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2535,7 +2535,7 @@ fn framework_split_case_279() {
 #[test]
 fn framework_split_case_280() {
     let base = "lorem ipsum dolor sit amet 280".repeat(20);
-    let limit = (280%40)+10;
+    let limit = (280 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2544,7 +2544,7 @@ fn framework_split_case_280() {
 #[test]
 fn framework_split_case_281() {
     let base = "lorem ipsum dolor sit amet 281".repeat(20);
-    let limit = (281%40)+10;
+    let limit = (281 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2553,7 +2553,7 @@ fn framework_split_case_281() {
 #[test]
 fn framework_split_case_282() {
     let base = "lorem ipsum dolor sit amet 282".repeat(20);
-    let limit = (282%40)+10;
+    let limit = (282 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2562,7 +2562,7 @@ fn framework_split_case_282() {
 #[test]
 fn framework_split_case_283() {
     let base = "lorem ipsum dolor sit amet 283".repeat(20);
-    let limit = (283%40)+10;
+    let limit = (283 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2571,7 +2571,7 @@ fn framework_split_case_283() {
 #[test]
 fn framework_split_case_284() {
     let base = "lorem ipsum dolor sit amet 284".repeat(20);
-    let limit = (284%40)+10;
+    let limit = (284 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2580,7 +2580,7 @@ fn framework_split_case_284() {
 #[test]
 fn framework_split_case_285() {
     let base = "lorem ipsum dolor sit amet 285".repeat(20);
-    let limit = (285%40)+10;
+    let limit = (285 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2589,7 +2589,7 @@ fn framework_split_case_285() {
 #[test]
 fn framework_split_case_286() {
     let base = "lorem ipsum dolor sit amet 286".repeat(20);
-    let limit = (286%40)+10;
+    let limit = (286 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2598,7 +2598,7 @@ fn framework_split_case_286() {
 #[test]
 fn framework_split_case_287() {
     let base = "lorem ipsum dolor sit amet 287".repeat(20);
-    let limit = (287%40)+10;
+    let limit = (287 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2607,7 +2607,7 @@ fn framework_split_case_287() {
 #[test]
 fn framework_split_case_288() {
     let base = "lorem ipsum dolor sit amet 288".repeat(20);
-    let limit = (288%40)+10;
+    let limit = (288 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2616,7 +2616,7 @@ fn framework_split_case_288() {
 #[test]
 fn framework_split_case_289() {
     let base = "lorem ipsum dolor sit amet 289".repeat(20);
-    let limit = (289%40)+10;
+    let limit = (289 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2625,7 +2625,7 @@ fn framework_split_case_289() {
 #[test]
 fn framework_split_case_290() {
     let base = "lorem ipsum dolor sit amet 290".repeat(20);
-    let limit = (290%40)+10;
+    let limit = (290 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2634,7 +2634,7 @@ fn framework_split_case_290() {
 #[test]
 fn framework_split_case_291() {
     let base = "lorem ipsum dolor sit amet 291".repeat(20);
-    let limit = (291%40)+10;
+    let limit = (291 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2643,7 +2643,7 @@ fn framework_split_case_291() {
 #[test]
 fn framework_split_case_292() {
     let base = "lorem ipsum dolor sit amet 292".repeat(20);
-    let limit = (292%40)+10;
+    let limit = (292 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2652,7 +2652,7 @@ fn framework_split_case_292() {
 #[test]
 fn framework_split_case_293() {
     let base = "lorem ipsum dolor sit amet 293".repeat(20);
-    let limit = (293%40)+10;
+    let limit = (293 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2661,7 +2661,7 @@ fn framework_split_case_293() {
 #[test]
 fn framework_split_case_294() {
     let base = "lorem ipsum dolor sit amet 294".repeat(20);
-    let limit = (294%40)+10;
+    let limit = (294 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2670,7 +2670,7 @@ fn framework_split_case_294() {
 #[test]
 fn framework_split_case_295() {
     let base = "lorem ipsum dolor sit amet 295".repeat(20);
-    let limit = (295%40)+10;
+    let limit = (295 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2679,7 +2679,7 @@ fn framework_split_case_295() {
 #[test]
 fn framework_split_case_296() {
     let base = "lorem ipsum dolor sit amet 296".repeat(20);
-    let limit = (296%40)+10;
+    let limit = (296 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2688,7 +2688,7 @@ fn framework_split_case_296() {
 #[test]
 fn framework_split_case_297() {
     let base = "lorem ipsum dolor sit amet 297".repeat(20);
-    let limit = (297%40)+10;
+    let limit = (297 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2697,7 +2697,7 @@ fn framework_split_case_297() {
 #[test]
 fn framework_split_case_298() {
     let base = "lorem ipsum dolor sit amet 298".repeat(20);
-    let limit = (298%40)+10;
+    let limit = (298 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2706,7 +2706,7 @@ fn framework_split_case_298() {
 #[test]
 fn framework_split_case_299() {
     let base = "lorem ipsum dolor sit amet 299".repeat(20);
-    let limit = (299%40)+10;
+    let limit = (299 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));
@@ -2715,7 +2715,7 @@ fn framework_split_case_299() {
 #[test]
 fn framework_split_case_300() {
     let base = "lorem ipsum dolor sit amet 300".repeat(20);
-    let limit = (300%40)+10;
+    let limit = (300 % 40) + 10;
     let chunks = split_text_by_limit(&base, limit);
     assert!(!chunks.is_empty());
     assert!(chunks.iter().all(|chunk| chunk.len() <= limit));

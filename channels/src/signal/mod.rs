@@ -207,8 +207,7 @@ impl Channel for SignalChannel {
     }
 
     async fn send(&self, target: &str, message: OutboundMessage) -> Result<MessageId> {
-        let id = if let Some(attachment) =
-            message.media.first().and_then(|m| m.file_path.as_ref())
+        let id = if let Some(attachment) = message.media.first().and_then(|m| m.file_path.as_ref())
         {
             self.send_with_attachment(target, &message.text, Path::new(attachment))
                 .await?

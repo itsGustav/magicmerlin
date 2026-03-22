@@ -1,0 +1,441 @@
+site_name: MagicMerlin Documentation
+site_description: The Rust-native OpenClaw-compatible AI agent runtime
+site_url: https://docs.magicmerlin.dev
+repo_url: https://github.com/magicmerlin/magicmerlin
+repo_name: magicmerlin/magicmerlin
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - tags
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/magicmerlin/magicmerlin
+  generator: false
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Getting Started: start/getting-started.md
+      - Setup: start/setup.md
+      - Onboarding (macOS App): start/onboarding.md
+      - Onboarding Overview: start/onboarding-overview.md
+      - Agent Bootstrapping: start/bootstrapping.md
+      - Personal Assistant Setup: start/openclaw.md
+      - Onboarding Wizard (CLI): start/wizard.md
+      - CLI Automation: start/wizard-cli-automation.md
+      - CLI Onboarding Reference: start/wizard-cli-reference.md
+      - Docs directory: start/docs-directory.md
+      - Docs Hubs: start/hubs.md
+      - OpenClaw Lore: start/lore.md
+      - Showcase: start/showcase.md
+  - Installation:
+      - Install: install/index.md
+      - Node.js: install/node.md
+      - Docker: install/docker.md
+      - Podman: install/podman.md
+      - Nix: install/nix.md
+      - Bun (Experimental): install/bun.md
+      - Ansible: install/ansible.md
+      - Fly.io: install/fly.md
+      - GCP: install/gcp.md
+      - Hetzner: install/hetzner.md
+      - Deploy on Railway: install/railway.md
+      - Deploy on Render: install/render.md
+      - Deploy on Northflank: install/northflank.md
+      - exe.dev: install/exe-dev.md
+      - macOS VMs: install/macos-vm.md
+      - Installer Internals: install/installer.md
+      - Development Channels: install/development-channels.md
+      - Migration Guide: install/migrating.md
+      - Updating: install/updating.md
+      - Uninstall: install/uninstall.md
+  - Concepts:
+      - Agent Runtime: concepts/agent.md
+      - Agent Loop: concepts/agent-loop.md
+      - Agent Workspace: concepts/agent-workspace.md
+      - Gateway Architecture: concepts/architecture.md
+      - Compaction: concepts/compaction.md
+      - Context: concepts/context.md
+      - Features: concepts/features.md
+      - Markdown Formatting: concepts/markdown-formatting.md
+      - Memory: concepts/memory.md
+      - Messages: concepts/messages.md
+      - Model Failover: concepts/model-failover.md
+      - Model Providers: concepts/model-providers.md
+      - Models CLI: concepts/models.md
+      - Multi-Agent Routing: concepts/multi-agent.md
+      - OAuth: concepts/oauth.md
+      - Presence: concepts/presence.md
+      - Command Queue: concepts/queue.md
+      - Retry Policy: concepts/retry.md
+      - Session Management: concepts/session.md
+      - Session Pruning: concepts/session-pruning.md
+      - Session Tools: concepts/session-tool.md
+      - Streaming and Chunking: concepts/streaming.md
+      - System Prompt: concepts/system-prompt.md
+      - Timezones: concepts/timezone.md
+      - TypeBox: concepts/typebox.md
+      - Typing Indicators: concepts/typing-indicators.md
+      - Usage Tracking: concepts/usage-tracking.md
+  - CLI Reference:
+      - CLI Reference: cli/index.md
+      - acp: cli/acp.md
+      - agent: cli/agent.md
+      - agents: cli/agents.md
+      - approvals: cli/approvals.md
+      - browser: cli/browser.md
+      - channels: cli/channels.md
+      - clawbot: cli/clawbot.md
+      - completion: cli/completion.md
+      - config: cli/config.md
+      - configure: cli/configure.md
+      - cron: cli/cron.md
+      - daemon: cli/daemon.md
+      - dashboard: cli/dashboard.md
+      - devices: cli/devices.md
+      - directory: cli/directory.md
+      - dns: cli/dns.md
+      - docs: cli/docs.md
+      - doctor: cli/doctor.md
+      - gateway: cli/gateway.md
+      - health: cli/health.md
+      - hooks: cli/hooks.md
+      - logs: cli/logs.md
+      - memory: cli/memory.md
+      - message: cli/message.md
+      - models: cli/models.md
+      - node: cli/node.md
+      - nodes: cli/nodes.md
+      - onboard: cli/onboard.md
+      - pairing: cli/pairing.md
+      - plugins: cli/plugins.md
+      - qr: cli/qr.md
+      - reset: cli/reset.md
+      - Sandbox CLI: cli/sandbox.md
+      - secrets: cli/secrets.md
+      - security: cli/security.md
+      - sessions: cli/sessions.md
+      - setup: cli/setup.md
+      - skills: cli/skills.md
+      - status: cli/status.md
+      - system: cli/system.md
+      - tui: cli/tui.md
+      - uninstall: cli/uninstall.md
+      - update: cli/update.md
+      - voicecall: cli/voicecall.md
+      - webhooks: cli/webhooks.md
+  - Gateway:
+      - Gateway Runbook: gateway/index.md
+      - Authentication: gateway/authentication.md
+      - Background Exec and Process Tool: gateway/background-process.md
+      - Bonjour Discovery: gateway/bonjour.md
+      - Bridge Protocol: gateway/bridge-protocol.md
+      - CLI Backends: gateway/cli-backends.md
+      - Configuration: gateway/configuration.md
+      - Configuration Examples: gateway/configuration-examples.md
+      - Configuration Reference: gateway/configuration-reference.md
+      - Discovery and Transports: gateway/discovery.md
+      - Doctor: gateway/doctor.md
+      - Gateway Lock: gateway/gateway-lock.md
+      - Health Checks: gateway/health.md
+      - Heartbeat: gateway/heartbeat.md
+      - Local Models: gateway/local-models.md
+      - Logging: gateway/logging.md
+      - Multiple Gateways: gateway/multiple-gateways.md
+      - Network model: gateway/network-model.md
+      - OpenAI Chat Completions: gateway/openai-http-api.md
+      - OpenResponses API: gateway/openresponses-http-api.md
+      - Gateway-Owned Pairing: gateway/pairing.md
+      - Gateway Protocol: gateway/protocol.md
+      - Remote Access: gateway/remote.md
+      - Remote Gateway Setup: gateway/remote-gateway-readme.md
+      - Sandbox vs Tool Policy vs Elevated: gateway/sandbox-vs-tool-policy-vs-elevated.md
+      - Sandboxing: gateway/sandboxing.md
+      - Secrets Management: gateway/secrets.md
+      - Secrets Apply Plan Contract: gateway/secrets-plan-contract.md
+      - Security: gateway/security/index.md
+      - Tailscale: gateway/tailscale.md
+      - Tools Invoke API: gateway/tools-invoke-http-api.md
+      - Troubleshooting: gateway/troubleshooting.md
+      - Trusted Proxy Auth: gateway/trusted-proxy-auth.md
+  - Tools:
+      - Tools: tools/index.md
+      - ACP Agents: tools/acp-agents.md
+      - Agent Send: tools/agent-send.md
+      - apply_patch Tool: tools/apply-patch.md
+      - Browser (OpenClaw-managed): tools/browser.md
+      - Browser Troubleshooting: tools/browser-linux-troubleshooting.md
+      - Browser Login: tools/browser-login.md
+      - Chrome Extension: tools/chrome-extension.md
+      - ClawHub: tools/clawhub.md
+      - Creating Skills: tools/creating-skills.md
+      - Diffs: tools/diffs.md
+      - Elevated Mode: tools/elevated.md
+      - Exec Tool: tools/exec.md
+      - Exec Approvals: tools/exec-approvals.md
+      - Firecrawl: tools/firecrawl.md
+      - LLM Task: tools/llm-task.md
+      - Lobster: tools/lobster.md
+      - Tool-loop detection: tools/loop-detection.md
+      - Multi-Agent Sandbox & Tools: tools/multi-agent-sandbox-tools.md
+      - PDF Tool: tools/pdf.md
+      - Plugins: tools/plugin.md
+      - Reactions: tools/reactions.md
+      - Skills: tools/skills.md
+      - Skills Config: tools/skills-config.md
+      - Slash Commands: tools/slash-commands.md
+      - Sub-Agents: tools/subagents.md
+      - Thinking Levels: tools/thinking.md
+      - Web Tools: tools/web.md
+  - Channels:
+      - Chat Channels: channels/index.md
+      - BlueBubbles: channels/bluebubbles.md
+      - Broadcast Groups: channels/broadcast-groups.md
+      - Channel Routing: channels/channel-routing.md
+      - Discord: channels/discord.md
+      - Feishu: channels/feishu.md
+      - Google Chat: channels/googlechat.md
+      - Group Messages: channels/group-messages.md
+      - Groups: channels/groups.md
+      - iMessage: channels/imessage.md
+      - IRC: channels/irc.md
+      - LINE: channels/line.md
+      - Channel Location Parsing: channels/location.md
+      - Matrix: channels/matrix.md
+      - Mattermost: channels/mattermost.md
+      - Microsoft Teams: channels/msteams.md
+      - Nextcloud Talk: channels/nextcloud-talk.md
+      - Nostr: channels/nostr.md
+      - Pairing: channels/pairing.md
+      - Signal: channels/signal.md
+      - Slack: channels/slack.md
+      - Synology Chat: channels/synology-chat.md
+      - Telegram: channels/telegram.md
+      - Tlon: channels/tlon.md
+      - Channel Troubleshooting: channels/troubleshooting.md
+      - Twitch: channels/twitch.md
+      - WhatsApp: channels/whatsapp.md
+      - Zalo: channels/zalo.md
+      - Zalo Personal: channels/zalouser.md
+  - Providers:
+      - Model Providers: providers/index.md
+      - Model Provider Quickstart: providers/models.md
+      - Anthropic: providers/anthropic.md
+      - Amazon Bedrock: providers/bedrock.md
+      - Claude Max API Proxy: providers/claude-max-api-proxy.md
+      - Cloudflare AI Gateway: providers/cloudflare-ai-gateway.md
+      - Deepgram: providers/deepgram.md
+      - GitHub Copilot: providers/github-copilot.md
+      - GLM Models: providers/glm.md
+      - Hugging Face (Inference): providers/huggingface.md
+      - Kilocode: providers/kilocode.md
+      - LiteLLM: providers/litellm.md
+      - MiniMax: providers/minimax.md
+      - Mistral: providers/mistral.md
+      - Moonshot AI: providers/moonshot.md
+      - NVIDIA: providers/nvidia.md
+      - Ollama: providers/ollama.md
+      - OpenAI: providers/openai.md
+      - OpenCode Zen: providers/opencode.md
+      - OpenRouter: providers/openrouter.md
+      - Qianfan: providers/qianfan.md
+      - Qwen: providers/qwen.md
+      - Synthetic: providers/synthetic.md
+      - Together: providers/together.md
+      - Venice AI: providers/venice.md
+      - Vercel AI Gateway: providers/vercel-ai-gateway.md
+      - vLLM: providers/vllm.md
+      - Xiaomi MiMo: providers/xiaomi.md
+      - Z.AI: providers/zai.md
+  - Nodes:
+      - Nodes: nodes/index.md
+      - Audio and Voice Notes: nodes/audio.md
+      - Camera Capture: nodes/camera.md
+      - Image and Media Support: nodes/images.md
+      - Location Command: nodes/location-command.md
+      - Media Understanding: nodes/media-understanding.md
+      - Talk Mode: nodes/talk.md
+      - Node Troubleshooting: nodes/troubleshooting.md
+      - Voice Wake: nodes/voicewake.md
+  - Platforms:
+      - Platforms: platforms/index.md
+      - Android App: platforms/android.md
+      - DigitalOcean: platforms/digitalocean.md
+      - iOS App: platforms/ios.md
+      - Linux App: platforms/linux.md
+      - macOS App: platforms/macos.md
+      - macOS:
+          - Gateway on macOS: platforms/mac/bundled-gateway.md
+          - Canvas: platforms/mac/canvas.md
+          - Gateway Lifecycle: platforms/mac/child-process.md
+          - macOS Dev Setup: platforms/mac/dev-setup.md
+          - Health Checks: platforms/mac/health.md
+          - Menu Bar Icon: platforms/mac/icon.md
+          - macOS Logging: platforms/mac/logging.md
+          - Menu Bar: platforms/mac/menu-bar.md
+          - Peekaboo Bridge: platforms/mac/peekaboo.md
+          - macOS Permissions: platforms/mac/permissions.md
+          - macOS Release: platforms/mac/release.md
+          - Remote Control: platforms/mac/remote.md
+          - macOS Signing: platforms/mac/signing.md
+          - Skills: platforms/mac/skills.md
+          - Voice Overlay: platforms/mac/voice-overlay.md
+          - Voice Wake: platforms/mac/voicewake.md
+          - WebChat: platforms/mac/webchat.md
+          - macOS IPC: platforms/mac/xpc.md
+      - Oracle Cloud: platforms/oracle.md
+      - Raspberry Pi: platforms/raspberry-pi.md
+      - Windows (WSL2): platforms/windows.md
+  - Automation:
+      - Auth Monitoring: automation/auth-monitoring.md
+      - Cron Jobs: automation/cron-jobs.md
+      - Cron vs Heartbeat: automation/cron-vs-heartbeat.md
+      - Gmail PubSub: automation/gmail-pubsub.md
+      - Hooks: automation/hooks.md
+      - Polls: automation/poll.md
+      - Automation Troubleshooting: automation/troubleshooting.md
+      - Webhooks: automation/webhook.md
+  - Plugins:
+      - Plugin Agent Tools: plugins/agent-tools.md
+      - Community plugins: plugins/community.md
+      - Plugin Manifest: plugins/manifest.md
+      - Voice Call Plugin: plugins/voice-call.md
+      - Zalo Personal Plugin: plugins/zalouser.md
+  - Web & Dashboard:
+      - Web: web/index.md
+      - Control UI: web/control-ui.md
+      - Dashboard: web/dashboard.md
+      - TUI: web/tui.md
+      - WebChat: web/webchat.md
+  - Reference:
+      - Default AGENTS.md: reference/AGENTS.default.md
+      - Release Checklist: reference/RELEASING.md
+      - API Usage and Costs: reference/api-usage-costs.md
+      - Credits: reference/credits.md
+      - Device Model Database: reference/device-models.md
+      - Prompt Caching: reference/prompt-caching.md
+      - RPC Adapters: reference/rpc.md
+      - Session Management Deep Dive: reference/session-management-compaction.md
+      - Templates:
+          - AGENTS.md Template: reference/templates/AGENTS.md
+          - BOOT.md Template: reference/templates/BOOT.md
+          - BOOTSTRAP.md Template: reference/templates/BOOTSTRAP.md
+          - HEARTBEAT.md Template: reference/templates/HEARTBEAT.md
+          - IDENTITY Template: reference/templates/IDENTITY.md
+          - SOUL.md Template: reference/templates/SOUL.md
+          - TOOLS.md Template: reference/templates/TOOLS.md
+          - USER Template: reference/templates/USER.md
+      - Tests: reference/test.md
+      - Token Use and Costs: reference/token-use.md
+      - Transcript Hygiene: reference/transcript-hygiene.md
+      - Onboarding Wizard Reference: reference/wizard.md
+  - Help:
+      - Help: help/index.md
+      - Debugging: help/debugging.md
+      - Environment Variables: help/environment.md
+      - FAQ: help/faq.md
+      - Scripts: help/scripts.md
+      - Testing: help/testing.md
+      - Troubleshooting: help/troubleshooting.md
+  - Security:
+      - Contributing Threat Model: security/CONTRIBUTING-THREAT-MODEL.md
+      - Threat Model Atlas: security/THREAT-MODEL-ATLAS.md
+      - Formal Verification: security/formal-verification.md
+  - Experiments:
+      - Onboarding and Config Protocol: experiments/onboarding-config-protocol.md
+      - Plans:
+          - ACP Thread Bound Agents: experiments/plans/acp-thread-bound-agents.md
+          - Unified Runtime Streaming Refactor: experiments/plans/acp-unified-streaming-refactor.md
+          - Browser Evaluate CDP Refactor: experiments/plans/browser-evaluate-cdp-refactor.md
+          - OpenResponses Gateway: experiments/plans/openresponses-gateway.md
+          - PTY and Process Supervision: experiments/plans/pty-process-supervision.md
+          - Session Binding Channel Agnostic: experiments/plans/session-binding-channel-agnostic.md
+      - Proposals:
+          - Model Config Exploration: experiments/proposals/model-config.md
+      - Research:
+          - Workspace Memory: experiments/research/memory.md
+  - Other:
+      - Brave Search: brave-search.md
+      - CI Pipeline: ci.md
+      - Date and Time: date-time.md
+      - Perplexity Sonar: perplexity.md
+      - Pi Integration Architecture: pi.md
+      - Pi Development Workflow: pi-dev.md
+      - OpenProse: prose.md
+      - Text-to-Speech: tts.md
+      - VPS Hosting: vps.md
+      - Debugging:
+          - Node + tsx Crash: debug/node-issue.md
+      - Design:
+          - Kilo Gateway Integration: design/kilo-gateway-integration.md
+      - Diagnostics:
+          - Diagnostics Flags: diagnostics/flags.md

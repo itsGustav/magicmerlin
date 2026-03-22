@@ -56,7 +56,9 @@ async fn gateway_identify_resume_and_health_progress() {
         })
         .await;
     let identify = channel.identify().await.unwrap();
-    channel.on_gateway_dispatch(42, Some("sess-42".to_string())).await;
+    channel
+        .on_gateway_dispatch(42, Some("sess-42".to_string()))
+        .await;
     let resume = channel.resume().await.unwrap();
     let health = channel.health().await;
 
@@ -91,8 +93,14 @@ async fn slash_commands_and_interaction_lifecycle_work() {
 
     let processed = channel.process_next_interaction().await.unwrap().unwrap();
     channel.defer_interaction("ix-1").await.unwrap();
-    channel.respond_to_interaction("ix-1", "status ok").await.unwrap();
-    channel.followup_interaction("ix-1", "details").await.unwrap();
+    channel
+        .respond_to_interaction("ix-1", "status ok")
+        .await
+        .unwrap();
+    channel
+        .followup_interaction("ix-1", "details")
+        .await
+        .unwrap();
     let responses = channel.interaction_responses().await;
 
     assert_eq!(processed.kind, "slash:status");
@@ -156,7 +164,10 @@ async fn thread_creation_channel_listing_and_presence_work() {
         .create_thread("channel-a", Some("guild-1"), "ops")
         .await
         .unwrap();
-    channel.update_presence("shipping discord parity").await.unwrap();
+    channel
+        .update_presence("shipping discord parity")
+        .await
+        .unwrap();
     channel
         .send_message(
             "channel-a",
@@ -184,7 +195,15 @@ async fn message_splitting_and_typing_indicator_work() {
     let channel = DiscordChannel::new(config());
     let text = "x".repeat(4500);
     channel
-        .send_message("channel-b", Some("guild-1"), "bot", message(&text), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-b",
+            Some("guild-1"),
+            "bot",
+            message(&text),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
     let history = channel
@@ -218,22 +237,46 @@ async fn allowlists_dm_policy_and_mention_gate_are_enforced() {
     let channel = DiscordChannel::new(config());
 
     let guild_denied = channel
-        .allows_inbound(ChatType::Group, Some("guild-x"), "channel-a", "user-1", Some("@magicmerlin hi"))
+        .allows_inbound(
+            ChatType::Group,
+            Some("guild-x"),
+            "channel-a",
+            "user-1",
+            Some("@magicmerlin hi"),
+        )
         .await;
     assert!(guild_denied.is_err());
 
     let channel_denied = channel
-        .allows_inbound(ChatType::Group, Some("guild-1"), "channel-x", "user-1", Some("@magicmerlin hi"))
+        .allows_inbound(
+            ChatType::Group,
+            Some("guild-1"),
+            "channel-x",
+            "user-1",
+            Some("@magicmerlin hi"),
+        )
         .await;
     assert!(channel_denied.is_err());
 
     let mention_denied = channel
-        .allows_inbound(ChatType::Group, Some("guild-1"), "channel-a", "user-1", Some("hello there"))
+        .allows_inbound(
+            ChatType::Group,
+            Some("guild-1"),
+            "channel-a",
+            "user-1",
+            Some("hello there"),
+        )
         .await;
     assert!(mention_denied.is_err());
 
     let allowed_group = channel
-        .allows_inbound(ChatType::Group, Some("guild-1"), "channel-a", "user-1", Some("@magicmerlin hello"))
+        .allows_inbound(
+            ChatType::Group,
+            Some("guild-1"),
+            "channel-a",
+            "user-1",
+            Some("@magicmerlin hello"),
+        )
         .await;
     assert!(allowed_group.is_ok());
 
@@ -247,11 +290,23 @@ async fn allowlists_dm_policy_and_mention_gate_are_enforced() {
 #[test]
 fn session_mapping_prefers_thread_then_guild_then_dm() {
     assert_eq!(
-        session_scope(ChatType::Group, Some("guild-1"), "channel-a", Some("thread-1"), "user-1"),
+        session_scope(
+            ChatType::Group,
+            Some("guild-1"),
+            "channel-a",
+            Some("thread-1"),
+            "user-1"
+        ),
         "discord:thread:thread-1"
     );
     assert_eq!(
-        session_scope(ChatType::Group, Some("guild-1"), "channel-a", None, "user-1"),
+        session_scope(
+            ChatType::Group,
+            Some("guild-1"),
+            "channel-a",
+            None,
+            "user-1"
+        ),
         "discord:guild:guild-1:channel:channel-a"
     );
     assert_eq!(
@@ -268,15 +323,39 @@ fn session_mapping_prefers_thread_then_guild_then_dm() {
 async fn bulk_delete_removes_multiple_messages() {
     let channel = DiscordChannel::new(config());
     let m1 = channel
-        .send_message("channel-a", Some("guild-1"), "bot", message("one"), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-a",
+            Some("guild-1"),
+            "bot",
+            message("one"),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
     let m2 = channel
-        .send_message("channel-a", Some("guild-1"), "bot", message("two"), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-a",
+            Some("guild-1"),
+            "bot",
+            message("two"),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
     let _m3 = channel
-        .send_message("channel-a", Some("guild-1"), "bot", message("three"), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-a",
+            Some("guild-1"),
+            "bot",
+            message("three"),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
 
@@ -299,11 +378,27 @@ async fn bulk_delete_removes_multiple_messages() {
 async fn pin_unpin_and_pinned_messages_work() {
     let channel = DiscordChannel::new(config());
     let m1 = channel
-        .send_message("channel-a", Some("guild-1"), "bot", message("pin me"), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-a",
+            Some("guild-1"),
+            "bot",
+            message("pin me"),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
     let m2 = channel
-        .send_message("channel-a", Some("guild-1"), "bot", message("pin me too"), Vec::new(), Vec::new(), None)
+        .send_message(
+            "channel-a",
+            Some("guild-1"),
+            "bot",
+            message("pin me too"),
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
         .await
         .unwrap();
 
@@ -468,7 +563,9 @@ async fn guild_management_members_roles_bans_and_permissions() {
             name: "Moderator".to_string(),
             color: 0x00FF00,
             position: 5,
-            permissions: Permissions(Permissions::KICK_MEMBERS | Permissions::BAN_MEMBERS | Permissions::MANAGE_MESSAGES),
+            permissions: Permissions(
+                Permissions::KICK_MEMBERS | Permissions::BAN_MEMBERS | Permissions::MANAGE_MESSAGES,
+            ),
             mentionable: true,
             hoist: true,
             managed: false,
@@ -556,7 +653,8 @@ async fn guild_management_members_roles_bans_and_permissions() {
     assert!(!regular_perms.has(Permissions::KICK_MEMBERS));
 
     // Ban user-3
-    gm.ban("guild-1", "user-3", Some("spamming".to_string())).await;
+    gm.ban("guild-1", "user-3", Some("spamming".to_string()))
+        .await;
     assert!(gm.is_banned("guild-1", "user-3").await);
     assert!(gm.member("guild-1", "user-3").await.is_none()); // removed from members
 
@@ -565,16 +663,19 @@ async fn guild_management_members_roles_bans_and_permissions() {
     assert!(!gm.is_banned("guild-1", "user-3").await);
 
     // Nickname update
-    gm.update_nickname("guild-1", "user-1", Some("New Nick".to_string())).await;
+    gm.update_nickname("guild-1", "user-1", Some("New Nick".to_string()))
+        .await;
     let member = gm.member("guild-1", "user-1").await.unwrap();
     assert_eq!(member.nickname.as_deref(), Some("New Nick"));
 
     // Role management on member
-    gm.add_role_to_member("guild-1", "user-1", "role-admin").await;
+    gm.add_role_to_member("guild-1", "user-1", "role-admin")
+        .await;
     let member = gm.member("guild-1", "user-1").await.unwrap();
     assert!(member.role_ids.contains(&"role-admin".to_string()));
 
-    gm.remove_role_from_member("guild-1", "user-1", "role-admin").await;
+    gm.remove_role_from_member("guild-1", "user-1", "role-admin")
+        .await;
     let member = gm.member("guild-1", "user-1").await.unwrap();
     assert!(!member.role_ids.contains(&"role-admin".to_string()));
 
@@ -879,7 +980,10 @@ async fn audit_log_record_and_query() {
 
     // Query by action
     let bans = al
-        .query("guild-1", AuditLogQuery::new().action(AuditLogAction::MemberBanAdd))
+        .query(
+            "guild-1",
+            AuditLogQuery::new().action(AuditLogAction::MemberBanAdd),
+        )
         .await;
     assert_eq!(bans.len(), 2);
 
@@ -903,7 +1007,10 @@ async fn audit_log_record_and_query() {
 
     // Verify changes recorded
     let channel_creates = al
-        .query("guild-1", AuditLogQuery::new().action(AuditLogAction::ChannelCreate))
+        .query(
+            "guild-1",
+            AuditLogQuery::new().action(AuditLogAction::ChannelCreate),
+        )
         .await;
     assert_eq!(channel_creates[0].changes.len(), 1);
     assert_eq!(channel_creates[0].changes[0].key, "name");
@@ -916,7 +1023,10 @@ async fn channel_management_create_modify_delete() {
 
     // Create text channel
     let text_ch = cm
-        .create("guild-1", CreateChannelParams::text("general").with_topic("General chat"))
+        .create(
+            "guild-1",
+            CreateChannelParams::text("general").with_topic("General chat"),
+        )
         .await;
     assert_eq!(text_ch.name, "general");
     assert_eq!(text_ch.kind, ChannelType::GuildText);
@@ -924,7 +1034,10 @@ async fn channel_management_create_modify_delete() {
 
     // Create voice channel
     let voice_ch = cm
-        .create("guild-1", CreateChannelParams::voice("Music").with_user_limit(10))
+        .create(
+            "guild-1",
+            CreateChannelParams::voice("Music").with_user_limit(10),
+        )
         .await;
     assert_eq!(voice_ch.kind, ChannelType::GuildVoice);
     assert_eq!(voice_ch.user_limit, Some(10));
@@ -938,7 +1051,9 @@ async fn channel_management_create_modify_delete() {
     let in_cat = cm
         .create(
             "guild-1",
-            CreateChannelParams::text("dev").in_category(&cat.id).with_slowmode(5),
+            CreateChannelParams::text("dev")
+                .in_category(&cat.id)
+                .with_slowmode(5),
         )
         .await;
     assert_eq!(in_cat.parent_id.as_deref(), Some(cat.id.as_str()));
@@ -1075,7 +1190,11 @@ async fn deeper_embeds_with_author_image_timestamp_and_url() {
         .url("https://example.com/release")
         .description("Major release with new features")
         .color(0x5865F2)
-        .author("MagicMerlin Bot", Some("https://example.com".to_string()), None)
+        .author(
+            "MagicMerlin Bot",
+            Some("https://example.com".to_string()),
+            None,
+        )
         .image("https://example.com/banner.png")
         .thumbnail("https://example.com/icon.png")
         .field("Features", "- Button support\n- Webhooks", false)
@@ -1086,7 +1205,10 @@ async fn deeper_embeds_with_author_image_timestamp_and_url() {
         .build();
 
     assert_eq!(embed.url.as_deref(), Some("https://example.com/release"));
-    assert_eq!(embed.image_url.as_deref(), Some("https://example.com/banner.png"));
+    assert_eq!(
+        embed.image_url.as_deref(),
+        Some("https://example.com/banner.png")
+    );
     assert_eq!(embed.timestamp.as_deref(), Some("2026-03-20T12:00:00Z"));
     assert!(embed.author.is_some());
     let author = embed.author.as_ref().unwrap();
@@ -1160,10 +1282,16 @@ fn select_menu_constructors() {
     assert_eq!(string_menu.max_values, 2);
 
     let user_menu = SelectMenu::user("pick-user");
-    assert_eq!(user_menu.kind, magicmerlin_channels::discord::components::SelectMenuKind::User);
+    assert_eq!(
+        user_menu.kind,
+        magicmerlin_channels::discord::components::SelectMenuKind::User
+    );
 
     let role_menu = SelectMenu::role("pick-role");
-    assert_eq!(role_menu.kind, magicmerlin_channels::discord::components::SelectMenuKind::Role);
+    assert_eq!(
+        role_menu.kind,
+        magicmerlin_channels::discord::components::SelectMenuKind::Role
+    );
 
     let channel_menu = SelectMenu::channel("pick-channel");
     assert_eq!(

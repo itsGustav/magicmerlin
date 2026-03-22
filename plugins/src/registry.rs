@@ -100,8 +100,8 @@ pub fn discover_plugin_manifests(roots: &[PathBuf]) -> Result<Vec<PluginManifest
         if !root.exists() {
             continue;
         }
-        let entries = fs::read_dir(root)
-            .with_context(|| format!("read plugin root {}", root.display()))?;
+        let entries =
+            fs::read_dir(root).with_context(|| format!("read plugin root {}", root.display()))?;
         for entry in entries {
             let entry = entry.with_context(|| format!("read entry in {}", root.display()))?;
             let path = entry.path();
@@ -160,14 +160,16 @@ pub fn load_registry() -> Result<PluginRegistry> {
 
     let default_roots = default_plugin_roots();
     for manifest in discover_plugin_manifests(&default_roots)? {
-        info_by_name.entry(manifest.name.clone()).or_insert(PluginInfo {
-            name: manifest.name.clone(),
-            version: manifest.version,
-            description: manifest.description,
-            enabled: true,
-            namespace: manifest.name,
-            source: "manifest".to_string(),
-        });
+        info_by_name
+            .entry(manifest.name.clone())
+            .or_insert(PluginInfo {
+                name: manifest.name.clone(),
+                version: manifest.version,
+                description: manifest.description,
+                enabled: true,
+                namespace: manifest.name,
+                source: "manifest".to_string(),
+            });
     }
 
     for entry in file_registry.plugins {
@@ -175,14 +177,16 @@ pub fn load_registry() -> Result<PluginRegistry> {
         if !entry.namespace_config.is_empty() {
             config_by_namespace.insert(namespace.clone(), entry.namespace_config);
         }
-        let plugin = info_by_name.entry(entry.name.clone()).or_insert(PluginInfo {
-            name: entry.name.clone(),
-            version: entry.version.clone().unwrap_or_else(|| "0.0.0".to_string()),
-            description: entry.description.clone().unwrap_or_default(),
-            enabled: entry.enabled,
-            namespace: namespace.clone(),
-            source: "manifest".to_string(),
-        });
+        let plugin = info_by_name
+            .entry(entry.name.clone())
+            .or_insert(PluginInfo {
+                name: entry.name.clone(),
+                version: entry.version.clone().unwrap_or_else(|| "0.0.0".to_string()),
+                description: entry.description.clone().unwrap_or_default(),
+                enabled: entry.enabled,
+                namespace: namespace.clone(),
+                source: "manifest".to_string(),
+            });
 
         plugin.enabled = entry.enabled;
         if let Some(version) = entry.version {
@@ -204,8 +208,7 @@ pub fn load_registry() -> Result<PluginRegistry> {
 pub fn save_registry(registry: &PluginRegistry) -> Result<()> {
     let file_path = registry_path();
     if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("create dir {}", parent.display()))?;
+        fs::create_dir_all(parent).with_context(|| format!("create dir {}", parent.display()))?;
     }
 
     let mut seen = BTreeSet::new();

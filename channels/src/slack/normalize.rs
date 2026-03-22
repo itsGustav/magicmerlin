@@ -9,10 +9,7 @@ use crate::framework::{ChatType, InboundMessage, MediaAttachment, MediaType, Pla
 ///
 /// Handles: `message`, `app_mention`, `message_changed`, `message_deleted`.
 /// Returns `None` for bot messages, subtypes we don't handle, or invalid payloads.
-pub fn normalize_slack_event(
-    event: &Value,
-    bot_user_id: Option<&str>,
-) -> Option<InboundMessage> {
+pub fn normalize_slack_event(event: &Value, bot_user_id: Option<&str>) -> Option<InboundMessage> {
     let event_type = event["type"].as_str()?;
 
     // Skip bot messages

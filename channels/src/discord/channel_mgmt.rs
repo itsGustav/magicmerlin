@@ -321,11 +321,7 @@ impl ChannelManager {
     }
 
     /// List channels of a specific type in a guild.
-    pub async fn list_by_type(
-        &self,
-        guild_id: &str,
-        kind: ChannelType,
-    ) -> Vec<ManagedChannel> {
+    pub async fn list_by_type(&self, guild_id: &str, kind: ChannelType) -> Vec<ManagedChannel> {
         self.channels
             .read()
             .await

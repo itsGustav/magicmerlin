@@ -108,7 +108,12 @@ impl DiscordEmbedBuilder {
         self
     }
 
-    pub fn field(mut self, name: impl Into<String>, value: impl Into<String>, inline: bool) -> Self {
+    pub fn field(
+        mut self,
+        name: impl Into<String>,
+        value: impl Into<String>,
+        inline: bool,
+    ) -> Self {
         self.fields.push(DiscordEmbedField {
             name: name.into(),
             value: value.into(),
@@ -331,7 +336,13 @@ impl fmt::Display for DiscordGatewayState {
     }
 }
 
-pub fn session_scope(chat_type: ChatType, guild_id: Option<&str>, channel_id: &str, thread_id: Option<&str>, user_id: &str) -> String {
+pub fn session_scope(
+    chat_type: ChatType,
+    guild_id: Option<&str>,
+    channel_id: &str,
+    thread_id: Option<&str>,
+    user_id: &str,
+) -> String {
     match chat_type {
         ChatType::Direct => format!("discord:dm:{user_id}"),
         ChatType::Group => {

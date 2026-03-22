@@ -359,11 +359,7 @@ impl SessionManager {
     ///
     /// Uses the session's running token count and divides by `context_window`.
     /// If `context_window` is 0, returns 0.0.
-    pub fn estimate_context_percent(
-        &self,
-        session: &SessionRecord,
-        context_window: u64,
-    ) -> f32 {
+    pub fn estimate_context_percent(&self, session: &SessionRecord, context_window: u64) -> f32 {
         if context_window == 0 {
             return 0.0;
         }
@@ -447,7 +443,10 @@ fn extract_memory_candidates(entries: &[Value]) -> Vec<String> {
     entries
         .iter()
         .filter_map(|entry| {
-            let role = entry.get("role").and_then(Value::as_str).unwrap_or_default();
+            let role = entry
+                .get("role")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let content = entry
                 .get("content")
                 .and_then(Value::as_str)

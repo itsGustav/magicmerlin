@@ -2,11 +2,12 @@ use crate::templates;
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct DocsIndex {
     #[serde(rename = "generatedAt")]
+    #[allow(dead_code)]
     pub generated_at: String,
     pub pages: Vec<RawPage>,
 }
@@ -90,8 +91,7 @@ fn parse_page(raw: &RawPage) -> DocPage {
 pub fn generate_all(index_path: &Path, out_dir: &Path) -> Result<GenerateStats> {
     let raw = std::fs::read_to_string(index_path)
         .with_context(|| format!("reading index from {}", index_path.display()))?;
-    let index: DocsIndex =
-        serde_json::from_str(&raw).context("parsing docs index JSON")?;
+    let index: DocsIndex = serde_json::from_str(&raw).context("parsing docs index JSON")?;
 
     std::fs::create_dir_all(out_dir)?;
 
@@ -200,16 +200,10 @@ fn generate_mkdocs_yml(pages: &[DocPage]) -> String {
 
     for sec in &section_order {
         if let Some(section_pages) = nav_sections.get(*sec) {
-            let display = section_display_names
-                .get(sec)
-                .copied()
-                .unwrap_or(sec);
+            let display = section_display_names.get(sec).copied().unwrap_or(sec);
             nav_yaml.push_str(&format!("  - {}:\n", display));
             for page in section_pages {
-                nav_yaml.push_str(&format!(
-                    "    - {}: {}\n",
-                    page.title, page.rel_path
-                ));
+                nav_yaml.push_str(&format!("    - {}: {}\n", page.title, page.rel_path));
             }
         }
     }
@@ -268,10 +262,7 @@ nav:
     )
 }
 
-fn generate_coverage_json(
-    sections: &BTreeMap<String, usize>,
-    total: usize,
-) -> String {
+fn generate_coverage_json(sections: &BTreeMap<String, usize>, total: usize) -> String {
     let now = chrono::Utc::now().to_rfc3339();
     let mut section_entries = String::new();
     for (sec, count) in sections {

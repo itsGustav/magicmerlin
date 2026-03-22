@@ -42,7 +42,9 @@ pub fn parse_markdown_v2(input: &str) -> TelegramFormattedText {
             continue;
         }
 
-        if let Some((entity, consumed, content)) = parse_markdown_entity(&chars, index, text.chars().count()) {
+        if let Some((entity, consumed, content)) =
+            parse_markdown_entity(&chars, index, text.chars().count())
+        {
             text.push_str(&content);
             entities.push(entity);
             index += consumed;
@@ -81,7 +83,9 @@ pub fn parse_html(input: &str) -> TelegramFormattedText {
                 let raw = &input[index + 1..index + close];
                 let normalized = raw.trim();
                 if let Some(tag_name) = normalized.strip_prefix('/') {
-                    if let Some(position) = stack.iter().rposition(|open| tag_matches(open, tag_name)) {
+                    if let Some(position) =
+                        stack.iter().rposition(|open| tag_matches(open, tag_name))
+                    {
                         let open = stack.remove(position);
                         let end = text.chars().count();
                         if end > open.start {
@@ -131,7 +135,10 @@ pub fn format_text(text: &str, parse_mode: Option<ParseMode>) -> TelegramFormatt
 }
 
 /// Splits text into Telegram-sized chunks with continuation markers and entity preservation.
-pub fn split_formatted_text(formatted: &TelegramFormattedText, limit: usize) -> Vec<TelegramFormattedText> {
+pub fn split_formatted_text(
+    formatted: &TelegramFormattedText,
+    limit: usize,
+) -> Vec<TelegramFormattedText> {
     let limit = limit.max(1);
     let mut parts = split_parts(&formatted.text, limit);
     if parts.is_empty() {
@@ -193,7 +200,13 @@ fn parse_markdown_entity(
     text_offset: usize,
 ) -> Option<(TelegramMessageEntity, usize, String)> {
     if chars.get(start..start + 2) == Some(&['_', '_']) {
-        return parse_wrapped_entity(chars, start, "__", TelegramEntityKind::Underline, text_offset);
+        return parse_wrapped_entity(
+            chars,
+            start,
+            "__",
+            TelegramEntityKind::Underline,
+            text_offset,
+        );
     }
     if chars[start] == '*' {
         return parse_wrapped_entity(chars, start, "*", TelegramEntityKind::Bold, text_offset);
@@ -202,7 +215,13 @@ fn parse_markdown_entity(
         return parse_wrapped_entity(chars, start, "_", TelegramEntityKind::Italic, text_offset);
     }
     if chars[start] == '~' {
-        return parse_wrapped_entity(chars, start, "~", TelegramEntityKind::Strikethrough, text_offset);
+        return parse_wrapped_entity(
+            chars,
+            start,
+            "~",
+            TelegramEntityKind::Strikethrough,
+            text_offset,
+        );
     }
     if chars[start] == '`' {
         return parse_wrapped_entity(chars, start, "`", TelegramEntityKind::Code, text_offset);
@@ -319,7 +338,9 @@ fn tag_matches(open: &impl std::fmt::Debug, close_tag: &str) -> bool {
         value if value.contains("Bold") => matches!(close_tag.as_str(), "b" | "strong"),
         value if value.contains("Italic") => matches!(close_tag.as_str(), "i" | "em"),
         value if value.contains("Underline") => close_tag == "u",
-        value if value.contains("Strikethrough") => matches!(close_tag.as_str(), "s" | "strike" | "del"),
+        value if value.contains("Strikethrough") => {
+            matches!(close_tag.as_str(), "s" | "strike" | "del")
+        }
         value if value.contains("Code") => close_tag == "code",
         value if value.contains("Pre") => close_tag == "pre",
         value if value.contains("Link") => close_tag == "a",
@@ -417,7 +438,10 @@ mod tests {
         assert_eq!(formatted.text, "bold italic link");
         assert_eq!(formatted.entities.len(), 3);
         assert_eq!(formatted.entities[0].kind, TelegramEntityKind::Bold);
-        assert_eq!(formatted.entities[2].url.as_deref(), Some("https://example.com"));
+        assert_eq!(
+            formatted.entities[2].url.as_deref(),
+            Some("https://example.com")
+        );
     }
 
     #[test]
@@ -443,7 +467,9 @@ mod tests {
         };
         let chunks = split_formatted_text(&source, TELEGRAM_MAX_MESSAGE_LEN);
         assert_eq!(chunks.len(), 2);
-        assert!(chunks.iter().all(|chunk| chunk.text.chars().count() <= TELEGRAM_MAX_MESSAGE_LEN));
+        assert!(chunks
+            .iter()
+            .all(|chunk| chunk.text.chars().count() <= TELEGRAM_MAX_MESSAGE_LEN));
         assert_eq!(chunks[0].entities.len(), 1);
         assert_eq!(chunks[1].entities.len(), 1);
     }

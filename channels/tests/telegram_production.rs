@@ -79,7 +79,12 @@ fn text_update(
     }
 }
 
-fn callback_update(update_id: i64, bot_username: &str, chat_id: &str, data: &str) -> TelegramUpdate {
+fn callback_update(
+    update_id: i64,
+    bot_username: &str,
+    chat_id: &str,
+    data: &str,
+) -> TelegramUpdate {
     TelegramUpdate {
         update_id,
         bot_username: Some(format!("@{bot_username}")),
@@ -152,10 +157,16 @@ async fn multi_account_concurrent_polling_processes_updates() {
     channel.start().await.unwrap();
 
     channel
-        .ingest_update("alpha", text_update(1, "bot_alpha", "chat-a", "hello alpha", None))
+        .ingest_update(
+            "alpha",
+            text_update(1, "bot_alpha", "chat-a", "hello alpha", None),
+        )
         .await;
     channel
-        .ingest_update("beta", text_update(2, "bot_beta", "chat-b", "hello beta", None))
+        .ingest_update(
+            "beta",
+            text_update(2, "bot_beta", "chat-b", "hello beta", None),
+        )
         .await;
 
     tokio::time::sleep(tokio::time::Duration::from_millis(80)).await;
@@ -163,7 +174,9 @@ async fn multi_account_concurrent_polling_processes_updates() {
 
     let processed = channel.processed_updates().await;
     assert_eq!(processed.len(), 2);
-    assert!(processed.iter().any(|update| update.account_name == "alpha"));
+    assert!(processed
+        .iter()
+        .any(|update| update.account_name == "alpha"));
     assert!(processed.iter().any(|update| update.account_name == "beta"));
 }
 
@@ -180,7 +193,10 @@ async fn routes_updates_by_bot_username_to_correct_account() {
 
     assert!(alpha.is_empty());
     assert_eq!(beta.len(), 1);
-    assert_eq!(beta[0].message.as_ref().and_then(|m| m.text.as_deref()), Some("routed"));
+    assert_eq!(
+        beta[0].message.as_ref().and_then(|m| m.text.as_deref()),
+        Some("routed")
+    );
 }
 
 #[tokio::test]
@@ -190,7 +206,10 @@ async fn poll_once_retries_server_error_then_processes_updates() {
         .queue_poll_error("alpha", TelegramApiError::server("temporary 500"))
         .await;
     channel
-        .ingest_update("alpha", text_update(11, "bot_alpha", "chat-a", "after retry", None))
+        .ingest_update(
+            "alpha",
+            text_update(11, "bot_alpha", "chat-a", "after retry", None),
+        )
         .await;
 
     let processed = channel.poll_once("alpha").await.unwrap();
@@ -222,7 +241,11 @@ async fn media_upload_download_roundtrip_is_preserved() {
     let media = sample_media(TelegramMediaKind::Photo, "photo-roundtrip", bytes);
 
     channel
-        .send_photo(TelegramTarget::chat("media-chat"), media.clone(), Some("caption"))
+        .send_photo(
+            TelegramTarget::chat("media-chat"),
+            media.clone(),
+            Some("caption"),
+        )
         .await
         .unwrap();
 
@@ -287,7 +310,10 @@ async fn supports_inline_keyboard_callback_cycle() {
         .await
         .unwrap();
     channel
-        .ingest_update("alpha", callback_update(21, "bot_alpha", "callback-chat", "approve"))
+        .ingest_update(
+            "alpha",
+            callback_update(21, "bot_alpha", "callback-chat", "approve"),
+        )
         .await;
     let processed = channel.poll_once("alpha").await.unwrap();
     channel
@@ -304,8 +330,12 @@ async fn supports_inline_keyboard_callback_cycle() {
 
     let deliveries = channel.deliveries().await;
     assert_eq!(processed[0].callback_data.as_deref(), Some("approve"));
-    assert!(deliveries.iter().any(|delivery| delivery.keyboard.as_ref() == Some(&keyboard)));
-    assert!(deliveries.iter().any(|delivery| delivery.operation == TelegramOperation::AnswerCallbackQuery));
+    assert!(deliveries
+        .iter()
+        .any(|delivery| delivery.keyboard.as_ref() == Some(&keyboard)));
+    assert!(deliveries
+        .iter()
+        .any(|delivery| delivery.operation == TelegramOperation::AnswerCallbackQuery));
 }
 
 #[tokio::test]
@@ -340,7 +370,10 @@ async fn markdown_and_html_entities_are_preserved_on_delivery() {
     assert_eq!(deliveries[0].entities.len(), 2);
     assert_eq!(deliveries[1].entities.len(), 2);
     assert_eq!(deliveries[0].entities[0].offset, 0);
-    assert_eq!(deliveries[1].entities[1].url.as_deref(), Some("https://example.com"));
+    assert_eq!(
+        deliveries[1].entities[1].url.as_deref(),
+        Some("https://example.com")
+    );
 }
 
 #[tokio::test]
@@ -361,7 +394,9 @@ async fn long_messages_are_split_with_continuation_markers() {
     let deliveries = send_text_deliveries(&channel).await;
     assert!(deliveries.len() > 1);
     assert!(deliveries[0].text.as_deref().unwrap().starts_with("[1/"));
-    assert!(deliveries.iter().all(|delivery| delivery.text.as_ref().unwrap().len() <= 4096));
+    assert!(deliveries
+        .iter()
+        .all(|delivery| delivery.text.as_ref().unwrap().len() <= 4096));
 }
 
 #[tokio::test]
@@ -388,8 +423,7 @@ async fn reactions_are_parsed_and_sent() {
 
     assert_eq!(counts[0].count, 1);
     assert!(deliveries.iter().any(|delivery| {
-        delivery.operation == TelegramOperation::SetMessageReaction
-            && delivery.reactions.len() == 2
+        delivery.operation == TelegramOperation::SetMessageReaction && delivery.reactions.len() == 2
     }));
 }
 
@@ -454,7 +488,9 @@ async fn location_and_poll_requests_are_supported() {
         .unwrap();
 
     let deliveries = channel.deliveries_for_chat("map-chat").await;
-    assert!(deliveries.iter().any(|delivery| delivery.operation == TelegramOperation::SendLocation));
+    assert!(deliveries
+        .iter()
+        .any(|delivery| delivery.operation == TelegramOperation::SendLocation));
     assert!(deliveries.iter().any(|delivery| {
         delivery.operation == TelegramOperation::SendPoll
             && delivery.poll.as_ref().unwrap().kind == TelegramPollKind::Quiz
@@ -522,12 +558,18 @@ async fn group_member_management_and_permissions_are_supported() {
         .ban_member(TelegramTarget::chat("group-chat"), "user-9")
         .await
         .unwrap();
-    let banned = channel.get_chat_member("group-chat", "user-9").await.unwrap();
+    let banned = channel
+        .get_chat_member("group-chat", "user-9")
+        .await
+        .unwrap();
     channel
         .kick_member(TelegramTarget::chat("group-chat"), "user-9")
         .await
         .unwrap();
-    let kicked = channel.get_chat_member("group-chat", "user-9").await.unwrap();
+    let kicked = channel
+        .get_chat_member("group-chat", "user-9")
+        .await
+        .unwrap();
     let granted = channel
         .bot_has_permissions(
             "group-chat",
@@ -562,7 +604,15 @@ async fn quote_forwarding_is_recorded() {
 
     let deliveries = channel.deliveries_for_chat("quote-chat").await;
     assert_eq!(deliveries[0].operation, TelegramOperation::ForwardMessage);
-    assert_eq!(deliveries[0].quote_forward.as_ref().unwrap().quote.as_deref(), Some("quoted"));
+    assert_eq!(
+        deliveries[0]
+            .quote_forward
+            .as_ref()
+            .unwrap()
+            .quote
+            .as_deref(),
+        Some("quoted")
+    );
 }
 
 #[tokio::test]
@@ -595,7 +645,11 @@ async fn webhook_router_accepts_updates_and_polling_fallback_recovers() {
     config.webhook_fallback_to_polling = true;
     let mut channel = TelegramChannel::new(config);
     channel
-        .set_webhook("alpha", "https://example.com/telegram", Some("secret-alpha"))
+        .set_webhook(
+            "alpha",
+            "https://example.com/telegram",
+            Some("secret-alpha"),
+        )
         .await
         .unwrap();
 
@@ -608,7 +662,8 @@ async fn webhook_router_accepts_updates_and_polling_fallback_recovers() {
                 .header("x-telegram-bot-api-secret-token", "secret-alpha")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    serde_json::to_vec(&text_update(61, "bot_alpha", "hook-chat", "webhook", None)).unwrap(),
+                    serde_json::to_vec(&text_update(61, "bot_alpha", "hook-chat", "webhook", None))
+                        .unwrap(),
                 ))
                 .unwrap(),
         )
@@ -619,7 +674,10 @@ async fn webhook_router_accepts_updates_and_polling_fallback_recovers() {
     channel.start().await.unwrap();
     channel.simulate_webhook_failure("alpha").await.unwrap();
     channel
-        .ingest_update("alpha", text_update(62, "bot_alpha", "hook-chat", "fallback", None))
+        .ingest_update(
+            "alpha",
+            text_update(62, "bot_alpha", "hook-chat", "fallback", None),
+        )
         .await;
     tokio::time::sleep(tokio::time::Duration::from_millis(80)).await;
     channel.stop().await.unwrap();

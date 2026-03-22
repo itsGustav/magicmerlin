@@ -734,11 +734,7 @@ async fn main() -> Result<()> {
                                     "{}\t{}\t{}",
                                     p.name,
                                     p.version.as_str(),
-                                    if p.enabled {
-                                        "enabled"
-                                    } else {
-                                        "disabled"
-                                    }
+                                    if p.enabled { "enabled" } else { "disabled" }
                                 );
                             }
                         }
@@ -2021,34 +2017,66 @@ async fn dispatch_ws_method(
         "approvals.approve" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { code: String, #[serde(default)] agent: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            approvals::set_approvals(&state.db_path, vec![approvals::ApprovalFileEntry {
-                agent: p.agent.clone(),
-                key: p.code.clone(),
-                value: "allow".to_string(),
-            }]).await.map_err(|e| RpcError::Internal(e.to_string()))?;
-            Ok(serde_json::json!({ "ok": true, "code": p.code, "decision": "approved", "agent": p.agent }))
+            struct Params {
+                code: String,
+                #[serde(default)]
+                agent: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            approvals::set_approvals(
+                &state.db_path,
+                vec![approvals::ApprovalFileEntry {
+                    agent: p.agent.clone(),
+                    key: p.code.clone(),
+                    value: "allow".to_string(),
+                }],
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(
+                serde_json::json!({ "ok": true, "code": p.code, "decision": "approved", "agent": p.agent }),
+            )
         }
         "approvals.deny" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { code: String, #[serde(default)] agent: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            approvals::set_approvals(&state.db_path, vec![approvals::ApprovalFileEntry {
-                agent: p.agent.clone(),
-                key: p.code.clone(),
-                value: "deny".to_string(),
-            }]).await.map_err(|e| RpcError::Internal(e.to_string()))?;
-            Ok(serde_json::json!({ "ok": true, "code": p.code, "decision": "denied", "agent": p.agent }))
+            struct Params {
+                code: String,
+                #[serde(default)]
+                agent: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            approvals::set_approvals(
+                &state.db_path,
+                vec![approvals::ApprovalFileEntry {
+                    agent: p.agent.clone(),
+                    key: p.code.clone(),
+                    value: "deny".to_string(),
+                }],
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
+            Ok(
+                serde_json::json!({ "ok": true, "code": p.code, "decision": "denied", "agent": p.agent }),
+            )
         }
         "approvals.pending" => {
             let data = approvals::get_approvals(&state.db_path)
                 .await
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            let pending: Vec<_> = data.approvals.iter()
+            let pending: Vec<_> = data
+                .approvals
+                .iter()
                 .filter(|a| a.value != "allow" && a.value != "deny")
                 .collect();
             Ok(serde_json::json!({ "pending": pending, "count": pending.len() }))
@@ -2142,12 +2170,23 @@ async fn dispatch_ws_method(
                 #[serde(default)]
                 agent: Option<String>,
             }
-            fn default_mem_limit() -> usize { 20 }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            fn default_mem_limit() -> usize {
+                20
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let agent = p.agent.as_deref().unwrap_or("merlin");
             let cfg = state.config.lock().await;
-            let mem_dir = cfg.state_paths().state_dir.join("agents").join(agent).join("memory");
+            let mem_dir = cfg
+                .state_paths()
+                .state_dir
+                .join("agents")
+                .join(agent)
+                .join("memory");
             drop(cfg);
             let matches = search_memory_files(&mem_dir, &p.query, p.limit).await;
             Ok(serde_json::json!({ "matches": matches, "query": p.query, "count": matches.len() }))
@@ -2160,11 +2199,20 @@ async fn dispatch_ws_method(
                 #[serde(default)]
                 agent: Option<String>,
             }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let agent = p.agent.as_deref().unwrap_or("merlin");
             let cfg = state.config.lock().await;
-            let mem_dir = cfg.state_paths().state_dir.join("agents").join(agent).join("memory");
+            let mem_dir = cfg
+                .state_paths()
+                .state_dir
+                .join("agents")
+                .join(agent)
+                .join("memory");
             drop(cfg);
             let file_path = mem_dir.join(&p.key);
             let content = tokio::fs::read_to_string(&file_path).await.ok();
@@ -2181,12 +2229,23 @@ async fn dispatch_ws_method(
                 #[serde(default)]
                 prefix: Option<String>,
             }
-            fn default_mem_list_limit() -> usize { 50 }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            fn default_mem_list_limit() -> usize {
+                50
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let agent = p.agent.as_deref().unwrap_or("merlin");
             let cfg = state.config.lock().await;
-            let mem_dir = cfg.state_paths().state_dir.join("agents").join(agent).join("memory");
+            let mem_dir = cfg
+                .state_paths()
+                .state_dir
+                .join("agents")
+                .join(agent)
+                .join("memory");
             drop(cfg);
             let files = list_memory_files(&mem_dir, p.prefix.as_deref(), p.limit).await;
             Ok(serde_json::json!({ "files": files, "count": files.len() }))
@@ -2196,15 +2255,33 @@ async fn dispatch_ws_method(
         "models.list" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
+            #[allow(dead_code)]
             struct Params {
                 #[serde(default)]
                 provider: Option<String>,
             }
-            let _p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let _p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let model = cfg.config().agents.defaults.model.as_deref().unwrap_or("anthropic/claude-sonnet-4-6");
-            let provider = cfg.config().agents.defaults.extra.get("provider").and_then(|v| v.as_str()).unwrap_or("anthropic");
+            let model = cfg
+                .config()
+                .agents
+                .defaults
+                .model
+                .as_deref()
+                .unwrap_or("anthropic/claude-sonnet-4-6");
+            let provider = cfg
+                .config()
+                .agents
+                .defaults
+                .extra
+                .get("provider")
+                .and_then(|v| v.as_str())
+                .unwrap_or("anthropic");
             let models_json = serde_json::json!({
                 "defaultModel": model,
                 "defaultProvider": provider,
@@ -2246,11 +2323,31 @@ async fn dispatch_ws_method(
                 #[serde(default)]
                 provider: Option<String>,
             }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let model = p.model.unwrap_or_else(|| cfg.config().agents.defaults.model.clone().unwrap_or_else(|| "anthropic/claude-sonnet-4-6".to_string()));
-            let provider = p.provider.unwrap_or_else(|| cfg.config().agents.defaults.extra.get("provider").and_then(|v| v.as_str()).unwrap_or("anthropic").to_string());
+            let model = p.model.unwrap_or_else(|| {
+                cfg.config()
+                    .agents
+                    .defaults
+                    .model
+                    .clone()
+                    .unwrap_or_else(|| "anthropic/claude-sonnet-4-6".to_string())
+            });
+            let provider = p.provider.unwrap_or_else(|| {
+                cfg.config()
+                    .agents
+                    .defaults
+                    .extra
+                    .get("provider")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("anthropic")
+                    .to_string()
+            });
             let api_key_env = match provider.as_str() {
                 "anthropic" => "ANTHROPIC_API_KEY",
                 "openai" => "OPENAI_API_KEY",
@@ -2258,7 +2355,9 @@ async fn dispatch_ws_method(
                 _ => "ANTHROPIC_API_KEY",
             };
             drop(cfg);
-            let has_key = std::env::var(api_key_env).ok().is_some_and(|k| !k.is_empty());
+            let has_key = std::env::var(api_key_env)
+                .ok()
+                .is_some_and(|k| !k.is_empty());
             let start = Instant::now();
             let (reachable, latency_ms) = if has_key {
                 let test_url = match provider.as_str() {
@@ -2267,7 +2366,9 @@ async fn dispatch_ws_method(
                     "google" => "https://generativelanguage.googleapis.com/v1/models",
                     _ => "https://api.anthropic.com/v1/messages",
                 };
-                let client = reqwest::Client::builder().timeout(Duration::from_secs(10)).build()
+                let client = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(10))
+                    .build()
                     .map_err(|e| RpcError::Internal(e.to_string()))?;
                 let resp = client.head(test_url).send().await;
                 let latency = start.elapsed().as_millis() as u64;
@@ -2297,117 +2398,194 @@ async fn dispatch_ws_method(
         "channels.list" => {
             let cfg = state.config.lock().await;
             let channels_cfg = &cfg.config().channels.values;
-            let platforms = ["telegram", "discord", "slack", "whatsapp", "signal", "imessage", "line", "web"];
+            let platforms = [
+                "telegram", "discord", "slack", "whatsapp", "signal", "imessage", "line", "web",
+            ];
             let type_map: std::collections::HashMap<&str, &str> = [
-                ("telegram", "polling"), ("discord", "gateway"), ("slack", "events"),
-                ("whatsapp", "web"), ("signal", "cli"), ("imessage", "jxa"),
-                ("line", "api"), ("web", "webhook"),
-            ].into_iter().collect();
-            let channels: Vec<Value> = platforms.iter().map(|p| {
-                let has_config = channels_cfg.get(*p).is_some_and(|v| !v.is_null());
-                let has_token = channels_cfg.get(&format!("{p}Token")).is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()))
-                    || channels_cfg.get(&format!("{p}BotToken")).is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()));
-                let status = if has_config || has_token { "configured" } else { "available" };
-                serde_json::json!({
-                    "name": p, "status": status, "type": type_map.get(p).unwrap_or(&"unknown"),
-                    "configured": has_config || has_token,
+                ("telegram", "polling"),
+                ("discord", "gateway"),
+                ("slack", "events"),
+                ("whatsapp", "web"),
+                ("signal", "cli"),
+                ("imessage", "jxa"),
+                ("line", "api"),
+                ("web", "webhook"),
+            ]
+            .into_iter()
+            .collect();
+            let channels: Vec<Value> = platforms
+                .iter()
+                .map(|p| {
+                    let has_config = channels_cfg.get(*p).is_some_and(|v| !v.is_null());
+                    let has_token = channels_cfg
+                        .get(&format!("{p}Token"))
+                        .is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()))
+                        || channels_cfg
+                            .get(&format!("{p}BotToken"))
+                            .is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()));
+                    let status = if has_config || has_token {
+                        "configured"
+                    } else {
+                        "available"
+                    };
+                    serde_json::json!({
+                        "name": p, "status": status, "type": type_map.get(p).unwrap_or(&"unknown"),
+                        "configured": has_config || has_token,
+                    })
                 })
-            }).collect();
+                .collect();
             Ok(serde_json::json!({ "channels": channels }))
         }
         "channels.status" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] channel: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                #[serde(default)]
+                channel: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
             let channels_cfg = &cfg.config().channels.values;
             let platforms: Vec<&str> = if let Some(ref ch) = p.channel {
                 vec![ch.as_str()]
             } else {
-                vec!["telegram", "discord", "slack", "whatsapp", "signal", "imessage", "line", "web"]
+                vec![
+                    "telegram", "discord", "slack", "whatsapp", "signal", "imessage", "line", "web",
+                ]
             };
-            let statuses: Vec<Value> = platforms.iter().map(|name| {
-                let configured = channels_cfg.get(*name).is_some_and(|v| !v.is_null())
-                    || channels_cfg.get(&format!("{name}Token")).is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()))
-                    || channels_cfg.get(&format!("{name}BotToken")).is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()));
-                let status = if configured { "configured" } else { "unconfigured" };
-                serde_json::json!({
-                    "name": name, "status": status, "connected": false,
-                    "lastMessage": null, "lastError": null,
+            let statuses: Vec<Value> = platforms
+                .iter()
+                .map(|name| {
+                    let configured = channels_cfg.get(*name).is_some_and(|v| !v.is_null())
+                        || channels_cfg
+                            .get(&format!("{name}Token"))
+                            .is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()))
+                        || channels_cfg
+                            .get(&format!("{name}BotToken"))
+                            .is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()));
+                    let status = if configured {
+                        "configured"
+                    } else {
+                        "unconfigured"
+                    };
+                    serde_json::json!({
+                        "name": name, "status": status, "connected": false,
+                        "lastMessage": null, "lastError": null,
+                    })
                 })
-            }).collect();
+                .collect();
             Ok(serde_json::json!({ "channels": statuses }))
         }
         "channels.login" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String, #[serde(default)] token: Option<String> }
+            struct Params {
+                channel: String,
+                #[serde(default)]
+                token: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             // Persist token to config if provided
             if let Some(ref token) = p.token {
                 let key = format!("channels.{}Token", p.channel);
                 let mut cfg = state.config.lock().await;
-                cfg.set(&key, token).map_err(|e| RpcError::Internal(e.to_string()))?;
+                cfg.set(&key, token)
+                    .map_err(|e| RpcError::Internal(e.to_string()))?;
                 cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
             }
-            emit_gateway_event(state, GatewayEvent {
-                method: "channels.login".to_string(),
-                params: serde_json::json!({"channel": p.channel}),
-                target_client: Some(client_id.to_string()),
-            }).await;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "channels.login".to_string(),
+                    params: serde_json::json!({"channel": p.channel}),
+                    target_client: Some(client_id.to_string()),
+                },
+            )
+            .await;
             Ok(serde_json::json!({ "ok": true, "channel": p.channel, "status": "login_initiated" }))
         }
         "channels.logout" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String }
+            struct Params {
+                channel: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            emit_gateway_event(state, GatewayEvent {
-                method: "channels.logout".to_string(),
-                params: serde_json::json!({"channel": p.channel}),
-                target_client: Some(client_id.to_string()),
-            }).await;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "channels.logout".to_string(),
+                    params: serde_json::json!({"channel": p.channel}),
+                    target_client: Some(client_id.to_string()),
+                },
+            )
+            .await;
             Ok(serde_json::json!({ "ok": true, "channel": p.channel, "status": "logged_out" }))
         }
         "channels.restart" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String }
+            struct Params {
+                channel: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            emit_gateway_event(state, GatewayEvent {
-                method: "channels.restart".to_string(),
-                params: serde_json::json!({"channel": p.channel}),
-                target_client: Some(client_id.to_string()),
-            }).await;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "channels.restart".to_string(),
+                    params: serde_json::json!({"channel": p.channel}),
+                    target_client: Some(client_id.to_string()),
+                },
+            )
+            .await;
             Ok(serde_json::json!({ "ok": true, "channel": p.channel, "status": "restarting" }))
         }
         "channels.send" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String, target: String, message: String, #[serde(default)] reply_to: Option<String> }
+            struct Params {
+                channel: String,
+                target: String,
+                message: String,
+                #[serde(default)]
+                reply_to: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let message_id = uuid::Uuid::new_v4().to_string();
-            emit_gateway_event(state, GatewayEvent {
-                method: "channels.outbound".to_string(),
-                params: serde_json::json!({
-                    "channel": p.channel, "target": p.target,
-                    "message": p.message, "messageId": message_id,
-                    "replyTo": p.reply_to,
-                }),
-                target_client: None,
-            }).await;
-            Ok(serde_json::json!({ "ok": true, "channel": p.channel, "target": p.target, "messageId": message_id }))
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "channels.outbound".to_string(),
+                    params: serde_json::json!({
+                        "channel": p.channel, "target": p.target,
+                        "message": p.message, "messageId": message_id,
+                        "replyTo": p.reply_to,
+                    }),
+                    target_client: None,
+                },
+            )
+            .await;
+            Ok(
+                serde_json::json!({ "ok": true, "channel": p.channel, "target": p.target, "messageId": message_id }),
+            )
         }
         "channels.react" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String, message_id: String, emoji: String }
+            struct Params {
+                channel: String,
+                message_id: String,
+                emoji: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             emit_gateway_event(state, GatewayEvent {
@@ -2415,20 +2593,31 @@ async fn dispatch_ws_method(
                 params: serde_json::json!({"channel": p.channel, "messageId": p.message_id, "emoji": p.emoji}),
                 target_client: None,
             }).await;
-            Ok(serde_json::json!({ "ok": true, "channel": p.channel, "messageId": p.message_id, "emoji": p.emoji }))
+            Ok(
+                serde_json::json!({ "ok": true, "channel": p.channel, "messageId": p.message_id, "emoji": p.emoji }),
+            )
         }
         "channels.delete" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { channel: String, message_id: String }
+            struct Params {
+                channel: String,
+                message_id: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            emit_gateway_event(state, GatewayEvent {
-                method: "channels.delete".to_string(),
-                params: serde_json::json!({"channel": p.channel, "messageId": p.message_id}),
-                target_client: None,
-            }).await;
-            Ok(serde_json::json!({ "ok": true, "channel": p.channel, "messageId": p.message_id, "deleted": true }))
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "channels.delete".to_string(),
+                    params: serde_json::json!({"channel": p.channel, "messageId": p.message_id}),
+                    target_client: None,
+                },
+            )
+            .await;
+            Ok(
+                serde_json::json!({ "ok": true, "channel": p.channel, "messageId": p.message_id, "deleted": true }),
+            )
         }
 
         // ── Pass 7: Hooks methods ───────────────────────────────
@@ -2454,7 +2643,11 @@ async fn dispatch_ws_method(
         "hooks.remove" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { url: Option<String>, #[serde(default)] id: Option<String> }
+            struct Params {
+                url: Option<String>,
+                #[serde(default)]
+                id: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             Ok(serde_json::json!({ "ok": true, "url": p.url, "id": p.id }))
@@ -2462,7 +2655,9 @@ async fn dispatch_ws_method(
         "hooks.test" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { url: String }
+            struct Params {
+                url: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             // Perform a test webhook delivery
@@ -2501,13 +2696,25 @@ async fn dispatch_ws_method(
                 #[serde(default)]
                 component: Option<String>,
             }
-            fn default_tail_lines() -> usize { 100 }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            fn default_tail_lines() -> usize {
+                100
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
             let log_dir = cfg.state_paths().logs_dir.clone();
             drop(cfg);
-            let entries = tail_log_file(&log_dir, p.lines, p.level.as_deref(), p.component.as_deref()).await;
+            let entries = tail_log_file(
+                &log_dir,
+                p.lines,
+                p.level.as_deref(),
+                p.component.as_deref(),
+            )
+            .await;
             Ok(serde_json::json!({ "entries": entries, "count": entries.len() }))
         }
         "logs.query" => {
@@ -2521,13 +2728,20 @@ async fn dispatch_ws_method(
                 #[serde(default = "default_query_limit")]
                 limit: usize,
             }
-            fn default_query_limit() -> usize { 200 }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            fn default_query_limit() -> usize {
+                200
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
             let log_dir = cfg.state_paths().logs_dir.clone();
             drop(cfg);
-            let entries = query_log_file(&log_dir, p.query.as_deref(), p.level.as_deref(), p.limit).await;
+            let entries =
+                query_log_file(&log_dir, p.query.as_deref(), p.level.as_deref(), p.limit).await;
             Ok(serde_json::json!({ "entries": entries, "count": entries.len() }))
         }
 
@@ -2539,7 +2753,9 @@ async fn dispatch_ws_method(
         "run.status" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { run_id: String }
+            struct Params {
+                run_id: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let status = state.run_queue.get_run_status(&p.run_id).await;
@@ -2559,7 +2775,9 @@ async fn dispatch_ws_method(
         "agents.get" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { name: String }
+            struct Params {
+                name: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
@@ -2571,7 +2789,13 @@ async fn dispatch_ws_method(
         "agents.add" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { name: String, #[serde(default)] model: Option<String>, #[serde(default)] description: Option<String> }
+            struct Params {
+                name: String,
+                #[serde(default)]
+                model: Option<String>,
+                #[serde(default)]
+                description: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
@@ -2579,14 +2803,21 @@ async fn dispatch_ws_method(
                 "model": p.model, "description": p.description,
             });
             let path = format!("agents.{}", p.name);
-            cfg.set(&path, &serde_json::to_string(&agent_config).unwrap_or_default())
-                .map_err(|e| RpcError::Internal(e.to_string()))?;
+            cfg.set(
+                &path,
+                &serde_json::to_string(&agent_config).unwrap_or_default(),
+            )
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
             cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
-            Ok(serde_json::json!({ "ok": true, "agent": p.name, "model": p.model, "description": p.description }))
+            Ok(
+                serde_json::json!({ "ok": true, "agent": p.name, "model": p.model, "description": p.description }),
+            )
         }
         "agents.remove" => {
             #[derive(Deserialize)]
-            struct Params { name: String }
+            struct Params {
+                name: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
@@ -2598,13 +2829,20 @@ async fn dispatch_ws_method(
         "agents.config" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { name: String, #[serde(default)] key: Option<String>, #[serde(default)] value: Option<String> }
+            struct Params {
+                name: String,
+                #[serde(default)]
+                key: Option<String>,
+                #[serde(default)]
+                value: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             if let (Some(key), Some(value)) = (&p.key, &p.value) {
                 let path = format!("agents.{}.{}", p.name, key);
                 let mut cfg = state.config.lock().await;
-                cfg.set(&path, value).map_err(|e| RpcError::Internal(e.to_string()))?;
+                cfg.set(&path, value)
+                    .map_err(|e| RpcError::Internal(e.to_string()))?;
                 cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
                 Ok(serde_json::json!({ "ok": true, "agent": p.name, "key": key, "value": value }))
             } else {
@@ -2625,7 +2863,9 @@ async fn dispatch_ws_method(
         }
         "skills.get" => {
             #[derive(Deserialize)]
-            struct Params { name: String }
+            struct Params {
+                name: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let reg = plugins::load_registry().map_err(|e| RpcError::Internal(e.to_string()))?;
@@ -2639,19 +2879,35 @@ async fn dispatch_ws_method(
         "directory.search" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { query: String, #[serde(default)] channel: Option<String>, #[serde(default = "default_dir_limit")] limit: usize }
-            fn default_dir_limit() -> usize { 25 }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                query: String,
+                #[serde(default)]
+                channel: Option<String>,
+                #[serde(default = "default_dir_limit")]
+                limit: usize,
+            }
+            fn default_dir_limit() -> usize {
+                25
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             // Search pairing DB for matching contacts
             let all = pairing::list_pairing_state(
                 &state.db_path,
                 p.channel.as_deref(),
-                None, None,
+                None,
+                None,
                 p.limit,
-            ).await.map_err(|e| RpcError::Internal(e.to_string()))?;
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
             let query_lower = p.query.to_lowercase();
-            let results: Vec<&_> = all.iter()
+            let results: Vec<&_> = all
+                .iter()
                 .filter(|entry| {
                     serde_json::to_string(entry)
                         .unwrap_or_default()
@@ -2660,12 +2916,18 @@ async fn dispatch_ws_method(
                 })
                 .take(p.limit)
                 .collect();
-            Ok(serde_json::json!({ "results": results, "query": p.query, "channel": p.channel, "count": results.len() }))
+            Ok(
+                serde_json::json!({ "results": results, "query": p.query, "channel": p.channel, "count": results.len() }),
+            )
         }
         "directory.get" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { id: String, #[serde(default)] channel: Option<String> }
+            struct Params {
+                id: String,
+                #[serde(default)]
+                channel: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             // Look up contact by peer_id in pairing DB
@@ -2675,7 +2937,9 @@ async fn dispatch_ws_method(
                 Some(&p.id),
                 None,
                 1,
-            ).await.map_err(|e| RpcError::Internal(e.to_string()))?;
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
             let contact = entries.into_iter().next();
             Ok(serde_json::json!({ "id": p.id, "contact": contact, "channel": p.channel }))
         }
@@ -2686,10 +2950,15 @@ async fn dispatch_ws_method(
             let nodes_val = cfg.get("nodes");
             let nodes: Vec<Value> = match nodes_val {
                 Some(Value::Array(arr)) => arr,
-                Some(Value::Object(map)) => map.into_iter().map(|(id, mut v)| {
-                    if let Some(obj) = v.as_object_mut() { obj.entry("id").or_insert(Value::String(id)); }
-                    v
-                }).collect(),
+                Some(Value::Object(map)) => map
+                    .into_iter()
+                    .map(|(id, mut v)| {
+                        if let Some(obj) = v.as_object_mut() {
+                            obj.entry("id").or_insert(Value::String(id));
+                        }
+                        v
+                    })
+                    .collect(),
                 _ => Vec::new(),
             };
             let count = nodes.len();
@@ -2698,21 +2967,29 @@ async fn dispatch_ws_method(
         "nodes.describe" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { id: String }
+            struct Params {
+                id: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let url = resolve_node_url(state, &p.id).await;
             match url {
                 Some(base_url) => {
-                    let client = reqwest::Client::builder().timeout(Duration::from_secs(10)).build()
+                    let client = reqwest::Client::builder()
+                        .timeout(Duration::from_secs(10))
+                        .build()
                         .map_err(|e| RpcError::Internal(e.to_string()))?;
                     match client.get(format!("{base_url}/api/describe")).send().await {
                         Ok(resp) if resp.status().is_success() => {
                             let body: Value = resp.json().await.unwrap_or(Value::Null);
                             Ok(serde_json::json!({ "id": p.id, "url": base_url, "node": body }))
                         }
-                        Ok(resp) => Ok(serde_json::json!({ "id": p.id, "url": base_url, "error": format!("HTTP {}", resp.status()) })),
-                        Err(e) => Ok(serde_json::json!({ "id": p.id, "url": base_url, "error": e.to_string() })),
+                        Ok(resp) => Ok(
+                            serde_json::json!({ "id": p.id, "url": base_url, "error": format!("HTTP {}", resp.status()) }),
+                        ),
+                        Err(e) => Ok(
+                            serde_json::json!({ "id": p.id, "url": base_url, "error": e.to_string() }),
+                        ),
                     }
                 }
                 None => Err(RpcError::InvalidParams(format!("node not found: {}", p.id))),
@@ -2721,15 +2998,34 @@ async fn dispatch_ws_method(
         "nodes.run" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { id: String, command: String, #[serde(default)] args: Vec<String>, #[serde(default)] cwd: Option<String>, #[serde(default)] timeout_ms: Option<u64> }
+            struct Params {
+                id: String,
+                command: String,
+                #[serde(default)]
+                args: Vec<String>,
+                #[serde(default)]
+                cwd: Option<String>,
+                #[serde(default)]
+                timeout_ms: Option<u64>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.id).await
+            let url = resolve_node_url(state, &p.id)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.id)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(p.timeout_ms.unwrap_or(30_000) / 1000 + 5)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(
+                    p.timeout_ms.unwrap_or(30_000) / 1000 + 5,
+                ))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let payload = serde_json::json!({ "command": p.command, "args": p.args, "cwd": p.cwd, "timeoutMs": p.timeout_ms });
-            match client.post(format!("{url}/api/run")).json(&payload).send().await {
+            match client
+                .post(format!("{url}/api/run"))
+                .json(&payload)
+                .send()
+                .await
+            {
                 Ok(resp) => {
                     let body: Value = resp.json().await.unwrap_or(Value::Null);
                     Ok(body)
@@ -2740,15 +3036,33 @@ async fn dispatch_ws_method(
         "nodes.invoke" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { id: String, #[serde(alias = "method", alias = "invokeCommand")] invoke_command: String, #[serde(default, alias = "invokeParamsJson")] params: Value, #[serde(default, alias = "invokeTimeoutMs")] timeout_ms: Option<u64> }
+            struct Params {
+                id: String,
+                #[serde(alias = "method", alias = "invokeCommand")]
+                invoke_command: String,
+                #[serde(default, alias = "invokeParamsJson")]
+                params: Value,
+                #[serde(default, alias = "invokeTimeoutMs")]
+                timeout_ms: Option<u64>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.id).await
+            let url = resolve_node_url(state, &p.id)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.id)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(p.timeout_ms.unwrap_or(30_000) / 1000 + 5)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(
+                    p.timeout_ms.unwrap_or(30_000) / 1000 + 5,
+                ))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let payload = serde_json::json!({ "command": p.invoke_command, "params": p.params, "timeoutMs": p.timeout_ms });
-            match client.post(format!("{url}/api/invoke")).json(&payload).send().await {
+            match client
+                .post(format!("{url}/api/invoke"))
+                .json(&payload)
+                .send()
+                .await
+            {
                 Ok(resp) => {
                     let body: Value = resp.json().await.unwrap_or(Value::Null);
                     Ok(body)
@@ -2759,15 +3073,32 @@ async fn dispatch_ws_method(
         "nodes.notify" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(alias = "id")] node: String, title: String, body: String, #[serde(default)] priority: Option<String>, #[serde(default)] sound: Option<String> }
+            struct Params {
+                #[serde(alias = "id")]
+                node: String,
+                title: String,
+                body: String,
+                #[serde(default)]
+                priority: Option<String>,
+                #[serde(default)]
+                sound: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.node).await
+            let url = resolve_node_url(state, &p.node)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.node)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(10)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let payload = serde_json::json!({ "title": p.title, "body": p.body, "priority": p.priority, "sound": p.sound });
-            match client.post(format!("{url}/api/notify")).json(&payload).send().await {
+            match client
+                .post(format!("{url}/api/notify"))
+                .json(&payload)
+                .send()
+                .await
+            {
                 Ok(resp) => {
                     let status = resp.status().as_u16();
                     let body: Value = resp.json().await.unwrap_or(Value::Null);
@@ -2779,49 +3110,106 @@ async fn dispatch_ws_method(
         "nodes.location_get" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(alias = "id")] node: String, #[serde(default)] desired_accuracy: Option<String>, #[serde(default)] location_timeout_ms: Option<u64> }
+            struct Params {
+                #[serde(alias = "id")]
+                node: String,
+                #[serde(default)]
+                desired_accuracy: Option<String>,
+                #[serde(default)]
+                location_timeout_ms: Option<u64>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.node).await
+            let url = resolve_node_url(state, &p.node)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.node)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(p.location_timeout_ms.unwrap_or(15_000) / 1000 + 5)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(
+                    p.location_timeout_ms.unwrap_or(15_000) / 1000 + 5,
+                ))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let mut req_url = format!("{url}/api/location");
-            if let Some(acc) = &p.desired_accuracy { req_url.push_str(&format!("?accuracy={acc}")); }
+            if let Some(acc) = &p.desired_accuracy {
+                req_url.push_str(&format!("?accuracy={acc}"));
+            }
             match client.get(&req_url).send().await {
-                Ok(resp) => { let body: Value = resp.json().await.unwrap_or(Value::Null); Ok(body) }
+                Ok(resp) => {
+                    let body: Value = resp.json().await.unwrap_or(Value::Null);
+                    Ok(body)
+                }
                 Err(e) => Err(RpcError::Internal(format!("node location_get failed: {e}"))),
             }
         }
         "nodes.screen_record" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(alias = "id")] node: String, duration_ms: u64, #[serde(default)] screen_index: Option<u32> }
+            struct Params {
+                #[serde(alias = "id")]
+                node: String,
+                duration_ms: u64,
+                #[serde(default)]
+                screen_index: Option<u32>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.node).await
+            let url = resolve_node_url(state, &p.node)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.node)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(p.duration_ms / 1000 + 30)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(p.duration_ms / 1000 + 30))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            let payload = serde_json::json!({ "durationMs": p.duration_ms, "screenIndex": p.screen_index });
-            match client.post(format!("{url}/api/screen/record")).json(&payload).send().await {
-                Ok(resp) => { let body: Value = resp.json().await.unwrap_or(Value::Null); Ok(body) }
-                Err(e) => Err(RpcError::Internal(format!("node screen_record failed: {e}"))),
+            let payload =
+                serde_json::json!({ "durationMs": p.duration_ms, "screenIndex": p.screen_index });
+            match client
+                .post(format!("{url}/api/screen/record"))
+                .json(&payload)
+                .send()
+                .await
+            {
+                Ok(resp) => {
+                    let body: Value = resp.json().await.unwrap_or(Value::Null);
+                    Ok(body)
+                }
+                Err(e) => Err(RpcError::Internal(format!(
+                    "node screen_record failed: {e}"
+                ))),
             }
         }
         "nodes.camera_snap" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(alias = "id")] node: String, #[serde(default)] facing: Option<String>, #[serde(default)] max_width: Option<u32>, #[serde(default)] quality: Option<u32> }
+            struct Params {
+                #[serde(alias = "id")]
+                node: String,
+                #[serde(default)]
+                facing: Option<String>,
+                #[serde(default)]
+                max_width: Option<u32>,
+                #[serde(default)]
+                quality: Option<u32>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
-            let url = resolve_node_url(state, &p.node).await
+            let url = resolve_node_url(state, &p.node)
+                .await
                 .ok_or_else(|| RpcError::InvalidParams(format!("node not found: {}", p.node)))?;
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(15)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(15))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let payload = serde_json::json!({ "facing": p.facing, "maxWidth": p.max_width, "quality": p.quality });
-            match client.post(format!("{url}/api/camera/snap")).json(&payload).send().await {
-                Ok(resp) => { let body: Value = resp.json().await.unwrap_or(Value::Null); Ok(body) }
+            match client
+                .post(format!("{url}/api/camera/snap"))
+                .json(&payload)
+                .send()
+                .await
+            {
+                Ok(resp) => {
+                    let body: Value = resp.json().await.unwrap_or(Value::Null);
+                    Ok(body)
+                }
                 Err(e) => Err(RpcError::Internal(format!("node camera_snap failed: {e}"))),
             }
         }
@@ -2829,12 +3217,20 @@ async fn dispatch_ws_method(
         // ── Sandbox methods ──────────────────────────────────────
         "sandbox.list" => {
             let output = tokio::process::Command::new("docker")
-                .args(["ps", "--filter", "label=magicmerlin.sandbox=true", "--format", "{{json .}}"])
-                .output().await;
+                .args([
+                    "ps",
+                    "--filter",
+                    "label=magicmerlin.sandbox=true",
+                    "--format",
+                    "{{json .}}",
+                ])
+                .output()
+                .await;
             match output {
                 Ok(o) if o.status.success() => {
                     let stdout = String::from_utf8_lossy(&o.stdout);
-                    let sandboxes: Vec<Value> = stdout.lines()
+                    let sandboxes: Vec<Value> = stdout
+                        .lines()
                         .filter_map(|line| serde_json::from_str(line).ok())
                         .collect();
                     let count = sandboxes.len();
@@ -2844,22 +3240,42 @@ async fn dispatch_ws_method(
                     let stderr = String::from_utf8_lossy(&o.stderr);
                     Ok(serde_json::json!({ "sandboxes": [], "count": 0, "error": stderr.trim() }))
                 }
-                Err(_) => Ok(serde_json::json!({ "sandboxes": [], "count": 0, "dockerAvailable": false })),
+                Err(_) => {
+                    Ok(serde_json::json!({ "sandboxes": [], "count": 0, "dockerAvailable": false }))
+                }
             }
         }
         "sandbox.start" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { name: String, #[serde(default)] image: Option<String> }
+            struct Params {
+                name: String,
+                #[serde(default)]
+                image: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let image = p.image.as_deref().unwrap_or("ubuntu:latest");
             let output = tokio::process::Command::new("docker")
-                .args(["run", "-d", "--name", &p.name, "--label", "magicmerlin.sandbox=true", image, "sleep", "infinity"])
-                .output().await.map_err(|e| RpcError::Internal(format!("docker run failed: {e}")))?;
+                .args([
+                    "run",
+                    "-d",
+                    "--name",
+                    &p.name,
+                    "--label",
+                    "magicmerlin.sandbox=true",
+                    image,
+                    "sleep",
+                    "infinity",
+                ])
+                .output()
+                .await
+                .map_err(|e| RpcError::Internal(format!("docker run failed: {e}")))?;
             if output.status.success() {
                 let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                Ok(serde_json::json!({ "ok": true, "name": p.name, "containerId": container_id, "image": image, "status": "running" }))
+                Ok(
+                    serde_json::json!({ "ok": true, "name": p.name, "containerId": container_id, "image": image, "status": "running" }),
+                )
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
                 Err(RpcError::Internal(format!("docker run failed: {stderr}")))
@@ -2867,41 +3283,68 @@ async fn dispatch_ws_method(
         }
         "sandbox.stop" => {
             #[derive(Deserialize)]
-            struct Params { name: String }
+            struct Params {
+                name: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let output = tokio::process::Command::new("docker")
                 .args(["rm", "-f", &p.name])
-                .output().await.map_err(|e| RpcError::Internal(format!("docker rm failed: {e}")))?;
-            Ok(serde_json::json!({ "ok": output.status.success(), "name": p.name, "status": "stopped" }))
+                .output()
+                .await
+                .map_err(|e| RpcError::Internal(format!("docker rm failed: {e}")))?;
+            Ok(
+                serde_json::json!({ "ok": output.status.success(), "name": p.name, "status": "stopped" }),
+            )
         }
         "sandbox.status" => {
             let output = tokio::process::Command::new("docker")
-                .args(["ps", "-a", "--filter", "label=magicmerlin.sandbox=true", "--format", "{{json .}}"])
-                .output().await;
+                .args([
+                    "ps",
+                    "-a",
+                    "--filter",
+                    "label=magicmerlin.sandbox=true",
+                    "--format",
+                    "{{json .}}",
+                ])
+                .output()
+                .await;
             match output {
                 Ok(o) if o.status.success() => {
                     let stdout = String::from_utf8_lossy(&o.stdout);
-                    let sandboxes: Vec<Value> = stdout.lines()
+                    let sandboxes: Vec<Value> = stdout
+                        .lines()
                         .filter_map(|line| serde_json::from_str(line).ok())
                         .collect();
-                    let running = sandboxes.iter().filter(|s| s.get("State").and_then(Value::as_str) == Some("running")).count();
+                    let running = sandboxes
+                        .iter()
+                        .filter(|s| s.get("State").and_then(Value::as_str) == Some("running"))
+                        .count();
                     Ok(serde_json::json!({ "sandboxes": sandboxes, "running": running }))
                 }
-                _ => Ok(serde_json::json!({ "sandboxes": [], "running": 0, "dockerAvailable": false })),
+                _ => Ok(
+                    serde_json::json!({ "sandboxes": [], "running": 0, "dockerAvailable": false }),
+                ),
             }
         }
         "sandbox.exec" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { name: String, command: String, #[serde(default)] args: Vec<String> }
+            struct Params {
+                name: String,
+                command: String,
+                #[serde(default)]
+                args: Vec<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cmd_args = vec!["exec".to_string(), p.name.clone(), p.command.clone()];
             cmd_args.extend(p.args.clone());
             let output = tokio::process::Command::new("docker")
                 .args(&cmd_args)
-                .output().await.map_err(|e| RpcError::Internal(format!("docker exec failed: {e}")))?;
+                .output()
+                .await
+                .map_err(|e| RpcError::Internal(format!("docker exec failed: {e}")))?;
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
             Ok(serde_json::json!({
@@ -2918,115 +3361,228 @@ async fn dispatch_ws_method(
         "browser.start" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] profile: Option<String>, #[serde(default)] headless: Option<bool> }
-            let _p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            #[allow(dead_code)]
+            struct Params {
+                #[serde(default)]
+                profile: Option<String>,
+                #[serde(default)]
+                headless: Option<bool>,
+            }
+            let _p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let chrome_path = cfg.get("browser.chromePath")
+            let chrome_path = cfg
+                .get("browser.chromePath")
                 .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_else(|| find_chrome_binary());
-            let debug_port = cfg.get("browser.debugPort")
+                .unwrap_or_else(find_chrome_binary);
+            let debug_port = cfg
+                .get("browser.debugPort")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(9222);
             drop(cfg);
             // Check if already running
-            let check = reqwest::Client::builder().timeout(Duration::from_secs(2)).build()
+            let check = reqwest::Client::builder()
+                .timeout(Duration::from_secs(2))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            if let Ok(resp) = check.get(format!("http://127.0.0.1:{debug_port}/json/version")).send().await {
+            if let Ok(resp) = check
+                .get(format!("http://127.0.0.1:{debug_port}/json/version"))
+                .send()
+                .await
+            {
                 if resp.status().is_success() {
                     let info: Value = resp.json().await.unwrap_or(Value::Null);
-                    return Ok(serde_json::json!({ "ok": true, "status": "already_running", "debugPort": debug_port, "info": info }));
+                    return Ok(
+                        serde_json::json!({ "ok": true, "status": "already_running", "debugPort": debug_port, "info": info }),
+                    );
                 }
             }
-            let headless_flag = if _p.headless.unwrap_or(true) { "--headless=new" } else { "--no-first-run" };
+            let headless_flag = if _p.headless.unwrap_or(true) {
+                "--headless=new"
+            } else {
+                "--no-first-run"
+            };
             let child = tokio::process::Command::new(&chrome_path)
-                .args([headless_flag, &format!("--remote-debugging-port={debug_port}"), "--disable-gpu", "--no-sandbox"])
+                .args([
+                    headless_flag,
+                    &format!("--remote-debugging-port={debug_port}"),
+                    "--disable-gpu",
+                    "--no-sandbox",
+                ])
                 .spawn();
             match child {
-                Ok(c) => Ok(serde_json::json!({ "ok": true, "status": "started", "pid": c.id(), "debugPort": debug_port })),
-                Err(e) => Err(RpcError::Internal(format!("failed to start Chrome at {chrome_path}: {e}"))),
+                Ok(c) => Ok(
+                    serde_json::json!({ "ok": true, "status": "started", "pid": c.id(), "debugPort": debug_port }),
+                ),
+                Err(e) => Err(RpcError::Internal(format!(
+                    "failed to start Chrome at {chrome_path}: {e}"
+                ))),
             }
         }
         "browser.stop" => {
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            let _ = client.get(format!("http://127.0.0.1:{debug_port}/json/close")).send().await;
+            let _ = client
+                .get(format!("http://127.0.0.1:{debug_port}/json/close"))
+                .send()
+                .await;
             // Also try pkill
-            let _ = tokio::process::Command::new("pkill").args(["-f", &format!("remote-debugging-port={debug_port}")]).output().await;
+            let _ = tokio::process::Command::new("pkill")
+                .args(["-f", &format!("remote-debugging-port={debug_port}")])
+                .output()
+                .await;
             Ok(serde_json::json!({ "ok": true, "status": "stopped" }))
         }
         "browser.status" => {
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(2)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(2))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/list")).send().await {
+            match client
+                .get(format!("http://127.0.0.1:{debug_port}/json/list"))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tabs: Vec<Value> = resp.json().await.unwrap_or_default();
-                    Ok(serde_json::json!({ "running": true, "tabs": tabs.len(), "debugPort": debug_port, "tabList": tabs }))
+                    Ok(
+                        serde_json::json!({ "running": true, "tabs": tabs.len(), "debugPort": debug_port, "tabList": tabs }),
+                    )
                 }
-                _ => Ok(serde_json::json!({ "running": false, "tabs": 0, "debugPort": debug_port })),
+                _ => {
+                    Ok(serde_json::json!({ "running": false, "tabs": 0, "debugPort": debug_port }))
+                }
             }
         }
         "browser.tabs" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] profile: Option<String> }
-            let _p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            #[allow(dead_code)]
+            struct Params {
+                #[serde(default)]
+                profile: Option<String>,
+            }
+            let _p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/list")).send().await {
+            match client
+                .get(format!("http://127.0.0.1:{debug_port}/json/list"))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tabs: Vec<Value> = resp.json().await.unwrap_or_default();
-                    let mapped: Vec<Value> = tabs.iter().map(|t| serde_json::json!({
-                        "id": t.get("id"), "title": t.get("title"),
-                        "url": t.get("url"), "type": t.get("type"),
-                    })).collect();
+                    let mapped: Vec<Value> = tabs
+                        .iter()
+                        .map(|t| {
+                            serde_json::json!({
+                                "id": t.get("id"), "title": t.get("title"),
+                                "url": t.get("url"), "type": t.get("type"),
+                            })
+                        })
+                        .collect();
                     Ok(serde_json::json!({ "tabs": mapped }))
                 }
-                _ => Err(RpcError::Internal("browser not running — use browser.start first".to_string())),
+                _ => Err(RpcError::Internal(
+                    "browser not running — use browser.start first".to_string(),
+                )),
             }
         }
         "browser.open" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { url: String, #[serde(default)] profile: Option<String> }
+            #[allow(dead_code)]
+            struct Params {
+                url: String,
+                #[serde(default)]
+                profile: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(5)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(5))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             let encoded_url = urlencoding::encode(&p.url);
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/new?{encoded_url}")).send().await {
+            match client
+                .get(format!(
+                    "http://127.0.0.1:{debug_port}/json/new?{encoded_url}"
+                ))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tab: Value = resp.json().await.unwrap_or(Value::Null);
-                    Ok(serde_json::json!({ "ok": true, "targetId": tab.get("id"), "url": p.url, "tab": tab }))
+                    Ok(
+                        serde_json::json!({ "ok": true, "targetId": tab.get("id"), "url": p.url, "tab": tab }),
+                    )
                 }
-                Ok(resp) => Err(RpcError::Internal(format!("failed to open tab: HTTP {}", resp.status()))),
+                Ok(resp) => Err(RpcError::Internal(format!(
+                    "failed to open tab: HTTP {}",
+                    resp.status()
+                ))),
                 Err(e) => Err(RpcError::Internal(format!("browser not reachable: {e}"))),
             }
         }
         "browser.navigate" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { url: String, #[serde(default)] target_id: Option<String>, #[serde(default)] tab_id: Option<String> }
+            struct Params {
+                url: String,
+                #[serde(default)]
+                target_id: Option<String>,
+                #[serde(default)]
+                tab_id: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
             let target = p.target_id.or(p.tab_id);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(10)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
             // Navigate by activating the target URL
             let endpoint = if let Some(ref tid) = target {
@@ -3040,21 +3596,47 @@ async fn dispatch_ws_method(
         "browser.screenshot" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] target_id: Option<String>, #[serde(default)] tab_id: Option<String>, #[serde(default)] full_page: Option<bool>, #[serde(default, alias = "type")] format: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                #[serde(default)]
+                target_id: Option<String>,
+                #[serde(default)]
+                tab_id: Option<String>,
+                #[serde(default)]
+                full_page: Option<bool>,
+                #[serde(default, alias = "type")]
+                format: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             // Screenshots require CDP WebSocket — return guidance
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/list")).send().await {
+            match client
+                .get(format!("http://127.0.0.1:{debug_port}/json/list"))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tabs: Vec<Value> = resp.json().await.unwrap_or_default();
                     let target = p.target_id.or(p.tab_id);
-                    let ws_url = tabs.iter()
-                        .find(|t| target.is_none() || t.get("id").and_then(Value::as_str) == target.as_deref())
+                    let ws_url = tabs
+                        .iter()
+                        .find(|t| {
+                            target.is_none()
+                                || t.get("id").and_then(Value::as_str) == target.as_deref()
+                        })
                         .and_then(|t| t.get("webSocketDebuggerUrl").and_then(Value::as_str));
                     Ok(serde_json::json!({
                         "ok": true, "targetId": target, "fullPage": p.full_page,
@@ -3069,23 +3651,40 @@ async fn dispatch_ws_method(
         "browser.act" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
+            #[allow(dead_code)]
             struct Params {
-                #[serde(default)] target_id: Option<String>,
-                #[serde(alias = "action")] request: Value,
-                #[serde(default)] profile: Option<String>,
+                #[serde(default)]
+                target_id: Option<String>,
+                #[serde(alias = "action")]
+                request: Value,
+                #[serde(default)]
+                profile: Option<String>,
             }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/list")).send().await {
+            match client
+                .get(format!("http://127.0.0.1:{debug_port}/json/list"))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tabs: Vec<Value> = resp.json().await.unwrap_or_default();
-                    let ws_url = tabs.iter()
-                        .find(|t| p.target_id.is_none() || t.get("id").and_then(Value::as_str) == p.target_id.as_deref())
+                    let ws_url = tabs
+                        .iter()
+                        .find(|t| {
+                            p.target_id.is_none()
+                                || t.get("id").and_then(Value::as_str) == p.target_id.as_deref()
+                        })
                         .and_then(|t| t.get("webSocketDebuggerUrl").and_then(Value::as_str));
                     Ok(serde_json::json!({
                         "ok": true, "targetId": p.target_id, "request": p.request,
@@ -3099,19 +3698,44 @@ async fn dispatch_ws_method(
         "browser.snapshot" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] target_id: Option<String>, #[serde(default)] profile: Option<String>, #[serde(default)] refs: Option<bool> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            #[allow(dead_code)]
+            struct Params {
+                #[serde(default)]
+                target_id: Option<String>,
+                #[serde(default)]
+                profile: Option<String>,
+                #[serde(default)]
+                refs: Option<bool>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let debug_port = cfg.get("browser.debugPort").and_then(|v| v.as_u64()).unwrap_or(9222);
+            let debug_port = cfg
+                .get("browser.debugPort")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(9222);
             drop(cfg);
-            let client = reqwest::Client::builder().timeout(Duration::from_secs(3)).build()
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .build()
                 .map_err(|e| RpcError::Internal(e.to_string()))?;
-            match client.get(format!("http://127.0.0.1:{debug_port}/json/list")).send().await {
+            match client
+                .get(format!("http://127.0.0.1:{debug_port}/json/list"))
+                .send()
+                .await
+            {
                 Ok(resp) if resp.status().is_success() => {
                     let tabs: Vec<Value> = resp.json().await.unwrap_or_default();
-                    let tab = tabs.iter()
-                        .find(|t| p.target_id.is_none() || t.get("id").and_then(Value::as_str) == p.target_id.as_deref())
+                    let tab = tabs
+                        .iter()
+                        .find(|t| {
+                            p.target_id.is_none()
+                                || t.get("id").and_then(Value::as_str) == p.target_id.as_deref()
+                        })
                         .cloned();
                     Ok(serde_json::json!({
                         "ok": true,
@@ -3130,8 +3754,16 @@ async fn dispatch_ws_method(
         "sessions.history" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { id: String, #[serde(default = "default_history_limit")] limit: usize, #[serde(default)] include_tools: Option<bool> }
-            fn default_history_limit() -> usize { 50 }
+            struct Params {
+                id: String,
+                #[serde(default = "default_history_limit")]
+                limit: usize,
+                #[serde(default)]
+                include_tools: Option<bool>,
+            }
+            fn default_history_limit() -> usize {
+                50
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let session = sessions::get_session(&state.db_path, &p.id)
@@ -3141,15 +3773,28 @@ async fn dispatch_ws_method(
             let state_dir = cfg.state_paths().state_dir.clone();
             drop(cfg);
             let transcript_path = state_dir.join("sessions").join(format!("{}.jsonl", p.id));
-            let history = read_transcript_tail(&transcript_path, p.limit, p.include_tools.unwrap_or(true)).await;
-            Ok(serde_json::json!({ "sessionId": p.id, "session": session, "history": history, "count": history.len() }))
+            let history =
+                read_transcript_tail(&transcript_path, p.limit, p.include_tools.unwrap_or(true))
+                    .await;
+            Ok(
+                serde_json::json!({ "sessionId": p.id, "session": session, "history": history, "count": history.len() }),
+            )
         }
         "sessions.yield" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] session_id: Option<String>, #[serde(default)] message: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                #[serde(default)]
+                session_id: Option<String>,
+                #[serde(default)]
+                message: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             if let Some(ref sid) = p.session_id {
                 sessions::upsert_session(
                     &state.db_path, sid, None, "yielded",
@@ -3178,11 +3823,14 @@ async fn dispatch_ws_method(
         }
         "config.import" => {
             #[derive(Deserialize)]
-            struct Params { config: Value }
+            struct Params {
+                config: Value,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
-            cfg.import_json(p.config).map_err(|e| RpcError::Internal(e.to_string()))?;
+            cfg.import_json(p.config)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
             cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({ "ok": true }))
         }
@@ -3199,20 +3847,22 @@ async fn dispatch_ws_method(
                 "presence": presence,
             }))
         }
-        "system.env" => {
-            Ok(serde_json::json!({
-                "MAGICMERLIN_STATE_DIR": std::env::var("MAGICMERLIN_STATE_DIR").ok(),
-                "MAGICMERLIN_API_KEY": std::env::var("MAGICMERLIN_API_KEY").ok().map(|_| "***"),
-                "MAGICMERLIN_DB_PATH": std::env::var("MAGICMERLIN_DB_PATH").ok(),
-                "MAGICMERLIN_CONFIG_PATH": std::env::var("MAGICMERLIN_CONFIG_PATH").ok(),
-            }))
-        }
+        "system.env" => Ok(serde_json::json!({
+            "MAGICMERLIN_STATE_DIR": std::env::var("MAGICMERLIN_STATE_DIR").ok(),
+            "MAGICMERLIN_API_KEY": std::env::var("MAGICMERLIN_API_KEY").ok().map(|_| "***"),
+            "MAGICMERLIN_DB_PATH": std::env::var("MAGICMERLIN_DB_PATH").ok(),
+            "MAGICMERLIN_CONFIG_PATH": std::env::var("MAGICMERLIN_CONFIG_PATH").ok(),
+        })),
 
         // ── Plugins install ──────────────────────────────────────
         "plugins.install" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { source: String, #[serde(default)] name: Option<String> }
+            struct Params {
+                source: String,
+                #[serde(default)]
+                name: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
@@ -3220,24 +3870,46 @@ async fn dispatch_ws_method(
             drop(cfg);
             let _ = tokio::fs::create_dir_all(&plugins_dir).await;
             let plugin_name = p.name.unwrap_or_else(|| {
-                p.source.rsplit('/').next().unwrap_or("plugin").trim_end_matches(".git").to_string()
+                p.source
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or("plugin")
+                    .trim_end_matches(".git")
+                    .to_string()
             });
             let dest = plugins_dir.join(&plugin_name);
             let output = if p.source.starts_with("http") || p.source.ends_with(".git") {
                 tokio::process::Command::new("git")
-                    .args(["clone", "--depth", "1", &p.source, &dest.to_string_lossy().as_ref()])
-                    .output().await
+                    .args([
+                        "clone",
+                        "--depth",
+                        "1",
+                        &p.source,
+                        dest.to_string_lossy().as_ref(),
+                    ])
+                    .output()
+                    .await
             } else {
                 // Local path — symlink
                 #[cfg(unix)]
-                { tokio::process::Command::new("ln").args(["-sf", &p.source, dest.to_string_lossy().as_ref()]).output().await }
+                {
+                    tokio::process::Command::new("ln")
+                        .args(["-sf", &p.source, dest.to_string_lossy().as_ref()])
+                        .output()
+                        .await
+                }
                 #[cfg(not(unix))]
-                { Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "symlink not supported")) }
+                {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::Unsupported,
+                        "symlink not supported",
+                    ))
+                }
             };
             match output {
-                Ok(o) if o.status.success() => {
-                    Ok(serde_json::json!({ "ok": true, "source": p.source, "name": plugin_name, "path": dest.to_string_lossy(), "status": "installed" }))
-                }
+                Ok(o) if o.status.success() => Ok(
+                    serde_json::json!({ "ok": true, "source": p.source, "name": plugin_name, "path": dest.to_string_lossy(), "status": "installed" }),
+                ),
                 Ok(o) => {
                     let stderr = String::from_utf8_lossy(&o.stderr).trim().to_string();
                     Err(RpcError::Internal(format!("install failed: {stderr}")))
@@ -3250,57 +3922,89 @@ async fn dispatch_ws_method(
         "subagents.list" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] recent_minutes: Option<u64> }
-            let _p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            #[allow(dead_code)]
+            struct Params {
+                #[serde(default)]
+                recent_minutes: Option<u64>,
+            }
+            let _p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let acp_sessions = state.acp.list_sessions().await;
             Ok(serde_json::json!({ "subagents": acp_sessions, "count": acp_sessions.len() }))
         }
         "subagents.steer" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { target: String, message: String }
+            struct Params {
+                target: String,
+                message: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             sessions::upsert_session(
                 &state.db_path, &p.target, None, "active",
                 Some(&serde_json::json!({"steerMessage": p.message, "steeredAt": chrono::Utc::now().timestamp()})),
             ).await.map_err(|e| RpcError::Internal(e.to_string()))?;
-            emit_gateway_event(state, GatewayEvent {
-                method: "subagents.steer".to_string(),
-                params: serde_json::json!({"target": p.target, "message": p.message}),
-                target_client: None,
-            }).await;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "subagents.steer".to_string(),
+                    params: serde_json::json!({"target": p.target, "message": p.message}),
+                    target_client: None,
+                },
+            )
+            .await;
             Ok(serde_json::json!({ "ok": true, "target": p.target }))
         }
         "subagents.kill" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { target: String }
+            struct Params {
+                target: String,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             sessions::upsert_session(
-                &state.db_path, &p.target, None, "killed",
+                &state.db_path,
+                &p.target,
+                None,
+                "killed",
                 Some(&serde_json::json!({"killedAt": chrono::Utc::now().timestamp()})),
-            ).await.map_err(|e| RpcError::Internal(e.to_string()))?;
-            emit_gateway_event(state, GatewayEvent {
-                method: "subagents.kill".to_string(),
-                params: serde_json::json!({"target": p.target}),
-                target_client: None,
-            }).await;
+            )
+            .await
+            .map_err(|e| RpcError::Internal(e.to_string()))?;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "subagents.kill".to_string(),
+                    params: serde_json::json!({"target": p.target}),
+                    target_client: None,
+                },
+            )
+            .await;
             Ok(serde_json::json!({ "ok": true, "target": p.target, "status": "killed" }))
         }
 
         // ── Gateway control aliases ─────────────────────────────
         "gateway.status" => {
-            let scheduler_state = state.scheduler.state().await.map_err(|e| RpcError::Internal(e.to_string()))?;
+            let scheduler_state = state
+                .scheduler
+                .state()
+                .await
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
             let mut presence = state.presence.lock().await.clone();
             presence.connected_clients = state.ws_state.connected_clients().await.len();
             let config = state.config.lock().await;
             let model = config.config().agents.defaults.model.clone();
             drop(config);
-            let session_count = sessions::list_sessions(&state.db_path, 1000).await
-                .map(|s| s.len()).unwrap_or(0);
+            let session_count = sessions::list_sessions(&state.db_path, 1000)
+                .await
+                .map(|s| s.len())
+                .unwrap_or(0);
             Ok(serde_json::json!({
                 "version": env!("CARGO_PKG_VERSION"),
                 "uptime": state.started_at.elapsed().as_secs(),
@@ -3315,15 +4019,28 @@ async fn dispatch_ws_method(
         "gateway.restart" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { #[serde(default)] reason: Option<String>, #[serde(default)] delay_ms: Option<u64> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                #[serde(default)]
+                reason: Option<String>,
+                #[serde(default)]
+                delay_ms: Option<u64>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let delay = p.delay_ms.unwrap_or(500);
-            emit_gateway_event(state, GatewayEvent {
-                method: "gateway.restart".to_string(),
-                params: serde_json::json!({"reason": p.reason, "delayMs": delay}),
-                target_client: None,
-            }).await;
+            emit_gateway_event(
+                state,
+                GatewayEvent {
+                    method: "gateway.restart".to_string(),
+                    params: serde_json::json!({"reason": p.reason, "delayMs": delay}),
+                    target_client: None,
+                },
+            )
+            .await;
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_millis(delay)).await;
                 std::process::exit(0);
@@ -3332,9 +4049,16 @@ async fn dispatch_ws_method(
         }
         "gateway.config.get" => {
             #[derive(Deserialize)]
-            struct Params { #[serde(default)] path: Option<String> }
-            let p: Params = serde_json::from_value(if params.is_null() { serde_json::json!({}) } else { params })
-                .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
+            struct Params {
+                #[serde(default)]
+                path: Option<String>,
+            }
+            let p: Params = serde_json::from_value(if params.is_null() {
+                serde_json::json!({})
+            } else {
+                params
+            })
+            .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
             match p.path {
                 Some(path) => Ok(serde_json::json!({ "value": cfg.get(&path), "path": path })),
@@ -3344,11 +4068,16 @@ async fn dispatch_ws_method(
         "gateway.config.patch" => {
             #[derive(Deserialize)]
             #[serde(rename_all = "camelCase")]
-            struct Params { raw: Value, #[serde(default)] note: Option<String> }
+            struct Params {
+                raw: Value,
+                #[serde(default)]
+                note: Option<String>,
+            }
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let mut cfg = state.config.lock().await;
-            cfg.import_json(p.raw).map_err(|e| RpcError::Internal(e.to_string()))?;
+            cfg.import_json(p.raw)
+                .map_err(|e| RpcError::Internal(e.to_string()))?;
             cfg.save().map_err(|e| RpcError::Internal(e.to_string()))?;
             Ok(serde_json::json!({ "ok": true, "note": p.note }))
         }
@@ -3383,7 +4112,9 @@ async fn run_agent_turn(
                 format!("model {}", name.unwrap_or_else(|| "unchanged".to_string()))
             }
             SlashCommand::Reset => "session reset requested".to_string(),
-            SlashCommand::Help { .. } => "/status /compact /reasoning /model /reset /help".to_string(),
+            SlashCommand::Help { .. } => {
+                "/status /compact /reasoning /model /reset /help".to_string()
+            }
             _ => format!("command received: {:?}", command),
         };
         return Ok(
@@ -3411,10 +4142,10 @@ async fn run_agent_turn(
     emit_gateway_event(
         state,
         GatewayEvent {
-        method: "agent.partial".to_string(),
-        params: serde_json::json!({"sessionId": session_id, "status":"queued"}),
-        target_client: Some(client_id.to_string()),
-    },
+            method: "agent.partial".to_string(),
+            params: serde_json::json!({"sessionId": session_id, "status":"queued"}),
+            target_client: Some(client_id.to_string()),
+        },
     )
     .await;
 
@@ -3424,10 +4155,10 @@ async fn run_agent_turn(
         emit_gateway_event(
             state,
             GatewayEvent {
-            method: "agent.partial".to_string(),
-            params: serde_json::json!({"sessionId": session_id_for_run, "status":"running"}),
-            target_client: Some(client_id.to_string()),
-        },
+                method: "agent.partial".to_string(),
+                params: serde_json::json!({"sessionId": session_id_for_run, "status":"running"}),
+                target_client: Some(client_id.to_string()),
+            },
         )
         .await;
         tokio::time::sleep(Duration::from_millis(120)).await;
@@ -4053,28 +4784,77 @@ async fn http_call(
         }
 
         // ── Delegate all other methods to WS dispatch ──────────
-        "memory.search" | "memory.get" | "memory.list"
-        | "models.list" | "models.set" | "models.test" | "models.status"
-        | "channels.list" | "channels.status" | "channels.login" | "channels.logout"
-        | "channels.restart" | "channels.send" | "channels.react" | "channels.delete"
-        | "hooks.list" | "hooks.add" | "hooks.remove" | "hooks.test"
-        | "logs.tail" | "logs.query"
-        | "run.list" | "run.status"
-        | "agents.list" | "agents.get" | "agents.add" | "agents.remove" | "agents.config"
-        | "skills.list" | "skills.get"
-        | "directory.search" | "directory.get"
-        | "nodes.list" | "nodes.describe" | "nodes.run" | "nodes.invoke"
-        | "nodes.notify" | "nodes.location_get" | "nodes.screen_record" | "nodes.camera_snap"
-        | "sandbox.list" | "sandbox.start" | "sandbox.stop" | "sandbox.status" | "sandbox.exec"
-        | "browser.start" | "browser.stop" | "browser.status" | "browser.navigate"
-        | "browser.screenshot" | "browser.act" | "browser.snapshot"
-        | "browser.tabs" | "browser.open"
-        | "sessions.history" | "sessions.export" | "sessions.yield"
-        | "config.list" | "config.export" | "config.import"
-        | "system.info" | "system.env" | "system.restart"
+        "memory.search"
+        | "memory.get"
+        | "memory.list"
+        | "models.list"
+        | "models.set"
+        | "models.test"
+        | "models.status"
+        | "channels.list"
+        | "channels.status"
+        | "channels.login"
+        | "channels.logout"
+        | "channels.restart"
+        | "channels.send"
+        | "channels.react"
+        | "channels.delete"
+        | "hooks.list"
+        | "hooks.add"
+        | "hooks.remove"
+        | "hooks.test"
+        | "logs.tail"
+        | "logs.query"
+        | "run.list"
+        | "run.status"
+        | "agents.list"
+        | "agents.get"
+        | "agents.add"
+        | "agents.remove"
+        | "agents.config"
+        | "skills.list"
+        | "skills.get"
+        | "directory.search"
+        | "directory.get"
+        | "nodes.list"
+        | "nodes.describe"
+        | "nodes.run"
+        | "nodes.invoke"
+        | "nodes.notify"
+        | "nodes.location_get"
+        | "nodes.screen_record"
+        | "nodes.camera_snap"
+        | "sandbox.list"
+        | "sandbox.start"
+        | "sandbox.stop"
+        | "sandbox.status"
+        | "sandbox.exec"
+        | "browser.start"
+        | "browser.stop"
+        | "browser.status"
+        | "browser.navigate"
+        | "browser.screenshot"
+        | "browser.act"
+        | "browser.snapshot"
+        | "browser.tabs"
+        | "browser.open"
+        | "sessions.history"
+        | "sessions.export"
+        | "sessions.yield"
+        | "config.list"
+        | "config.export"
+        | "config.import"
+        | "system.info"
+        | "system.env"
+        | "system.restart"
         | "plugins.install"
-        | "subagents.list" | "subagents.steer" | "subagents.kill"
-        | "gateway.status" | "gateway.restart" | "gateway.config.get" | "gateway.config.patch"
+        | "subagents.list"
+        | "subagents.steer"
+        | "subagents.kill"
+        | "gateway.status"
+        | "gateway.restart"
+        | "gateway.config.get"
+        | "gateway.config.patch"
         | "approvals.pending" => {
             match dispatch_ws_method(&state, "http-call", method_name.as_str(), req.params).await {
                 Ok(result) => (StatusCode::OK, Json(result)),
@@ -4082,7 +4862,9 @@ async fn http_call(
                     let (code_str, status_code) = match &rpc_err {
                         RpcError::InvalidParams(_) => ("invalid_params", StatusCode::BAD_REQUEST),
                         RpcError::MethodNotFound(_) => ("method_not_found", StatusCode::NOT_FOUND),
-                        RpcError::Internal(_) => ("internal_error", StatusCode::INTERNAL_SERVER_ERROR),
+                        RpcError::Internal(_) => {
+                            ("internal_error", StatusCode::INTERNAL_SERVER_ERROR)
+                        }
                         RpcError::Unauthorized => ("unauthorized", StatusCode::UNAUTHORIZED),
                     };
                     call_error_response(
@@ -4114,7 +4896,10 @@ fn is_authorized(headers: &HeaderMap) -> bool {
     let bearer = headers
         .get("authorization")
         .and_then(|v| v.to_str().ok())
-        .and_then(|raw| raw.strip_prefix("Bearer ").or_else(|| raw.strip_prefix("bearer ")))
+        .and_then(|raw| {
+            raw.strip_prefix("Bearer ")
+                .or_else(|| raw.strip_prefix("bearer "))
+        })
         .map(str::trim)
         .unwrap_or("");
 
@@ -4186,7 +4971,10 @@ async fn http_api_sessions(
     }
 
     match sessions::list_sessions(&state.db_path, query.limit).await {
-        Ok(rows) => (StatusCode::OK, Json(serde_json::json!({ "sessions": rows }))),
+        Ok(rows) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "sessions": rows })),
+        ),
         Err(err) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": format!("failed to list sessions: {err:#}")})),
@@ -4733,12 +5521,7 @@ async fn http_events(
     let limit = query.limit.unwrap_or(100).clamp(1, 500);
     let history = state.event_history.lock().await;
     let start = since.min(history.len());
-    let items: Vec<GatewayEvent> = history
-        .iter()
-        .skip(start)
-        .take(limit)
-        .cloned()
-        .collect();
+    let items: Vec<GatewayEvent> = history.iter().skip(start).take(limit).cloned().collect();
     (
         StatusCode::OK,
         Json(serde_json::json!({
@@ -4758,10 +5541,16 @@ async fn http_acp_sessions(State(state): State<AppState>, headers: HeaderMap) ->
     }
 
     let sessions = state.acp.list_sessions().await;
-    (StatusCode::OK, Json(serde_json::json!({ "sessions": sessions })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "sessions": sessions })),
+    )
 }
 
-async fn http_security_audit(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+async fn http_security_audit(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
     if !is_authorized(&headers) {
         return (
             StatusCode::UNAUTHORIZED,
@@ -4787,14 +5576,20 @@ async fn resolve_node_url(state: &AppState, node_id: &str) -> Option<String> {
                 if node.get("id").and_then(Value::as_str) == Some(node_id)
                     || node.get("name").and_then(Value::as_str) == Some(node_id)
                 {
-                    return node.get("url").and_then(Value::as_str).map(|s| s.trim_end_matches('/').to_string());
+                    return node
+                        .get("url")
+                        .and_then(Value::as_str)
+                        .map(|s| s.trim_end_matches('/').to_string());
                 }
             }
             None
         }
         Some(Value::Object(map)) => {
             if let Some(node) = map.get(node_id) {
-                return node.get("url").and_then(Value::as_str).map(|s| s.trim_end_matches('/').to_string());
+                return node
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .map(|s| s.trim_end_matches('/').to_string());
             }
             None
         }
@@ -4853,11 +5648,7 @@ async fn read_transcript_tail(
 // ── Pass 7: Helper functions for new gateway methods ────────────────
 
 /// Search memory files for a query string (case-insensitive substring match).
-async fn search_memory_files(
-    mem_dir: &std::path::Path,
-    query: &str,
-    limit: usize,
-) -> Vec<Value> {
+async fn search_memory_files(mem_dir: &std::path::Path, query: &str, limit: usize) -> Vec<Value> {
     let query_lower = query.to_lowercase();
     let mut results = Vec::new();
     let Ok(mut entries) = tokio::fs::read_dir(mem_dir).await else {
@@ -4868,7 +5659,10 @@ async fn search_memory_files(
             break;
         }
         let path = entry.path();
-        if path.extension().is_some_and(|e| e == "md" || e == "txt" || e == "json") {
+        if path
+            .extension()
+            .is_some_and(|e| e == "md" || e == "txt" || e == "json")
+        {
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 if content.to_lowercase().contains(&query_lower) {
                     let filename = path
@@ -4950,7 +5744,7 @@ async fn tail_log_file(
             if path.extension().is_some_and(|e| e == "log" || e == "jsonl") {
                 if let Ok(meta) = entry.metadata().await {
                     let modified = meta.modified().unwrap_or(std::time::UNIX_EPOCH);
-                    if latest.as_ref().is_none_or(|(_, best)| modified > *best) {
+                    if latest.as_ref().map_or(true, |(_, best)| modified > *best) {
                         latest = Some((path, modified));
                     }
                 }
@@ -5008,8 +5802,10 @@ async fn query_log_file(
                 if results.len() >= limit {
                     break;
                 }
-                let matches_query = query.is_none_or(|q| line.to_lowercase().contains(&q.to_lowercase()));
-                let matches_level = level.is_none_or(|l| line.to_lowercase().contains(&l.to_lowercase()));
+                let matches_query =
+                    query.map_or(true, |q| line.to_lowercase().contains(&q.to_lowercase()));
+                let matches_level =
+                    level.map_or(true, |l| line.to_lowercase().contains(&l.to_lowercase()));
                 if matches_query && matches_level {
                     results.push(serde_json::json!({
                         "line": line,

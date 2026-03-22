@@ -11,8 +11,8 @@ use axum::{Json, Router};
 use serde_json::Value;
 use tokio::sync::mpsc;
 
-use crate::framework::InboundMessage;
 use super::normalize::normalize_slack_event;
+use crate::framework::InboundMessage;
 
 /// Shared state for the webhook handler.
 #[derive(Clone)]
@@ -39,14 +39,15 @@ async fn handle_events(
         // URL verification challenge — Slack sends this when you first set up the webhook URL
         "url_verification" => {
             let challenge = payload["challenge"].as_str().unwrap_or("").to_string();
-            (StatusCode::OK, Json(serde_json::json!({"challenge": challenge})))
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"challenge": challenge})),
+            )
         }
         // Normal event callback
         "event_callback" => {
             if let Some(event) = payload.get("event") {
-                if let Some(inbound) =
-                    normalize_slack_event(event, state.bot_user_id.as_deref())
-                {
+                if let Some(inbound) = normalize_slack_event(event, state.bot_user_id.as_deref()) {
                     let _ = state.tx.send(inbound).await;
                 }
             }

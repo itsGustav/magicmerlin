@@ -317,8 +317,7 @@ impl IMessageChannel {
             loop {
                 tokio::time::sleep(interval).await;
                 let last_id = last_row_id.load(Ordering::Relaxed);
-                let query =
-                    POLL_QUERY_TEMPLATE.replace("{last_id}", &last_id.to_string());
+                let query = POLL_QUERY_TEMPLATE.replace("{last_id}", &last_id.to_string());
 
                 let output = match tokio::process::Command::new("sqlite3")
                     .arg("-separator")
@@ -391,7 +390,10 @@ impl Channel for IMessageChannel {
     async fn start(&mut self) -> Result<()> {
         let db = self.db_path();
         if !db.exists() {
-            warn!("chat.db not found at {}, iMessage monitoring unavailable", db.display());
+            warn!(
+                "chat.db not found at {}, iMessage monitoring unavailable",
+                db.display()
+            );
             return Err(ChannelError::PlatformRequest(format!(
                 "chat.db not found at {}",
                 db.display()
@@ -401,12 +403,10 @@ impl Channel for IMessageChannel {
         // Start poll loop if an inbound sender is attached.
         if let Some(tx) = self.inbound_tx.clone() {
             let interval = Duration::from_millis(self.config.poll_interval_ms);
-            let last_row_id =
-                Arc::new(AtomicI64::new(self.last_row_id.load(Ordering::Relaxed)));
+            let last_row_id = Arc::new(AtomicI64::new(self.last_row_id.load(Ordering::Relaxed)));
             let allowed = self.config.allowed_senders.clone();
 
-            let handle =
-                Self::spawn_poll_loop(db, interval, last_row_id.clone(), allowed, tx);
+            let handle = Self::spawn_poll_loop(db, interval, last_row_id.clone(), allowed, tx);
 
             *self.poll_handle.lock().await = Some(handle);
 
@@ -502,8 +502,7 @@ mod tests {
     #[test]
     fn parses_row_with_group_flag() {
         let row =
-            IMessageChannel::parse_chat_row(&["42", "chat://g", "bob", "hi", "100", "1"])
-                .unwrap();
+            IMessageChannel::parse_chat_row(&["42", "chat://g", "bob", "hi", "100", "1"]).unwrap();
         assert!(row.is_group);
         assert_eq!(row.row_id, 42);
     }

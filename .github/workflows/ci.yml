@@ -1,21 +1,112 @@
-name: ci
+name: CI
 
 on:
   push:
+    branches: [main, "feat/**"]
   pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: clippy, rustfmt
 
-      - name: fmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --workspace --locked
+
+      - name: Unit tests
+        run: cargo test --workspace --lib
+
+      - name: Integration tests
+        run: cargo test --workspace --test '*'
+
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+
+      - name: Fmt check
         run: cargo fmt --all -- --check
 
-      - name: test
-        run: cargo test --all
+  sentinel:
+    name: Parity Sentinel
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run sentinel CI check
+        run: cargo run -p magicmerlin-sentinel -- ci --json
+
+  cross-compile:
+    name: Cross-compile (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Cross build
+        run: cross build --workspace --target ${{ matrix.target }} --release
+
+  release:
+    name: Release binaries
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: linux-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            suffix: macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: macos-x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }} -p magicmerlin -p magicmerlin-gateway
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: magicmerlin-${{ matrix.suffix }}
+          path: |
+            target/${{ matrix.target }}/release/magicmerlin
+            target/${{ matrix.target }}/release/magicmerlin-gateway

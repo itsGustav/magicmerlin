@@ -320,7 +320,10 @@ mod tests {
     #[test]
     fn parses_reasoning_effort() {
         let mut extra = HashMap::new();
-        extra.insert("reasoning_effort".to_string(), Value::String("high".to_string()));
+        extra.insert(
+            "reasoning_effort".to_string(),
+            Value::String("high".to_string()),
+        );
         assert_eq!(parse_reasoning_effort(&extra).as_deref(), Some("high"));
     }
 }

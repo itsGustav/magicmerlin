@@ -15,8 +15,8 @@ use crate::error::{Result, ToolError};
 use crate::gateway::gateway_call;
 use crate::registry::{NodeConfig, Tool, ToolContext, ToolRegistry, ToolResult};
 
-use std::io::Read as StdRead;
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
+use std::io::Read as StdRead;
 
 const READ_MAX_BYTES: usize = 50 * 1024;
 const READ_MAX_LINES: usize = 2000;
@@ -491,20 +491,19 @@ impl Tool for WebSearchTool {
             .unwrap_or(5)
             .clamp(1, 10);
 
-        let api_key = match ctx
-            .config
-            .tools
-            .values
-            .get("brave_api_key")
-            .and_then(Value::as_str)
-        {
-            Some(k) => k.to_string(),
-            None => {
-                return Ok(ToolResult::failure(
+        let api_key =
+            match ctx
+                .config
+                .tools
+                .values
+                .get("brave_api_key")
+                .and_then(Value::as_str)
+            {
+                Some(k) => k.to_string(),
+                None => return Ok(ToolResult::failure(
                     "missing tools.brave_api_key config — set it in config to enable web search",
-                ))
-            }
-        };
+                )),
+            };
 
         let http = reqwest::Client::new();
         let mut last_err = String::new();
@@ -751,10 +750,7 @@ impl Tool for MemorySearchTool {
         let total_docs = all_chunks.len().max(1) as f64;
         let mut idf_map: HashMap<String, f64> = HashMap::new();
         for qt in &query_terms {
-            let doc_freq = all_chunks
-                .iter()
-                .filter(|c| c.terms.contains(qt))
-                .count() as f64;
+            let doc_freq = all_chunks.iter().filter(|c| c.terms.contains(qt)).count() as f64;
             let idf = ((total_docs - doc_freq + 0.5) / (doc_freq + 0.5) + 1.0).ln();
             idf_map.insert(qt.clone(), idf.max(0.1));
         }
@@ -949,11 +945,7 @@ impl Tool for SessionStatusTool {
         };
 
         // Context window size heuristic based on model name
-        let context_window = if model
-            .as_deref()
-            .unwrap_or("")
-            .contains("opus")
-        {
+        let context_window = if model.as_deref().unwrap_or("").contains("opus") {
             200_000
         } else {
             128_000
@@ -1439,16 +1431,15 @@ impl Tool for PdfTool {
                 tool: self.name().to_string(),
                 message: "pdf entries must be strings".to_string(),
             })?;
-            let source =
-                if path_str.starts_with("http://") || path_str.starts_with("https://") {
-                    magicmerlin_media::understanding::MediaSource::Url {
-                        url: path_str.to_string(),
-                    }
-                } else {
-                    magicmerlin_media::understanding::MediaSource::File {
-                        path: PathBuf::from(path_str),
-                    }
-                };
+            let source = if path_str.starts_with("http://") || path_str.starts_with("https://") {
+                magicmerlin_media::understanding::MediaSource::Url {
+                    url: path_str.to_string(),
+                }
+            } else {
+                magicmerlin_media::understanding::MediaSource::File {
+                    path: PathBuf::from(path_str),
+                }
+            };
             let analysis = client
                 .analyze_pdf_with_fallback(
                     magicmerlin_media::understanding::AnalysisRequest {
@@ -1669,9 +1660,9 @@ impl Tool for BrowserTool {
                     .map_err(|e| ToolError::Execution(e.to_string()))?;
                 Ok(ToolResult::success(json!({"stopped": port})))
             }
-            "profiles" => {
-                Ok(ToolResult::success(json!({"profiles": ["default", "relay"]})))
-            }
+            "profiles" => Ok(ToolResult::success(
+                json!({"profiles": ["default", "relay"]}),
+            )),
             "tabs" => {
                 let tabs = magicmerlin_media::browser::list_tabs(port)
                     .await
@@ -1725,7 +1716,10 @@ impl Tool for BrowserTool {
                     .get("format")
                     .and_then(Value::as_str)
                     .unwrap_or("png");
-                let quality = params.get("quality").and_then(Value::as_u64).map(|q| q as u8);
+                let quality = params
+                    .get("quality")
+                    .and_then(Value::as_u64)
+                    .map(|q| q as u8);
                 let bytes = client
                     .capture_screenshot(fmt, quality, None)
                     .await
@@ -1999,10 +1993,7 @@ impl NodeApiClient {
 struct NodesTool;
 
 impl NodesTool {
-    fn resolve_node<'a>(
-        configs: &'a [NodeConfig],
-        params: &Value,
-    ) -> Result<&'a NodeConfig> {
+    fn resolve_node<'a>(configs: &'a [NodeConfig], params: &Value) -> Result<&'a NodeConfig> {
         if configs.is_empty() {
             return Err(ToolError::InvalidParams {
                 tool: "nodes".to_string(),
@@ -2378,7 +2369,6 @@ async fn exec_foreground_pty(
         "tty": true,
     })))
 }
-
 
 fn required_string(params: &Value, key: &str, tool: &str) -> Result<String> {
     params
@@ -2821,21 +2811,15 @@ fn extract_text_content(html: &str) -> String {
 }
 
 /// Recursively walks an HTML element tree, converting to markdown.
-fn walk_element_to_markdown(
-    el: scraper::ElementRef,
-    skip: &HashSet<&str>,
-    out: &mut String,
-) {
+fn walk_element_to_markdown(el: scraper::ElementRef, skip: &HashSet<&str>, out: &mut String) {
     for child in el.children() {
         match child.value() {
             scraper::Node::Text(t) => {
                 let raw = t.to_string();
                 let trimmed = raw.trim();
                 if !trimmed.is_empty() {
-                    let has_leading_ws =
-                        raw.starts_with(|c: char| c.is_whitespace());
-                    let has_trailing_ws =
-                        raw.ends_with(|c: char| c.is_whitespace());
+                    let has_leading_ws = raw.starts_with(|c: char| c.is_whitespace());
+                    let has_trailing_ws = raw.ends_with(|c: char| c.is_whitespace());
                     if has_leading_ws
                         && !out.is_empty()
                         && !out.ends_with(|c: char| c.is_whitespace())
@@ -3040,8 +3024,17 @@ mod tests {
         register_default_tools(&mut registry);
         let names = registry.names();
         for required in [
-            "exec", "process", "read", "write", "edit", "memory_get", "memory_search",
-            "message", "cron", "session_status", "nodes",
+            "exec",
+            "process",
+            "read",
+            "write",
+            "edit",
+            "memory_get",
+            "memory_search",
+            "message",
+            "cron",
+            "session_status",
+            "nodes",
         ] {
             assert!(
                 names.contains(&required.to_string()),
@@ -3060,7 +3053,11 @@ mod tests {
             .await
             .expect("pty exec");
         assert!(result.ok);
-        let output = result.value.get("output").and_then(Value::as_str).unwrap_or("");
+        let output = result
+            .value
+            .get("output")
+            .and_then(Value::as_str)
+            .unwrap_or("");
         assert!(output.contains("pty_hello"), "got: {output}");
         assert_eq!(result.value.get("tty").and_then(Value::as_bool), Some(true));
     }
@@ -3094,7 +3091,11 @@ mod tests {
             .await
             .expect("search");
         assert!(result.ok);
-        let results = result.value.get("results").and_then(Value::as_array).unwrap();
+        let results = result
+            .value
+            .get("results")
+            .and_then(Value::as_array)
+            .unwrap();
         assert!(!results.is_empty(), "should find at least one result");
         let first = &results[0];
         assert!(first.get("score").and_then(Value::as_f64).unwrap_or(0.0) > 0.0);
@@ -3142,10 +3143,7 @@ mod tests {
         // This will fail to connect to gateway, which is expected.
         // We verify the tool doesn't panic and returns a meaningful error.
         let result = MessageTool
-            .execute(
-                json!({"action": "send", "text": "hello world"}),
-                &ctx,
-            )
+            .execute(json!({"action": "send", "text": "hello world"}), &ctx)
             .await;
         // Gateway not running, so expect an error
         assert!(result.is_err() || !result.as_ref().unwrap().ok);
@@ -3165,9 +3163,7 @@ mod tests {
         let temp = tempfile::tempdir().expect("tmp");
         let ctx = make_test_ctx(temp.path());
         // Gateway not running, so expect connection error
-        let result = CronTool
-            .execute(json!({"action": "list"}), &ctx)
-            .await;
+        let result = CronTool.execute(json!({"action": "list"}), &ctx).await;
         assert!(result.is_err() || !result.as_ref().unwrap().ok);
     }
 
@@ -3200,10 +3196,7 @@ mod tests {
             .expect("status");
         assert!(result.ok);
         let session = result.value.get("session").unwrap();
-        assert_eq!(
-            session.get("missing").and_then(Value::as_bool),
-            Some(true)
-        );
+        assert_eq!(session.get("missing").and_then(Value::as_bool), Some(true));
         // Should have token fields even for missing session
         assert!(result.value.get("contextTokens").is_some());
         assert!(result.value.get("messageCount").is_some());
@@ -3265,18 +3258,21 @@ mod tests {
             "http://192.168.1.42:9222".to_string(),
             "test-token".to_string(),
         );
-        assert_eq!(client.url("/api/status"), "http://192.168.1.42:9222/api/status");
+        assert_eq!(
+            client.url("/api/status"),
+            "http://192.168.1.42:9222/api/status"
+        );
         assert_eq!(
             client.url("/api/location?accuracy=balanced&timeoutMs=5000"),
             "http://192.168.1.42:9222/api/location?accuracy=balanced&timeoutMs=5000"
         );
 
         // Trailing slash should be stripped
-        let client2 = NodeApiClient::new(
-            "http://example.com:8080/".to_string(),
-            "tok".to_string(),
+        let client2 = NodeApiClient::new("http://example.com:8080/".to_string(), "tok".to_string());
+        assert_eq!(
+            client2.url("/api/describe"),
+            "http://example.com:8080/api/describe"
         );
-        assert_eq!(client2.url("/api/describe"), "http://example.com:8080/api/describe");
     }
 
     // --- NodesTool resolve_node ---
@@ -3382,9 +3378,7 @@ mod tests {
     async fn subagents_tool_dispatches_list() {
         let temp = tempfile::tempdir().expect("tmp");
         let ctx = make_test_ctx(temp.path());
-        let result = SubagentsTool
-            .execute(json!({"action": "list"}), &ctx)
-            .await;
+        let result = SubagentsTool.execute(json!({"action": "list"}), &ctx).await;
         assert!(result.is_err() || !result.as_ref().unwrap().ok);
     }
 
@@ -3454,10 +3448,7 @@ mod tests {
         );
         assert!(md.contains("**main**"), "should have bold formatting: {md}");
         assert!(!md.contains("Home"), "should not contain nav links: {md}");
-        assert!(
-            !md.contains("Copyright"),
-            "should not contain footer: {md}"
-        );
+        assert!(!md.contains("Copyright"), "should not contain footer: {md}");
         assert!(
             md.contains("[Example link](https://example.com)"),
             "should have markdown link: {md}"

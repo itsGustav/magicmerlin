@@ -25,10 +25,7 @@ use crate::framework::{
 // Well-known binary locations
 // ---------------------------------------------------------------------------
 
-const WACLI_CANDIDATES: &[&str] = &[
-    "/opt/homebrew/bin/wacli",
-    "/usr/local/bin/wacli",
-];
+const WACLI_CANDIDATES: &[&str] = &["/opt/homebrew/bin/wacli", "/usr/local/bin/wacli"];
 
 const BRIDGE_CANDIDATES: &[&str] = &[
     "/opt/homebrew/bin/whatsapp-bridge",
@@ -628,7 +625,10 @@ mod tests {
     #[test]
     fn wacli_send_args_built_correctly() {
         let args = WaCliRuntime::build_send_args("+1234567890", "hello world");
-        assert_eq!(args, vec!["send", "--to", "+1234567890", "--message", "hello world"]);
+        assert_eq!(
+            args,
+            vec!["send", "--to", "+1234567890", "--message", "hello world"]
+        );
     }
 
     #[test]

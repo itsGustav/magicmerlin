@@ -81,9 +81,7 @@ impl SignalCliWrapper {
             .output()
             .await
             .map_err(|e| {
-                ChannelError::PlatformRequest(format!(
-                    "signal-cli group send failed to spawn: {e}"
-                ))
+                ChannelError::PlatformRequest(format!("signal-cli group send failed to spawn: {e}"))
             })?;
 
         if !output.status.success() {
@@ -144,9 +142,7 @@ impl SignalCliWrapper {
             .output()
             .await
             .map_err(|e| {
-                ChannelError::PlatformRequest(format!(
-                    "signal-cli receive failed to spawn: {e}"
-                ))
+                ChannelError::PlatformRequest(format!("signal-cli receive failed to spawn: {e}"))
             })?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);

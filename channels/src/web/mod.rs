@@ -62,7 +62,11 @@ impl WebChannel {
         );
     }
 
-    pub async fn handle_ws_message(&self, session_id: &str, payload: &serde_json::Value) -> Result<()> {
+    pub async fn handle_ws_message(
+        &self,
+        session_id: &str,
+        payload: &serde_json::Value,
+    ) -> Result<()> {
         self.events.lock().await.push_back(WebEvent {
             event: "message".to_string(),
             session_id: session_id.to_string(),
@@ -91,25 +95,43 @@ impl WebChannel {
 
 #[async_trait::async_trait]
 impl Channel for WebChannel {
-    fn name(&self) -> &str { "web" }
-    fn platform(&self) -> Platform { Platform::Web }
+    fn name(&self) -> &str {
+        "web"
+    }
+    fn platform(&self) -> Platform {
+        Platform::Web
+    }
 
-    async fn start(&mut self) -> Result<()> { let _ = &self.config.websocket_bind; Ok(()) }
-    async fn stop(&mut self) -> Result<()> { Ok(()) }
+    async fn start(&mut self) -> Result<()> {
+        let _ = &self.config.websocket_bind;
+        Ok(())
+    }
+    async fn stop(&mut self) -> Result<()> {
+        Ok(())
+    }
 
     async fn send(&self, target: &str, message: OutboundMessage) -> Result<MessageId> {
         let id = self.next_message_id();
-        self.messages.write().await.insert(format!("{target}:{id}"), message);
+        self.messages
+            .write()
+            .await
+            .insert(format!("{target}:{id}"), message);
         Ok(id)
     }
 
     async fn edit(&self, target: &str, message_id: &str, message: OutboundMessage) -> Result<()> {
-        self.messages.write().await.insert(format!("{target}:{message_id}"), message);
+        self.messages
+            .write()
+            .await
+            .insert(format!("{target}:{message_id}"), message);
         Ok(())
     }
 
     async fn delete(&self, target: &str, message_id: &str) -> Result<()> {
-        self.messages.write().await.remove(&format!("{target}:{message_id}"));
+        self.messages
+            .write()
+            .await
+            .remove(&format!("{target}:{message_id}"));
         Ok(())
     }
 

@@ -155,7 +155,9 @@ impl ProviderError {
 
     /// Returns true when provider auth rotation may help recover.
     pub fn should_rotate_auth(&self) -> bool {
-        self.retry_hint().map(|hint| hint.rotate_key).unwrap_or(false)
+        self.retry_hint()
+            .map(|hint| hint.rotate_key)
+            .unwrap_or(false)
     }
 
     /// Returns status code if this is an API error.

@@ -168,7 +168,10 @@ impl SlackChannel {
                 tokio::time::sleep(next.duration_since(now)).await;
             }
         }
-        windows.insert(route.to_string(), Instant::now() + Duration::from_millis(200));
+        windows.insert(
+            route.to_string(),
+            Instant::now() + Duration::from_millis(200),
+        );
         Ok(())
     }
 
@@ -257,7 +260,11 @@ impl Channel for SlackChannel {
 
     async fn edit(&self, target: &str, message_id: &str, message: OutboundMessage) -> Result<()> {
         self.apply_rate_limit("chat.update").await?;
-        if let Err(e) = self.api.chat_update(target, message_id, &message.text).await {
+        if let Err(e) = self
+            .api
+            .chat_update(target, message_id, &message.text)
+            .await
+        {
             tracing::warn!(error = %e, "Slack API edit failed, tracking locally");
             self.messages
                 .write()
@@ -325,7 +332,12 @@ pub fn format_for_slack(text: &str) -> String {
     while let Some(start) = out.find("**") {
         if let Some(end) = out[start + 2..].find("**") {
             let inner = out[start + 2..start + 2 + end].to_string();
-            out = format!("{}*{}*{}", &out[..start], inner, &out[start + 2 + end + 2..]);
+            out = format!(
+                "{}*{}*{}",
+                &out[..start],
+                inner,
+                &out[start + 2 + end + 2..]
+            );
         } else {
             break;
         }

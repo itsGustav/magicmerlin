@@ -20,7 +20,7 @@ pub mod web;
 pub mod whatsapp;
 
 pub use framework::{
-    AutoReplyBridge, Channel, ChannelHealth, ChannelRegistry, ChatType, DmPolicy, DmPolicyEnforcer,
-    HealthMonitor, InboundMessage, InlineButton, MediaAttachment, MediaType, MentionGate,
-    MessageId, OutboundMessage, ParseMode, Platform, Result, Sender, ChannelError,
+    AutoReplyBridge, Channel, ChannelError, ChannelHealth, ChannelRegistry, ChatType, DmPolicy,
+    DmPolicyEnforcer, HealthMonitor, InboundMessage, InlineButton, MediaAttachment, MediaType,
+    MentionGate, MessageId, OutboundMessage, ParseMode, Platform, Result, Sender,
 };

@@ -23,6 +23,7 @@ fn model(
 }
 
 /// Returns built-in model definitions across first-party and compatible providers.
+#[allow(clippy::vec_init_then_push)]
 pub fn built_in_models() -> Vec<ModelDefinition> {
     let mut out = Vec::new();
     out.push(model(

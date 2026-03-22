@@ -160,7 +160,7 @@ fn extract_meta_content(html: &str, name: &str) -> Option<String> {
         {
             if let Some(content) = extract_attr_value(&attrs, "content") {
                 if !content.trim().is_empty() {
-                    return Some(html_unescape(&content.trim().to_string()));
+                    return Some(html_unescape(content.trim()));
                 }
             }
         }
@@ -176,7 +176,7 @@ fn extract_meta_property_content(html: &str, property: &str) -> Option<String> {
         {
             if let Some(content) = extract_attr_value(&attrs, "content") {
                 if !content.trim().is_empty() {
-                    return Some(html_unescape(&content.trim().to_string()));
+                    return Some(html_unescape(content.trim()));
                 }
             }
         }
@@ -197,10 +197,7 @@ fn collect_og_tags(html: &str) -> HashMap<String, String> {
             continue;
         };
         if !content.trim().is_empty() {
-            out.insert(
-                property.trim().to_string(),
-                html_unescape(&content.trim().to_string()),
-            );
+            out.insert(property.trim().to_string(), html_unescape(content.trim()));
         }
     }
     out

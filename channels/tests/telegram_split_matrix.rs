@@ -14,1808 +14,310 @@ macro_rules! split_case {
             let text = format!("{}{}", $pattern.repeat(5_000), "x".repeat($padding));
             let parts = TelegramChannel::split_message(&text);
             assert!(parts.len() >= $min_parts);
-            assert!(parts.iter().all(|part| part.len() <= TELEGRAM_MAX_MESSAGE_LEN));
+            assert!(parts
+                .iter()
+                .all(|part| part.len() <= TELEGRAM_MAX_MESSAGE_LEN));
         }
     };
 }
 
-split_case!(
-    split_case_001,
-    "x",
-    1,
-    2
-);
-split_case!(
-    split_case_002,
-    "x",
-    2,
-    2
-);
-split_case!(
-    split_case_003,
-    "x",
-    3,
-    2
-);
-split_case!(
-    split_case_004,
-    "x",
-    4,
-    2
-);
-split_case!(
-    split_case_005,
-    "x",
-    5,
-    2
-);
-split_case!(
-    split_case_006,
-    "x",
-    6,
-    2
-);
-split_case!(
-    split_case_007,
-    "x",
-    7,
-    2
-);
-split_case!(
-    split_case_008,
-    "x",
-    8,
-    2
-);
-split_case!(
-    split_case_009,
-    "x",
-    9,
-    2
-);
-split_case!(
-    split_case_010,
-    "x",
-    10,
-    2
-);
-split_case!(
-    split_case_011,
-    "x",
-    11,
-    2
-);
-split_case!(
-    split_case_012,
-    "x",
-    12,
-    2
-);
-split_case!(
-    split_case_013,
-    "x",
-    13,
-    2
-);
-split_case!(
-    split_case_014,
-    "x",
-    14,
-    2
-);
-split_case!(
-    split_case_015,
-    "x",
-    15,
-    2
-);
-split_case!(
-    split_case_016,
-    "x",
-    16,
-    2
-);
-split_case!(
-    split_case_017,
-    "x",
-    17,
-    2
-);
-split_case!(
-    split_case_018,
-    "x",
-    18,
-    2
-);
-split_case!(
-    split_case_019,
-    "x",
-    19,
-    2
-);
-split_case!(
-    split_case_020,
-    "x",
-    20,
-    2
-);
-split_case!(
-    split_case_021,
-    "x",
-    21,
-    2
-);
-split_case!(
-    split_case_022,
-    "x",
-    22,
-    2
-);
-split_case!(
-    split_case_023,
-    "x",
-    23,
-    2
-);
-split_case!(
-    split_case_024,
-    "x",
-    24,
-    2
-);
-split_case!(
-    split_case_025,
-    "x",
-    25,
-    2
-);
-split_case!(
-    split_case_026,
-    "x",
-    26,
-    2
-);
-split_case!(
-    split_case_027,
-    "x",
-    27,
-    2
-);
-split_case!(
-    split_case_028,
-    "x",
-    28,
-    2
-);
-split_case!(
-    split_case_029,
-    "x",
-    29,
-    2
-);
-split_case!(
-    split_case_030,
-    "x",
-    30,
-    2
-);
-split_case!(
-    split_case_031,
-    "x",
-    31,
-    2
-);
-split_case!(
-    split_case_032,
-    "x",
-    32,
-    2
-);
-split_case!(
-    split_case_033,
-    "x",
-    33,
-    2
-);
-split_case!(
-    split_case_034,
-    "x",
-    34,
-    2
-);
-split_case!(
-    split_case_035,
-    "x",
-    35,
-    2
-);
-split_case!(
-    split_case_036,
-    "x",
-    36,
-    2
-);
-split_case!(
-    split_case_037,
-    "x",
-    37,
-    2
-);
-split_case!(
-    split_case_038,
-    "x",
-    38,
-    2
-);
-split_case!(
-    split_case_039,
-    "x",
-    39,
-    2
-);
-split_case!(
-    split_case_040,
-    "x",
-    40,
-    2
-);
-split_case!(
-    split_case_041,
-    "x",
-    41,
-    2
-);
-split_case!(
-    split_case_042,
-    "x",
-    42,
-    2
-);
-split_case!(
-    split_case_043,
-    "x",
-    43,
-    2
-);
-split_case!(
-    split_case_044,
-    "x",
-    44,
-    2
-);
-split_case!(
-    split_case_045,
-    "x",
-    45,
-    2
-);
-split_case!(
-    split_case_046,
-    "x",
-    46,
-    2
-);
-split_case!(
-    split_case_047,
-    "x",
-    47,
-    2
-);
-split_case!(
-    split_case_048,
-    "x",
-    48,
-    2
-);
-split_case!(
-    split_case_049,
-    "x",
-    49,
-    2
-);
-split_case!(
-    split_case_050,
-    "x",
-    50,
-    2
-);
-split_case!(
-    split_case_051,
-    "x",
-    51,
-    2
-);
-split_case!(
-    split_case_052,
-    "x",
-    52,
-    2
-);
-split_case!(
-    split_case_053,
-    "x",
-    53,
-    2
-);
-split_case!(
-    split_case_054,
-    "x",
-    54,
-    2
-);
-split_case!(
-    split_case_055,
-    "x",
-    55,
-    2
-);
-split_case!(
-    split_case_056,
-    "x",
-    56,
-    2
-);
-split_case!(
-    split_case_057,
-    "x",
-    57,
-    2
-);
-split_case!(
-    split_case_058,
-    "x",
-    58,
-    2
-);
-split_case!(
-    split_case_059,
-    "x",
-    59,
-    2
-);
-split_case!(
-    split_case_060,
-    "x",
-    60,
-    2
-);
-split_case!(
-    split_case_061,
-    "x",
-    61,
-    2
-);
-split_case!(
-    split_case_062,
-    "x",
-    62,
-    2
-);
-split_case!(
-    split_case_063,
-    "x",
-    63,
-    2
-);
-split_case!(
-    split_case_064,
-    "x",
-    64,
-    2
-);
-split_case!(
-    split_case_065,
-    "x",
-    65,
-    2
-);
-split_case!(
-    split_case_066,
-    "x",
-    66,
-    2
-);
-split_case!(
-    split_case_067,
-    "x",
-    67,
-    2
-);
-split_case!(
-    split_case_068,
-    "x",
-    68,
-    2
-);
-split_case!(
-    split_case_069,
-    "x",
-    69,
-    2
-);
-split_case!(
-    split_case_070,
-    "x",
-    70,
-    2
-);
-split_case!(
-    split_case_071,
-    "x",
-    71,
-    2
-);
-split_case!(
-    split_case_072,
-    "x",
-    72,
-    2
-);
-split_case!(
-    split_case_073,
-    "x",
-    73,
-    2
-);
-split_case!(
-    split_case_074,
-    "x",
-    74,
-    2
-);
-split_case!(
-    split_case_075,
-    "x",
-    75,
-    2
-);
-split_case!(
-    split_case_076,
-    "x",
-    76,
-    2
-);
-split_case!(
-    split_case_077,
-    "x",
-    77,
-    2
-);
-split_case!(
-    split_case_078,
-    "x",
-    78,
-    2
-);
-split_case!(
-    split_case_079,
-    "x",
-    79,
-    2
-);
-split_case!(
-    split_case_080,
-    "x",
-    80,
-    2
-);
-split_case!(
-    split_case_081,
-    "x",
-    81,
-    2
-);
-split_case!(
-    split_case_082,
-    "x",
-    82,
-    2
-);
-split_case!(
-    split_case_083,
-    "x",
-    83,
-    2
-);
-split_case!(
-    split_case_084,
-    "x",
-    84,
-    2
-);
-split_case!(
-    split_case_085,
-    "x",
-    85,
-    2
-);
-split_case!(
-    split_case_086,
-    "x",
-    86,
-    2
-);
-split_case!(
-    split_case_087,
-    "x",
-    87,
-    2
-);
-split_case!(
-    split_case_088,
-    "x",
-    88,
-    2
-);
-split_case!(
-    split_case_089,
-    "x",
-    89,
-    2
-);
-split_case!(
-    split_case_090,
-    "x",
-    90,
-    2
-);
-split_case!(
-    split_case_091,
-    "x",
-    91,
-    2
-);
-split_case!(
-    split_case_092,
-    "x",
-    92,
-    2
-);
-split_case!(
-    split_case_093,
-    "x",
-    93,
-    2
-);
-split_case!(
-    split_case_094,
-    "x",
-    94,
-    2
-);
-split_case!(
-    split_case_095,
-    "x",
-    95,
-    2
-);
-split_case!(
-    split_case_096,
-    "x",
-    96,
-    2
-);
-split_case!(
-    split_case_097,
-    "x",
-    97,
-    2
-);
-split_case!(
-    split_case_098,
-    "x",
-    98,
-    2
-);
-split_case!(
-    split_case_099,
-    "x",
-    99,
-    2
-);
-split_case!(
-    split_case_100,
-    "x",
-    100,
-    2
-);
-split_case!(
-    split_case_101,
-    "word ",
-    101,
-    2
-);
-split_case!(
-    split_case_102,
-    "word ",
-    102,
-    2
-);
-split_case!(
-    split_case_103,
-    "word ",
-    103,
-    2
-);
-split_case!(
-    split_case_104,
-    "word ",
-    104,
-    2
-);
-split_case!(
-    split_case_105,
-    "word ",
-    105,
-    2
-);
-split_case!(
-    split_case_106,
-    "word ",
-    106,
-    2
-);
-split_case!(
-    split_case_107,
-    "word ",
-    107,
-    2
-);
-split_case!(
-    split_case_108,
-    "word ",
-    108,
-    2
-);
-split_case!(
-    split_case_109,
-    "word ",
-    109,
-    2
-);
-split_case!(
-    split_case_110,
-    "word ",
-    110,
-    2
-);
-split_case!(
-    split_case_111,
-    "word ",
-    111,
-    2
-);
-split_case!(
-    split_case_112,
-    "word ",
-    112,
-    2
-);
-split_case!(
-    split_case_113,
-    "word ",
-    113,
-    2
-);
-split_case!(
-    split_case_114,
-    "word ",
-    114,
-    2
-);
-split_case!(
-    split_case_115,
-    "word ",
-    115,
-    2
-);
-split_case!(
-    split_case_116,
-    "word ",
-    116,
-    2
-);
-split_case!(
-    split_case_117,
-    "word ",
-    117,
-    2
-);
-split_case!(
-    split_case_118,
-    "word ",
-    118,
-    2
-);
-split_case!(
-    split_case_119,
-    "word ",
-    119,
-    2
-);
-split_case!(
-    split_case_120,
-    "word ",
-    120,
-    2
-);
-split_case!(
-    split_case_121,
-    "word ",
-    121,
-    2
-);
-split_case!(
-    split_case_122,
-    "word ",
-    122,
-    2
-);
-split_case!(
-    split_case_123,
-    "word ",
-    123,
-    2
-);
-split_case!(
-    split_case_124,
-    "word ",
-    124,
-    2
-);
-split_case!(
-    split_case_125,
-    "word ",
-    125,
-    2
-);
-split_case!(
-    split_case_126,
-    "word ",
-    126,
-    2
-);
-split_case!(
-    split_case_127,
-    "word ",
-    127,
-    2
-);
-split_case!(
-    split_case_128,
-    "word ",
-    128,
-    2
-);
-split_case!(
-    split_case_129,
-    "word ",
-    129,
-    2
-);
-split_case!(
-    split_case_130,
-    "word ",
-    130,
-    2
-);
-split_case!(
-    split_case_131,
-    "word ",
-    131,
-    2
-);
-split_case!(
-    split_case_132,
-    "word ",
-    132,
-    2
-);
-split_case!(
-    split_case_133,
-    "word ",
-    133,
-    2
-);
-split_case!(
-    split_case_134,
-    "word ",
-    134,
-    2
-);
-split_case!(
-    split_case_135,
-    "word ",
-    135,
-    2
-);
-split_case!(
-    split_case_136,
-    "word ",
-    136,
-    2
-);
-split_case!(
-    split_case_137,
-    "word ",
-    137,
-    2
-);
-split_case!(
-    split_case_138,
-    "word ",
-    138,
-    2
-);
-split_case!(
-    split_case_139,
-    "word ",
-    139,
-    2
-);
-split_case!(
-    split_case_140,
-    "word ",
-    140,
-    2
-);
-split_case!(
-    split_case_141,
-    "word ",
-    141,
-    2
-);
-split_case!(
-    split_case_142,
-    "word ",
-    142,
-    2
-);
-split_case!(
-    split_case_143,
-    "word ",
-    143,
-    2
-);
-split_case!(
-    split_case_144,
-    "word ",
-    144,
-    2
-);
-split_case!(
-    split_case_145,
-    "word ",
-    145,
-    2
-);
-split_case!(
-    split_case_146,
-    "word ",
-    146,
-    2
-);
-split_case!(
-    split_case_147,
-    "word ",
-    147,
-    2
-);
-split_case!(
-    split_case_148,
-    "word ",
-    148,
-    2
-);
-split_case!(
-    split_case_149,
-    "word ",
-    149,
-    2
-);
-split_case!(
-    split_case_150,
-    "word ",
-    150,
-    2
-);
-split_case!(
-    split_case_151,
-    "word ",
-    151,
-    2
-);
-split_case!(
-    split_case_152,
-    "word ",
-    152,
-    2
-);
-split_case!(
-    split_case_153,
-    "word ",
-    153,
-    2
-);
-split_case!(
-    split_case_154,
-    "word ",
-    154,
-    2
-);
-split_case!(
-    split_case_155,
-    "word ",
-    155,
-    2
-);
-split_case!(
-    split_case_156,
-    "word ",
-    156,
-    2
-);
-split_case!(
-    split_case_157,
-    "word ",
-    157,
-    2
-);
-split_case!(
-    split_case_158,
-    "word ",
-    158,
-    2
-);
-split_case!(
-    split_case_159,
-    "word ",
-    159,
-    2
-);
-split_case!(
-    split_case_160,
-    "word ",
-    160,
-    2
-);
-split_case!(
-    split_case_161,
-    "word ",
-    161,
-    2
-);
-split_case!(
-    split_case_162,
-    "word ",
-    162,
-    2
-);
-split_case!(
-    split_case_163,
-    "word ",
-    163,
-    2
-);
-split_case!(
-    split_case_164,
-    "word ",
-    164,
-    2
-);
-split_case!(
-    split_case_165,
-    "word ",
-    165,
-    2
-);
-split_case!(
-    split_case_166,
-    "word ",
-    166,
-    2
-);
-split_case!(
-    split_case_167,
-    "word ",
-    167,
-    2
-);
-split_case!(
-    split_case_168,
-    "word ",
-    168,
-    2
-);
-split_case!(
-    split_case_169,
-    "word ",
-    169,
-    2
-);
-split_case!(
-    split_case_170,
-    "word ",
-    170,
-    2
-);
-split_case!(
-    split_case_171,
-    "word ",
-    171,
-    2
-);
-split_case!(
-    split_case_172,
-    "word ",
-    172,
-    2
-);
-split_case!(
-    split_case_173,
-    "word ",
-    173,
-    2
-);
-split_case!(
-    split_case_174,
-    "word ",
-    174,
-    2
-);
-split_case!(
-    split_case_175,
-    "word ",
-    175,
-    2
-);
-split_case!(
-    split_case_176,
-    "word ",
-    176,
-    2
-);
-split_case!(
-    split_case_177,
-    "word ",
-    177,
-    2
-);
-split_case!(
-    split_case_178,
-    "word ",
-    178,
-    2
-);
-split_case!(
-    split_case_179,
-    "word ",
-    179,
-    2
-);
-split_case!(
-    split_case_180,
-    "word ",
-    180,
-    2
-);
-split_case!(
-    split_case_181,
-    "word ",
-    181,
-    2
-);
-split_case!(
-    split_case_182,
-    "word ",
-    182,
-    2
-);
-split_case!(
-    split_case_183,
-    "word ",
-    183,
-    2
-);
-split_case!(
-    split_case_184,
-    "word ",
-    184,
-    2
-);
-split_case!(
-    split_case_185,
-    "word ",
-    185,
-    2
-);
-split_case!(
-    split_case_186,
-    "word ",
-    186,
-    2
-);
-split_case!(
-    split_case_187,
-    "word ",
-    187,
-    2
-);
-split_case!(
-    split_case_188,
-    "word ",
-    188,
-    2
-);
-split_case!(
-    split_case_189,
-    "word ",
-    189,
-    2
-);
-split_case!(
-    split_case_190,
-    "word ",
-    190,
-    2
-);
-split_case!(
-    split_case_191,
-    "word ",
-    191,
-    2
-);
-split_case!(
-    split_case_192,
-    "word ",
-    192,
-    2
-);
-split_case!(
-    split_case_193,
-    "word ",
-    193,
-    2
-);
-split_case!(
-    split_case_194,
-    "word ",
-    194,
-    2
-);
-split_case!(
-    split_case_195,
-    "word ",
-    195,
-    2
-);
-split_case!(
-    split_case_196,
-    "word ",
-    196,
-    2
-);
-split_case!(
-    split_case_197,
-    "word ",
-    197,
-    2
-);
-split_case!(
-    split_case_198,
-    "word ",
-    198,
-    2
-);
-split_case!(
-    split_case_199,
-    "word ",
-    199,
-    2
-);
-split_case!(
-    split_case_200,
-    "word ",
-    200,
-    2
-);
-split_case!(
-    split_case_201,
-    "line\n",
-    201,
-    2
-);
-split_case!(
-    split_case_202,
-    "line\n",
-    202,
-    2
-);
-split_case!(
-    split_case_203,
-    "line\n",
-    203,
-    2
-);
-split_case!(
-    split_case_204,
-    "line\n",
-    204,
-    2
-);
-split_case!(
-    split_case_205,
-    "line\n",
-    205,
-    2
-);
-split_case!(
-    split_case_206,
-    "line\n",
-    206,
-    2
-);
-split_case!(
-    split_case_207,
-    "line\n",
-    207,
-    2
-);
-split_case!(
-    split_case_208,
-    "line\n",
-    208,
-    2
-);
-split_case!(
-    split_case_209,
-    "line\n",
-    209,
-    2
-);
-split_case!(
-    split_case_210,
-    "line\n",
-    210,
-    2
-);
-split_case!(
-    split_case_211,
-    "line\n",
-    211,
-    2
-);
-split_case!(
-    split_case_212,
-    "line\n",
-    212,
-    2
-);
-split_case!(
-    split_case_213,
-    "line\n",
-    213,
-    2
-);
-split_case!(
-    split_case_214,
-    "line\n",
-    214,
-    2
-);
-split_case!(
-    split_case_215,
-    "line\n",
-    215,
-    2
-);
-split_case!(
-    split_case_216,
-    "line\n",
-    216,
-    2
-);
-split_case!(
-    split_case_217,
-    "line\n",
-    217,
-    2
-);
-split_case!(
-    split_case_218,
-    "line\n",
-    218,
-    2
-);
-split_case!(
-    split_case_219,
-    "line\n",
-    219,
-    2
-);
-split_case!(
-    split_case_220,
-    "line\n",
-    220,
-    2
-);
-split_case!(
-    split_case_221,
-    "line\n",
-    221,
-    2
-);
-split_case!(
-    split_case_222,
-    "line\n",
-    222,
-    2
-);
-split_case!(
-    split_case_223,
-    "line\n",
-    223,
-    2
-);
-split_case!(
-    split_case_224,
-    "line\n",
-    224,
-    2
-);
-split_case!(
-    split_case_225,
-    "line\n",
-    225,
-    2
-);
-split_case!(
-    split_case_226,
-    "line\n",
-    226,
-    2
-);
-split_case!(
-    split_case_227,
-    "line\n",
-    227,
-    2
-);
-split_case!(
-    split_case_228,
-    "line\n",
-    228,
-    2
-);
-split_case!(
-    split_case_229,
-    "line\n",
-    229,
-    2
-);
-split_case!(
-    split_case_230,
-    "line\n",
-    230,
-    2
-);
-split_case!(
-    split_case_231,
-    "line\n",
-    231,
-    2
-);
-split_case!(
-    split_case_232,
-    "line\n",
-    232,
-    2
-);
-split_case!(
-    split_case_233,
-    "line\n",
-    233,
-    2
-);
-split_case!(
-    split_case_234,
-    "line\n",
-    234,
-    2
-);
-split_case!(
-    split_case_235,
-    "line\n",
-    235,
-    2
-);
-split_case!(
-    split_case_236,
-    "line\n",
-    236,
-    2
-);
-split_case!(
-    split_case_237,
-    "line\n",
-    237,
-    2
-);
-split_case!(
-    split_case_238,
-    "line\n",
-    238,
-    2
-);
-split_case!(
-    split_case_239,
-    "line\n",
-    239,
-    2
-);
-split_case!(
-    split_case_240,
-    "line\n",
-    240,
-    2
-);
-split_case!(
-    split_case_241,
-    "line\n",
-    241,
-    2
-);
-split_case!(
-    split_case_242,
-    "line\n",
-    242,
-    2
-);
-split_case!(
-    split_case_243,
-    "line\n",
-    243,
-    2
-);
-split_case!(
-    split_case_244,
-    "line\n",
-    244,
-    2
-);
-split_case!(
-    split_case_245,
-    "line\n",
-    245,
-    2
-);
-split_case!(
-    split_case_246,
-    "line\n",
-    246,
-    2
-);
-split_case!(
-    split_case_247,
-    "line\n",
-    247,
-    2
-);
-split_case!(
-    split_case_248,
-    "line\n",
-    248,
-    2
-);
-split_case!(
-    split_case_249,
-    "line\n",
-    249,
-    2
-);
-split_case!(
-    split_case_250,
-    "line\n",
-    250,
-    2
-);
-split_case!(
-    split_case_251,
-    "line\n",
-    251,
-    2
-);
-split_case!(
-    split_case_252,
-    "line\n",
-    252,
-    2
-);
-split_case!(
-    split_case_253,
-    "line\n",
-    253,
-    2
-);
-split_case!(
-    split_case_254,
-    "line\n",
-    254,
-    2
-);
-split_case!(
-    split_case_255,
-    "line\n",
-    255,
-    2
-);
-split_case!(
-    split_case_256,
-    "line\n",
-    256,
-    2
-);
-split_case!(
-    split_case_257,
-    "line\n",
-    257,
-    2
-);
-split_case!(
-    split_case_258,
-    "line\n",
-    258,
-    2
-);
-split_case!(
-    split_case_259,
-    "line\n",
-    259,
-    2
-);
-split_case!(
-    split_case_260,
-    "line\n",
-    260,
-    2
-);
-split_case!(
-    split_case_261,
-    "line\n",
-    261,
-    2
-);
-split_case!(
-    split_case_262,
-    "line\n",
-    262,
-    2
-);
-split_case!(
-    split_case_263,
-    "line\n",
-    263,
-    2
-);
-split_case!(
-    split_case_264,
-    "line\n",
-    264,
-    2
-);
-split_case!(
-    split_case_265,
-    "line\n",
-    265,
-    2
-);
-split_case!(
-    split_case_266,
-    "line\n",
-    266,
-    2
-);
-split_case!(
-    split_case_267,
-    "line\n",
-    267,
-    2
-);
-split_case!(
-    split_case_268,
-    "line\n",
-    268,
-    2
-);
-split_case!(
-    split_case_269,
-    "line\n",
-    269,
-    2
-);
-split_case!(
-    split_case_270,
-    "line\n",
-    270,
-    2
-);
-split_case!(
-    split_case_271,
-    "line\n",
-    271,
-    2
-);
-split_case!(
-    split_case_272,
-    "line\n",
-    272,
-    2
-);
-split_case!(
-    split_case_273,
-    "line\n",
-    273,
-    2
-);
-split_case!(
-    split_case_274,
-    "line\n",
-    274,
-    2
-);
-split_case!(
-    split_case_275,
-    "line\n",
-    275,
-    2
-);
-split_case!(
-    split_case_276,
-    "line\n",
-    276,
-    2
-);
-split_case!(
-    split_case_277,
-    "line\n",
-    277,
-    2
-);
-split_case!(
-    split_case_278,
-    "line\n",
-    278,
-    2
-);
-split_case!(
-    split_case_279,
-    "line\n",
-    279,
-    2
-);
-split_case!(
-    split_case_280,
-    "line\n",
-    280,
-    2
-);
-split_case!(
-    split_case_281,
-    "line\n",
-    281,
-    2
-);
-split_case!(
-    split_case_282,
-    "line\n",
-    282,
-    2
-);
-split_case!(
-    split_case_283,
-    "line\n",
-    283,
-    2
-);
-split_case!(
-    split_case_284,
-    "line\n",
-    284,
-    2
-);
-split_case!(
-    split_case_285,
-    "line\n",
-    285,
-    2
-);
-split_case!(
-    split_case_286,
-    "line\n",
-    286,
-    2
-);
-split_case!(
-    split_case_287,
-    "line\n",
-    287,
-    2
-);
-split_case!(
-    split_case_288,
-    "line\n",
-    288,
-    2
-);
-split_case!(
-    split_case_289,
-    "line\n",
-    289,
-    2
-);
-split_case!(
-    split_case_290,
-    "line\n",
-    290,
-    2
-);
-split_case!(
-    split_case_291,
-    "line\n",
-    291,
-    2
-);
-split_case!(
-    split_case_292,
-    "line\n",
-    292,
-    2
-);
-split_case!(
-    split_case_293,
-    "line\n",
-    293,
-    2
-);
-split_case!(
-    split_case_294,
-    "line\n",
-    294,
-    2
-);
-split_case!(
-    split_case_295,
-    "line\n",
-    295,
-    2
-);
-split_case!(
-    split_case_296,
-    "line\n",
-    296,
-    2
-);
-split_case!(
-    split_case_297,
-    "line\n",
-    297,
-    2
-);
-split_case!(
-    split_case_298,
-    "line\n",
-    298,
-    2
-);
-split_case!(
-    split_case_299,
-    "line\n",
-    299,
-    2
-);
-split_case!(
-    split_case_300,
-    "line\n",
-    300,
-    2
-);
+split_case!(split_case_001, "x", 1, 2);
+split_case!(split_case_002, "x", 2, 2);
+split_case!(split_case_003, "x", 3, 2);
+split_case!(split_case_004, "x", 4, 2);
+split_case!(split_case_005, "x", 5, 2);
+split_case!(split_case_006, "x", 6, 2);
+split_case!(split_case_007, "x", 7, 2);
+split_case!(split_case_008, "x", 8, 2);
+split_case!(split_case_009, "x", 9, 2);
+split_case!(split_case_010, "x", 10, 2);
+split_case!(split_case_011, "x", 11, 2);
+split_case!(split_case_012, "x", 12, 2);
+split_case!(split_case_013, "x", 13, 2);
+split_case!(split_case_014, "x", 14, 2);
+split_case!(split_case_015, "x", 15, 2);
+split_case!(split_case_016, "x", 16, 2);
+split_case!(split_case_017, "x", 17, 2);
+split_case!(split_case_018, "x", 18, 2);
+split_case!(split_case_019, "x", 19, 2);
+split_case!(split_case_020, "x", 20, 2);
+split_case!(split_case_021, "x", 21, 2);
+split_case!(split_case_022, "x", 22, 2);
+split_case!(split_case_023, "x", 23, 2);
+split_case!(split_case_024, "x", 24, 2);
+split_case!(split_case_025, "x", 25, 2);
+split_case!(split_case_026, "x", 26, 2);
+split_case!(split_case_027, "x", 27, 2);
+split_case!(split_case_028, "x", 28, 2);
+split_case!(split_case_029, "x", 29, 2);
+split_case!(split_case_030, "x", 30, 2);
+split_case!(split_case_031, "x", 31, 2);
+split_case!(split_case_032, "x", 32, 2);
+split_case!(split_case_033, "x", 33, 2);
+split_case!(split_case_034, "x", 34, 2);
+split_case!(split_case_035, "x", 35, 2);
+split_case!(split_case_036, "x", 36, 2);
+split_case!(split_case_037, "x", 37, 2);
+split_case!(split_case_038, "x", 38, 2);
+split_case!(split_case_039, "x", 39, 2);
+split_case!(split_case_040, "x", 40, 2);
+split_case!(split_case_041, "x", 41, 2);
+split_case!(split_case_042, "x", 42, 2);
+split_case!(split_case_043, "x", 43, 2);
+split_case!(split_case_044, "x", 44, 2);
+split_case!(split_case_045, "x", 45, 2);
+split_case!(split_case_046, "x", 46, 2);
+split_case!(split_case_047, "x", 47, 2);
+split_case!(split_case_048, "x", 48, 2);
+split_case!(split_case_049, "x", 49, 2);
+split_case!(split_case_050, "x", 50, 2);
+split_case!(split_case_051, "x", 51, 2);
+split_case!(split_case_052, "x", 52, 2);
+split_case!(split_case_053, "x", 53, 2);
+split_case!(split_case_054, "x", 54, 2);
+split_case!(split_case_055, "x", 55, 2);
+split_case!(split_case_056, "x", 56, 2);
+split_case!(split_case_057, "x", 57, 2);
+split_case!(split_case_058, "x", 58, 2);
+split_case!(split_case_059, "x", 59, 2);
+split_case!(split_case_060, "x", 60, 2);
+split_case!(split_case_061, "x", 61, 2);
+split_case!(split_case_062, "x", 62, 2);
+split_case!(split_case_063, "x", 63, 2);
+split_case!(split_case_064, "x", 64, 2);
+split_case!(split_case_065, "x", 65, 2);
+split_case!(split_case_066, "x", 66, 2);
+split_case!(split_case_067, "x", 67, 2);
+split_case!(split_case_068, "x", 68, 2);
+split_case!(split_case_069, "x", 69, 2);
+split_case!(split_case_070, "x", 70, 2);
+split_case!(split_case_071, "x", 71, 2);
+split_case!(split_case_072, "x", 72, 2);
+split_case!(split_case_073, "x", 73, 2);
+split_case!(split_case_074, "x", 74, 2);
+split_case!(split_case_075, "x", 75, 2);
+split_case!(split_case_076, "x", 76, 2);
+split_case!(split_case_077, "x", 77, 2);
+split_case!(split_case_078, "x", 78, 2);
+split_case!(split_case_079, "x", 79, 2);
+split_case!(split_case_080, "x", 80, 2);
+split_case!(split_case_081, "x", 81, 2);
+split_case!(split_case_082, "x", 82, 2);
+split_case!(split_case_083, "x", 83, 2);
+split_case!(split_case_084, "x", 84, 2);
+split_case!(split_case_085, "x", 85, 2);
+split_case!(split_case_086, "x", 86, 2);
+split_case!(split_case_087, "x", 87, 2);
+split_case!(split_case_088, "x", 88, 2);
+split_case!(split_case_089, "x", 89, 2);
+split_case!(split_case_090, "x", 90, 2);
+split_case!(split_case_091, "x", 91, 2);
+split_case!(split_case_092, "x", 92, 2);
+split_case!(split_case_093, "x", 93, 2);
+split_case!(split_case_094, "x", 94, 2);
+split_case!(split_case_095, "x", 95, 2);
+split_case!(split_case_096, "x", 96, 2);
+split_case!(split_case_097, "x", 97, 2);
+split_case!(split_case_098, "x", 98, 2);
+split_case!(split_case_099, "x", 99, 2);
+split_case!(split_case_100, "x", 100, 2);
+split_case!(split_case_101, "word ", 101, 2);
+split_case!(split_case_102, "word ", 102, 2);
+split_case!(split_case_103, "word ", 103, 2);
+split_case!(split_case_104, "word ", 104, 2);
+split_case!(split_case_105, "word ", 105, 2);
+split_case!(split_case_106, "word ", 106, 2);
+split_case!(split_case_107, "word ", 107, 2);
+split_case!(split_case_108, "word ", 108, 2);
+split_case!(split_case_109, "word ", 109, 2);
+split_case!(split_case_110, "word ", 110, 2);
+split_case!(split_case_111, "word ", 111, 2);
+split_case!(split_case_112, "word ", 112, 2);
+split_case!(split_case_113, "word ", 113, 2);
+split_case!(split_case_114, "word ", 114, 2);
+split_case!(split_case_115, "word ", 115, 2);
+split_case!(split_case_116, "word ", 116, 2);
+split_case!(split_case_117, "word ", 117, 2);
+split_case!(split_case_118, "word ", 118, 2);
+split_case!(split_case_119, "word ", 119, 2);
+split_case!(split_case_120, "word ", 120, 2);
+split_case!(split_case_121, "word ", 121, 2);
+split_case!(split_case_122, "word ", 122, 2);
+split_case!(split_case_123, "word ", 123, 2);
+split_case!(split_case_124, "word ", 124, 2);
+split_case!(split_case_125, "word ", 125, 2);
+split_case!(split_case_126, "word ", 126, 2);
+split_case!(split_case_127, "word ", 127, 2);
+split_case!(split_case_128, "word ", 128, 2);
+split_case!(split_case_129, "word ", 129, 2);
+split_case!(split_case_130, "word ", 130, 2);
+split_case!(split_case_131, "word ", 131, 2);
+split_case!(split_case_132, "word ", 132, 2);
+split_case!(split_case_133, "word ", 133, 2);
+split_case!(split_case_134, "word ", 134, 2);
+split_case!(split_case_135, "word ", 135, 2);
+split_case!(split_case_136, "word ", 136, 2);
+split_case!(split_case_137, "word ", 137, 2);
+split_case!(split_case_138, "word ", 138, 2);
+split_case!(split_case_139, "word ", 139, 2);
+split_case!(split_case_140, "word ", 140, 2);
+split_case!(split_case_141, "word ", 141, 2);
+split_case!(split_case_142, "word ", 142, 2);
+split_case!(split_case_143, "word ", 143, 2);
+split_case!(split_case_144, "word ", 144, 2);
+split_case!(split_case_145, "word ", 145, 2);
+split_case!(split_case_146, "word ", 146, 2);
+split_case!(split_case_147, "word ", 147, 2);
+split_case!(split_case_148, "word ", 148, 2);
+split_case!(split_case_149, "word ", 149, 2);
+split_case!(split_case_150, "word ", 150, 2);
+split_case!(split_case_151, "word ", 151, 2);
+split_case!(split_case_152, "word ", 152, 2);
+split_case!(split_case_153, "word ", 153, 2);
+split_case!(split_case_154, "word ", 154, 2);
+split_case!(split_case_155, "word ", 155, 2);
+split_case!(split_case_156, "word ", 156, 2);
+split_case!(split_case_157, "word ", 157, 2);
+split_case!(split_case_158, "word ", 158, 2);
+split_case!(split_case_159, "word ", 159, 2);
+split_case!(split_case_160, "word ", 160, 2);
+split_case!(split_case_161, "word ", 161, 2);
+split_case!(split_case_162, "word ", 162, 2);
+split_case!(split_case_163, "word ", 163, 2);
+split_case!(split_case_164, "word ", 164, 2);
+split_case!(split_case_165, "word ", 165, 2);
+split_case!(split_case_166, "word ", 166, 2);
+split_case!(split_case_167, "word ", 167, 2);
+split_case!(split_case_168, "word ", 168, 2);
+split_case!(split_case_169, "word ", 169, 2);
+split_case!(split_case_170, "word ", 170, 2);
+split_case!(split_case_171, "word ", 171, 2);
+split_case!(split_case_172, "word ", 172, 2);
+split_case!(split_case_173, "word ", 173, 2);
+split_case!(split_case_174, "word ", 174, 2);
+split_case!(split_case_175, "word ", 175, 2);
+split_case!(split_case_176, "word ", 176, 2);
+split_case!(split_case_177, "word ", 177, 2);
+split_case!(split_case_178, "word ", 178, 2);
+split_case!(split_case_179, "word ", 179, 2);
+split_case!(split_case_180, "word ", 180, 2);
+split_case!(split_case_181, "word ", 181, 2);
+split_case!(split_case_182, "word ", 182, 2);
+split_case!(split_case_183, "word ", 183, 2);
+split_case!(split_case_184, "word ", 184, 2);
+split_case!(split_case_185, "word ", 185, 2);
+split_case!(split_case_186, "word ", 186, 2);
+split_case!(split_case_187, "word ", 187, 2);
+split_case!(split_case_188, "word ", 188, 2);
+split_case!(split_case_189, "word ", 189, 2);
+split_case!(split_case_190, "word ", 190, 2);
+split_case!(split_case_191, "word ", 191, 2);
+split_case!(split_case_192, "word ", 192, 2);
+split_case!(split_case_193, "word ", 193, 2);
+split_case!(split_case_194, "word ", 194, 2);
+split_case!(split_case_195, "word ", 195, 2);
+split_case!(split_case_196, "word ", 196, 2);
+split_case!(split_case_197, "word ", 197, 2);
+split_case!(split_case_198, "word ", 198, 2);
+split_case!(split_case_199, "word ", 199, 2);
+split_case!(split_case_200, "word ", 200, 2);
+split_case!(split_case_201, "line\n", 201, 2);
+split_case!(split_case_202, "line\n", 202, 2);
+split_case!(split_case_203, "line\n", 203, 2);
+split_case!(split_case_204, "line\n", 204, 2);
+split_case!(split_case_205, "line\n", 205, 2);
+split_case!(split_case_206, "line\n", 206, 2);
+split_case!(split_case_207, "line\n", 207, 2);
+split_case!(split_case_208, "line\n", 208, 2);
+split_case!(split_case_209, "line\n", 209, 2);
+split_case!(split_case_210, "line\n", 210, 2);
+split_case!(split_case_211, "line\n", 211, 2);
+split_case!(split_case_212, "line\n", 212, 2);
+split_case!(split_case_213, "line\n", 213, 2);
+split_case!(split_case_214, "line\n", 214, 2);
+split_case!(split_case_215, "line\n", 215, 2);
+split_case!(split_case_216, "line\n", 216, 2);
+split_case!(split_case_217, "line\n", 217, 2);
+split_case!(split_case_218, "line\n", 218, 2);
+split_case!(split_case_219, "line\n", 219, 2);
+split_case!(split_case_220, "line\n", 220, 2);
+split_case!(split_case_221, "line\n", 221, 2);
+split_case!(split_case_222, "line\n", 222, 2);
+split_case!(split_case_223, "line\n", 223, 2);
+split_case!(split_case_224, "line\n", 224, 2);
+split_case!(split_case_225, "line\n", 225, 2);
+split_case!(split_case_226, "line\n", 226, 2);
+split_case!(split_case_227, "line\n", 227, 2);
+split_case!(split_case_228, "line\n", 228, 2);
+split_case!(split_case_229, "line\n", 229, 2);
+split_case!(split_case_230, "line\n", 230, 2);
+split_case!(split_case_231, "line\n", 231, 2);
+split_case!(split_case_232, "line\n", 232, 2);
+split_case!(split_case_233, "line\n", 233, 2);
+split_case!(split_case_234, "line\n", 234, 2);
+split_case!(split_case_235, "line\n", 235, 2);
+split_case!(split_case_236, "line\n", 236, 2);
+split_case!(split_case_237, "line\n", 237, 2);
+split_case!(split_case_238, "line\n", 238, 2);
+split_case!(split_case_239, "line\n", 239, 2);
+split_case!(split_case_240, "line\n", 240, 2);
+split_case!(split_case_241, "line\n", 241, 2);
+split_case!(split_case_242, "line\n", 242, 2);
+split_case!(split_case_243, "line\n", 243, 2);
+split_case!(split_case_244, "line\n", 244, 2);
+split_case!(split_case_245, "line\n", 245, 2);
+split_case!(split_case_246, "line\n", 246, 2);
+split_case!(split_case_247, "line\n", 247, 2);
+split_case!(split_case_248, "line\n", 248, 2);
+split_case!(split_case_249, "line\n", 249, 2);
+split_case!(split_case_250, "line\n", 250, 2);
+split_case!(split_case_251, "line\n", 251, 2);
+split_case!(split_case_252, "line\n", 252, 2);
+split_case!(split_case_253, "line\n", 253, 2);
+split_case!(split_case_254, "line\n", 254, 2);
+split_case!(split_case_255, "line\n", 255, 2);
+split_case!(split_case_256, "line\n", 256, 2);
+split_case!(split_case_257, "line\n", 257, 2);
+split_case!(split_case_258, "line\n", 258, 2);
+split_case!(split_case_259, "line\n", 259, 2);
+split_case!(split_case_260, "line\n", 260, 2);
+split_case!(split_case_261, "line\n", 261, 2);
+split_case!(split_case_262, "line\n", 262, 2);
+split_case!(split_case_263, "line\n", 263, 2);
+split_case!(split_case_264, "line\n", 264, 2);
+split_case!(split_case_265, "line\n", 265, 2);
+split_case!(split_case_266, "line\n", 266, 2);
+split_case!(split_case_267, "line\n", 267, 2);
+split_case!(split_case_268, "line\n", 268, 2);
+split_case!(split_case_269, "line\n", 269, 2);
+split_case!(split_case_270, "line\n", 270, 2);
+split_case!(split_case_271, "line\n", 271, 2);
+split_case!(split_case_272, "line\n", 272, 2);
+split_case!(split_case_273, "line\n", 273, 2);
+split_case!(split_case_274, "line\n", 274, 2);
+split_case!(split_case_275, "line\n", 275, 2);
+split_case!(split_case_276, "line\n", 276, 2);
+split_case!(split_case_277, "line\n", 277, 2);
+split_case!(split_case_278, "line\n", 278, 2);
+split_case!(split_case_279, "line\n", 279, 2);
+split_case!(split_case_280, "line\n", 280, 2);
+split_case!(split_case_281, "line\n", 281, 2);
+split_case!(split_case_282, "line\n", 282, 2);
+split_case!(split_case_283, "line\n", 283, 2);
+split_case!(split_case_284, "line\n", 284, 2);
+split_case!(split_case_285, "line\n", 285, 2);
+split_case!(split_case_286, "line\n", 286, 2);
+split_case!(split_case_287, "line\n", 287, 2);
+split_case!(split_case_288, "line\n", 288, 2);
+split_case!(split_case_289, "line\n", 289, 2);
+split_case!(split_case_290, "line\n", 290, 2);
+split_case!(split_case_291, "line\n", 291, 2);
+split_case!(split_case_292, "line\n", 292, 2);
+split_case!(split_case_293, "line\n", 293, 2);
+split_case!(split_case_294, "line\n", 294, 2);
+split_case!(split_case_295, "line\n", 295, 2);
+split_case!(split_case_296, "line\n", 296, 2);
+split_case!(split_case_297, "line\n", 297, 2);
+split_case!(split_case_298, "line\n", 298, 2);
+split_case!(split_case_299, "line\n", 299, 2);
+split_case!(split_case_300, "line\n", 300, 2);

@@ -14,16 +14,16 @@ use crate::framework::{
     ParseMode, Platform, Result as ChannelResult,
 };
 
-use super::config::{TelegramAccount, TelegramConfig, normalize_bot_username};
+use super::config::{normalize_bot_username, TelegramAccount, TelegramConfig};
 use super::formatting::{escape_markdown_v2, format_text, split_formatted_text, split_message};
 use super::types::{
     TelegramAccountHealth, TelegramAccountHealthState, TelegramApiError, TelegramApiErrorKind,
     TelegramBotPermissions, TelegramCallbackAnswer, TelegramChatAction, TelegramChatMember,
     TelegramDelivery, TelegramDeliveryMode, TelegramFormattedText, TelegramForumTopic,
-    TelegramInlineButton, TelegramInlineButtonStyle, TelegramInlineKeyboardMarkup, TelegramLocation,
-    TelegramMedia, TelegramMediaKind, TelegramMessageEntity, TelegramOperation, TelegramPollKind,
-    TelegramPollRequest, TelegramProcessedUpdate, TelegramQuoteForward, TelegramReaction,
-    TelegramReactionCount, TelegramTarget, TelegramUpdate, TelegramWebhookState,
+    TelegramInlineButton, TelegramInlineButtonStyle, TelegramInlineKeyboardMarkup,
+    TelegramLocation, TelegramMedia, TelegramMediaKind, TelegramMessageEntity, TelegramOperation,
+    TelegramPollKind, TelegramPollRequest, TelegramProcessedUpdate, TelegramQuoteForward,
+    TelegramReaction, TelegramReactionCount, TelegramTarget, TelegramUpdate, TelegramWebhookState,
     TELEGRAM_MAX_MESSAGE_LEN,
 };
 
@@ -113,7 +113,10 @@ impl TelegramChannel {
         let mut accounts = HashMap::new();
         let store = Arc::new(TelegramStore::default());
         for account in &config.accounts {
-            accounts.insert(account.name.clone(), Arc::new(AccountState::new(account.clone())));
+            accounts.insert(
+                account.name.clone(),
+                Arc::new(AccountState::new(account.clone())),
+            );
         }
 
         Self {
@@ -235,14 +238,19 @@ impl TelegramChannel {
 
     /// Simulates a user blocking the bot in a chat.
     pub async fn block_chat(&self, chat_id: &str) {
-        self.store.blocked_chats.write().await.insert(chat_id.to_string());
+        self.store
+            .blocked_chats
+            .write()
+            .await
+            .insert(chat_id.to_string());
     }
 
     /// Returns all deliveries in send order.
     pub async fn deliveries(&self) -> Vec<TelegramDelivery> {
         let order = self.store.delivery_order.read().await.clone();
         let deliveries = self.store.deliveries.read().await;
-        order.into_iter()
+        order
+            .into_iter()
             .filter_map(|id| deliveries.get(&id).cloned())
             .collect()
     }
@@ -262,7 +270,11 @@ impl TelegramChannel {
     }
 
     /// Returns reaction counts for a message.
-    pub async fn reaction_counts(&self, chat_id: &str, message_id: i64) -> Vec<TelegramReactionCount> {
+    pub async fn reaction_counts(
+        &self,
+        chat_id: &str,
+        message_id: i64,
+    ) -> Vec<TelegramReactionCount> {
         self.store
             .reactions
             .read()
@@ -274,16 +286,15 @@ impl TelegramChannel {
 
     /// Returns the webhook state for an account.
     pub async fn webhook_state(&self, account: &str) -> Option<TelegramWebhookState> {
-        self.store
-            .webhook_states
-            .read()
-            .await
-            .get(account)
-            .cloned()
+        self.store.webhook_states.read().await.get(account).cloned()
     }
 
     /// Implements long-polling semantics with update offsets.
-    pub async fn get_updates(&self, account: &str, limit: usize) -> TelegramResult<Vec<TelegramUpdate>> {
+    pub async fn get_updates(
+        &self,
+        account: &str,
+        limit: usize,
+    ) -> TelegramResult<Vec<TelegramUpdate>> {
         let state = self.require_account(account)?;
         let mut updates = state.updates.lock().await;
         let offset = state.last_update_offset.load(Ordering::Relaxed);
@@ -317,17 +328,33 @@ impl TelegramChannel {
         for attempt in 0..=self.config.retry_limit {
             if let Some(error) = state.poll_errors.lock().await.pop_front() {
                 if error.kind == TelegramApiErrorKind::Unauthorized {
-                    self.mark_health(&state, TelegramAccountHealthState::AuthError, Some(error.message.clone())).await;
+                    self.mark_health(
+                        &state,
+                        TelegramAccountHealthState::AuthError,
+                        Some(error.message.clone()),
+                    )
+                    .await;
                     return Err(error);
                 }
 
                 if error.kind == TelegramApiErrorKind::RateLimited
                     || error.kind == TelegramApiErrorKind::FloodWait
                 {
-                    self.apply_rate_limit(account, error.retry_after_seconds).await;
-                    self.mark_health(&state, TelegramAccountHealthState::RateLimited, Some(error.message.clone())).await;
+                    self.apply_rate_limit(account, error.retry_after_seconds)
+                        .await;
+                    self.mark_health(
+                        &state,
+                        TelegramAccountHealthState::RateLimited,
+                        Some(error.message.clone()),
+                    )
+                    .await;
                 } else {
-                    self.mark_health(&state, TelegramAccountHealthState::Reconnecting, Some(error.message.clone())).await;
+                    self.mark_health(
+                        &state,
+                        TelegramAccountHealthState::Reconnecting,
+                        Some(error.message.clone()),
+                    )
+                    .await;
                 }
 
                 if !error.is_retryable() || attempt == self.config.retry_limit {
@@ -342,11 +369,13 @@ impl TelegramChannel {
                 .get_updates(account, self.config.max_updates_per_poll)
                 .await?;
             if updates.is_empty() {
-                self.mark_health(&state, TelegramAccountHealthState::Connected, None).await;
+                self.mark_health(&state, TelegramAccountHealthState::Connected, None)
+                    .await;
                 return Ok(Vec::new());
             }
             let processed = self.process_updates(account, updates).await?;
-            self.mark_health(&state, TelegramAccountHealthState::Connected, None).await;
+            self.mark_health(&state, TelegramAccountHealthState::Connected, None)
+                .await;
             return Ok(processed);
         }
 
@@ -379,12 +408,21 @@ impl TelegramChannel {
         Ok(processed)
     }
 
-    async fn process_update(&self, account: &str, update: TelegramUpdate) -> TelegramResult<TelegramProcessedUpdate> {
+    async fn process_update(
+        &self,
+        account: &str,
+        update: TelegramUpdate,
+    ) -> TelegramResult<TelegramProcessedUpdate> {
         let state = self.require_account(account)?;
         let bot_username = update
             .bot_username
             .clone()
-            .or_else(|| update.message.as_ref().and_then(|message| message.bot_username.clone()))
+            .or_else(|| {
+                update
+                    .message
+                    .as_ref()
+                    .and_then(|message| message.bot_username.clone())
+            })
             .or_else(|| {
                 update
                     .callback_query
@@ -407,7 +445,10 @@ impl TelegramChannel {
             "unknown"
         };
 
-        let callback_data = update.callback_query.as_ref().and_then(|query| query.data.clone());
+        let callback_data = update
+            .callback_query
+            .as_ref()
+            .and_then(|query| query.data.clone());
         let chat_id = update
             .message
             .as_ref()
@@ -418,13 +459,28 @@ impl TelegramChannel {
                     .as_ref()
                     .and_then(|query| query.chat_id.clone())
             })
-            .or_else(|| update.reaction.as_ref().map(|reaction| reaction.chat_id.clone()))
-            .or_else(|| update.chat_member.as_ref().map(|member| member.chat_id.clone()));
+            .or_else(|| {
+                update
+                    .reaction
+                    .as_ref()
+                    .map(|reaction| reaction.chat_id.clone())
+            })
+            .or_else(|| {
+                update
+                    .chat_member
+                    .as_ref()
+                    .map(|member| member.chat_id.clone())
+            });
         let thread_id = update
             .message
             .as_ref()
             .and_then(|message| message.message_thread_id)
-            .or_else(|| update.edited_message.as_ref().and_then(|message| message.message_thread_id));
+            .or_else(|| {
+                update
+                    .edited_message
+                    .as_ref()
+                    .and_then(|message| message.message_thread_id)
+            });
 
         if let Some(callback) = &update.callback_query {
             self.store
@@ -434,11 +490,10 @@ impl TelegramChannel {
                 .insert(callback.id.clone(), account.to_string());
         }
         if let Some(reaction) = &update.reaction {
-            self.store
-                .reactions
-                .write()
-                .await
-                .insert(reaction_key(&reaction.chat_id, reaction.message_id), reaction.counts.clone());
+            self.store.reactions.write().await.insert(
+                reaction_key(&reaction.chat_id, reaction.message_id),
+                reaction.counts.clone(),
+            );
         }
         if let Some(member_update) = &update.chat_member {
             self.store
@@ -447,7 +502,10 @@ impl TelegramChannel {
                 .await
                 .entry(member_update.chat_id.clone())
                 .or_default()
-                .insert(member_update.new_member.user_id.clone(), member_update.new_member.clone());
+                .insert(
+                    member_update.new_member.user_id.clone(),
+                    member_update.new_member.clone(),
+                );
         }
 
         let processed = TelegramProcessedUpdate {
@@ -475,7 +533,11 @@ impl TelegramChannel {
     }
 
     /// Reply to callback queries.
-    pub async fn answer_callback_query(&self, callback_id: &str, text: Option<&str>) -> TelegramResult<()> {
+    pub async fn answer_callback_query(
+        &self,
+        callback_id: &str,
+        text: Option<&str>,
+    ) -> TelegramResult<()> {
         self.answer_callback_query_with_options(
             callback_id,
             TelegramCallbackAnswer {
@@ -501,7 +563,12 @@ impl TelegramChannel {
             .get(callback_id)
             .cloned()
             .or_else(|| self.accounts.keys().next().cloned())
-            .ok_or_else(|| TelegramApiError::new(TelegramApiErrorKind::Config, "no telegram account configured"))?;
+            .ok_or_else(|| {
+                TelegramApiError::new(
+                    TelegramApiErrorKind::Config,
+                    "no telegram account configured",
+                )
+            })?;
         let state = self.require_account(&account_name)?;
         let delivery = TelegramDelivery {
             id: self.next_message_id(),
@@ -536,9 +603,31 @@ impl TelegramChannel {
     }
 
     /// Sends a chat action to a target chat.
-    pub async fn send_chat_action(&self, target: TelegramTarget, action: TelegramChatAction) -> TelegramResult<()> {
+    pub async fn send_chat_action(
+        &self,
+        target: TelegramTarget,
+        action: TelegramChatAction,
+    ) -> TelegramResult<()> {
         let state = self.resolve_account(&target)?;
-        self.dispatch_delivery(&state, &target, TelegramOperation::SendChatAction, None, None, Vec::new(), Vec::new(), None, Vec::new(), None, None, None, Some(action), true, None, None).await?;
+        self.dispatch_delivery(
+            &state,
+            &target,
+            TelegramOperation::SendChatAction,
+            None,
+            None,
+            Vec::new(),
+            Vec::new(),
+            None,
+            Vec::new(),
+            None,
+            None,
+            None,
+            Some(action),
+            true,
+            None,
+            None,
+        )
+        .await?;
         Ok(())
     }
 
@@ -560,44 +649,45 @@ impl TelegramChannel {
     ) -> TelegramResult<Vec<MessageId>> {
         let state = self.resolve_account(&target)?;
         if self.config.auto_send_chat_actions {
-            self.send_chat_action(target.clone(), TelegramChatAction::Typing).await?;
+            self.send_chat_action(target.clone(), TelegramChatAction::Typing)
+                .await?;
         }
 
-        let formatted = if parse_mode == Some(ParseMode::Markdown) {
-            format_text(text, parse_mode)
-        } else if parse_mode == Some(ParseMode::Html) {
-            format_text(text, parse_mode)
-        } else {
-            TelegramFormattedText {
-                text: text.to_string(),
-                entities: Vec::new(),
-                parse_mode: parse_mode.unwrap_or(ParseMode::Plain),
-            }
-        };
+        let formatted =
+            if parse_mode == Some(ParseMode::Markdown) || parse_mode == Some(ParseMode::Html) {
+                format_text(text, parse_mode)
+            } else {
+                TelegramFormattedText {
+                    text: text.to_string(),
+                    entities: Vec::new(),
+                    parse_mode: parse_mode.unwrap_or(ParseMode::Plain),
+                }
+            };
 
         let parts = split_formatted_text(&formatted, TELEGRAM_MAX_MESSAGE_LEN);
         let total = parts.len();
         let mut ids = Vec::with_capacity(total);
         for (index, part) in parts.into_iter().enumerate() {
-            let delivery = self.dispatch_delivery(
-                &state,
-                &target,
-                TelegramOperation::SendText,
-                Some(part.text),
-                parse_mode,
-                part.entities,
-                Vec::new(),
-                keyboard.clone(),
-                Vec::new(),
-                None,
-                None,
-                quote_forward.clone(),
-                None,
-                silent,
-                Some(index + 1),
-                Some(total),
-            )
-            .await?;
+            let delivery = self
+                .dispatch_delivery(
+                    &state,
+                    &target,
+                    TelegramOperation::SendText,
+                    Some(part.text),
+                    parse_mode,
+                    part.entities,
+                    Vec::new(),
+                    keyboard.clone(),
+                    Vec::new(),
+                    None,
+                    None,
+                    quote_forward.clone(),
+                    None,
+                    silent,
+                    Some(index + 1),
+                    Some(total),
+                )
+                .await?;
             ids.push(delivery.id);
         }
         Ok(ids)
@@ -622,100 +712,197 @@ impl TelegramChannel {
     }
 
     /// Sends a photo.
-    pub async fn send_photo(&self, target: TelegramTarget, media: TelegramMedia, caption: Option<&str>) -> TelegramResult<MessageId> {
-        self.send_media_kind(target, TelegramOperation::SendPhoto, media.with_kind(TelegramMediaKind::Photo), caption, ParseMode::Plain).await
+    pub async fn send_photo(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+        caption: Option<&str>,
+    ) -> TelegramResult<MessageId> {
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendPhoto,
+            media.with_kind(TelegramMediaKind::Photo),
+            caption,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a voice note and infers duration when possible.
-    pub async fn send_voice(&self, target: TelegramTarget, media: TelegramMedia, caption: Option<&str>) -> TelegramResult<MessageId> {
+    pub async fn send_voice(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+        caption: Option<&str>,
+    ) -> TelegramResult<MessageId> {
         let mut media = media.with_kind(TelegramMediaKind::Voice);
         if media.duration_seconds.is_none() {
             media.duration_seconds = Some(detect_voice_duration(&media));
         }
-        self.send_media_kind(target, TelegramOperation::SendVoice, media, caption, ParseMode::Plain).await
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendVoice,
+            media,
+            caption,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a document.
-    pub async fn send_document(&self, target: TelegramTarget, media: TelegramMedia, caption: Option<&str>) -> TelegramResult<MessageId> {
-        self.send_media_kind(target, TelegramOperation::SendDocument, media.with_kind(TelegramMediaKind::Document), caption, ParseMode::Plain).await
+    pub async fn send_document(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+        caption: Option<&str>,
+    ) -> TelegramResult<MessageId> {
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendDocument,
+            media.with_kind(TelegramMediaKind::Document),
+            caption,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a video note.
-    pub async fn send_video_note(&self, target: TelegramTarget, media: TelegramMedia) -> TelegramResult<MessageId> {
+    pub async fn send_video_note(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+    ) -> TelegramResult<MessageId> {
         let mut media = media.with_kind(TelegramMediaKind::VideoNote);
         media.is_video_note = true;
-        self.send_media_kind(target, TelegramOperation::SendVideoNote, media, None, ParseMode::Plain).await
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendVideoNote,
+            media,
+            None,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a video.
-    pub async fn send_video(&self, target: TelegramTarget, media: TelegramMedia, caption: Option<&str>) -> TelegramResult<MessageId> {
-        self.send_media_kind(target, TelegramOperation::SendVideo, media.with_kind(TelegramMediaKind::Video), caption, ParseMode::Plain).await
+    pub async fn send_video(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+        caption: Option<&str>,
+    ) -> TelegramResult<MessageId> {
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendVideo,
+            media.with_kind(TelegramMediaKind::Video),
+            caption,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a sticker.
-    pub async fn send_sticker(&self, target: TelegramTarget, media: TelegramMedia) -> TelegramResult<MessageId> {
-        self.send_media_kind(target, TelegramOperation::SendSticker, media.with_kind(TelegramMediaKind::Sticker), None, ParseMode::Plain).await
+    pub async fn send_sticker(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+    ) -> TelegramResult<MessageId> {
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendSticker,
+            media.with_kind(TelegramMediaKind::Sticker),
+            None,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends an animation.
-    pub async fn send_animation(&self, target: TelegramTarget, media: TelegramMedia, caption: Option<&str>) -> TelegramResult<MessageId> {
+    pub async fn send_animation(
+        &self,
+        target: TelegramTarget,
+        media: TelegramMedia,
+        caption: Option<&str>,
+    ) -> TelegramResult<MessageId> {
         let mut media = media.with_kind(TelegramMediaKind::Animation);
         media.is_animated = true;
-        self.send_media_kind(target, TelegramOperation::SendAnimation, media, caption, ParseMode::Plain).await
+        self.send_media_kind(
+            target,
+            TelegramOperation::SendAnimation,
+            media,
+            caption,
+            ParseMode::Plain,
+        )
+        .await
     }
 
     /// Sends a location payload.
-    pub async fn send_location(&self, target: TelegramTarget, location: TelegramLocation) -> TelegramResult<MessageId> {
+    pub async fn send_location(
+        &self,
+        target: TelegramTarget,
+        location: TelegramLocation,
+    ) -> TelegramResult<MessageId> {
         let state = self.resolve_account(&target)?;
-        let delivery = self.dispatch_delivery(
-            &state,
-            &target,
-            TelegramOperation::SendLocation,
-            None,
-            None,
-            Vec::new(),
-            Vec::new(),
-            None,
-            Vec::new(),
-            Some(location),
-            None,
-            None,
-            None,
-            false,
-            None,
-            None,
-        )
-        .await?;
+        let delivery = self
+            .dispatch_delivery(
+                &state,
+                &target,
+                TelegramOperation::SendLocation,
+                None,
+                None,
+                Vec::new(),
+                Vec::new(),
+                None,
+                Vec::new(),
+                Some(location),
+                None,
+                None,
+                None,
+                false,
+                None,
+                None,
+            )
+            .await?;
         Ok(delivery.id)
     }
 
     /// Sends a poll.
-    pub async fn send_poll_request(&self, target: TelegramTarget, poll: TelegramPollRequest) -> TelegramResult<MessageId> {
+    pub async fn send_poll_request(
+        &self,
+        target: TelegramTarget,
+        poll: TelegramPollRequest,
+    ) -> TelegramResult<MessageId> {
         let state = self.resolve_account(&target)?;
-        let delivery = self.dispatch_delivery(
-            &state,
-            &target,
-            TelegramOperation::SendPoll,
-            Some(poll.question.clone()),
-            None,
-            Vec::new(),
-            Vec::new(),
-            None,
-            Vec::new(),
-            None,
-            Some(poll),
-            None,
-            None,
-            false,
-            None,
-            None,
-        )
-        .await?;
+        let delivery = self
+            .dispatch_delivery(
+                &state,
+                &target,
+                TelegramOperation::SendPoll,
+                Some(poll.question.clone()),
+                None,
+                Vec::new(),
+                Vec::new(),
+                None,
+                Vec::new(),
+                None,
+                Some(poll),
+                None,
+                None,
+                false,
+                None,
+                None,
+            )
+            .await?;
         Ok(delivery.id)
     }
 
     /// Preserves the legacy poll helper.
-    pub async fn send_poll(&self, chat_id: &str, question: &str, options: &[String]) -> TelegramResult<MessageId> {
+    pub async fn send_poll(
+        &self,
+        chat_id: &str,
+        question: &str,
+        options: &[String],
+    ) -> TelegramResult<MessageId> {
         self.send_poll_request(
             TelegramTarget::chat(chat_id),
             TelegramPollRequest {
@@ -730,7 +917,11 @@ impl TelegramChannel {
     }
 
     /// Uploads a framework message's media payload using Telegram media semantics.
-    pub async fn upload_media(&self, chat_id: &str, message: &OutboundMessage) -> TelegramResult<MessageId> {
+    pub async fn upload_media(
+        &self,
+        chat_id: &str,
+        message: &OutboundMessage,
+    ) -> TelegramResult<MessageId> {
         let target = TelegramTarget::chat(chat_id);
         let attachment = message.media.first().cloned().unwrap_or(MediaAttachment {
             kind: MediaType::Document,
@@ -745,9 +936,14 @@ impl TelegramChannel {
             TelegramMediaKind::Voice => self.send_voice(target, media, Some(&message.text)).await,
             TelegramMediaKind::Video => self.send_video(target, media, Some(&message.text)).await,
             TelegramMediaKind::Sticker => self.send_sticker(target, media).await,
-            TelegramMediaKind::Animation => self.send_animation(target, media, Some(&message.text)).await,
+            TelegramMediaKind::Animation => {
+                self.send_animation(target, media, Some(&message.text))
+                    .await
+            }
             TelegramMediaKind::VideoNote => self.send_video_note(target, media).await,
-            TelegramMediaKind::Document => self.send_document(target, media, Some(&message.text)).await,
+            TelegramMediaKind::Document => {
+                self.send_document(target, media, Some(&message.text)).await
+            }
         }
     }
 
@@ -773,21 +969,30 @@ impl TelegramChannel {
                 is_animated: false,
                 is_video_note: false,
             });
-        let account = self
-            .accounts
-            .values()
-            .next()
-            .ok_or_else(|| TelegramApiError::new(TelegramApiErrorKind::Config, "no telegram account configured"))?;
+        let account = self.accounts.values().next().ok_or_else(|| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                "no telegram account configured",
+            )
+        })?;
         let dir = PathBuf::from(self.config.media_dir_for(&account.account));
-        fs::create_dir_all(&dir)
-            .map_err(|error| TelegramApiError::new(TelegramApiErrorKind::Config, format!("failed to create media dir: {error}")))?;
+        fs::create_dir_all(&dir).map_err(|error| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                format!("failed to create media dir: {error}"),
+            )
+        })?;
         let file_name = media
             .file_name
             .clone()
             .unwrap_or_else(|| format!("telegram_{file_id}.bin"));
         let path = dir.join(file_name);
-        fs::write(&path, &media.bytes)
-            .map_err(|error| TelegramApiError::new(TelegramApiErrorKind::Config, format!("failed to write media file: {error}")))?;
+        fs::write(&path, &media.bytes).map_err(|error| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                format!("failed to write media file: {error}"),
+            )
+        })?;
         Ok(path.display().to_string())
     }
 
@@ -838,25 +1043,26 @@ impl TelegramChannel {
         quote_forward: TelegramQuoteForward,
     ) -> TelegramResult<MessageId> {
         let state = self.resolve_account(&target)?;
-        let delivery = self.dispatch_delivery(
-            &state,
-            &target,
-            TelegramOperation::ForwardMessage,
-            quote_forward.quote.clone(),
-            None,
-            Vec::new(),
-            Vec::new(),
-            None,
-            Vec::new(),
-            None,
-            None,
-            Some(quote_forward),
-            None,
-            false,
-            None,
-            None,
-        )
-        .await?;
+        let delivery = self
+            .dispatch_delivery(
+                &state,
+                &target,
+                TelegramOperation::ForwardMessage,
+                quote_forward.quote.clone(),
+                None,
+                Vec::new(),
+                Vec::new(),
+                None,
+                Vec::new(),
+                None,
+                None,
+                Some(quote_forward),
+                None,
+                false,
+                None,
+                None,
+            )
+            .await?;
         Ok(delivery.id)
     }
 
@@ -915,7 +1121,11 @@ impl TelegramChannel {
     }
 
     /// Returns a chat member.
-    pub async fn get_chat_member(&self, chat_id: &str, user_id: &str) -> Option<TelegramChatMember> {
+    pub async fn get_chat_member(
+        &self,
+        chat_id: &str,
+        user_id: &str,
+    ) -> Option<TelegramChatMember> {
         self.store
             .chat_members
             .read()
@@ -926,7 +1136,8 @@ impl TelegramChannel {
 
     /// Bans a group member.
     pub async fn ban_member(&self, target: TelegramTarget, user_id: &str) -> TelegramResult<()> {
-        self.update_member_status(&target, user_id, crate_status_banned()).await?;
+        self.update_member_status(&target, user_id, crate_status_banned())
+            .await?;
         let state = self.resolve_account(&target)?;
         self.dispatch_delivery(
             &state,
@@ -952,7 +1163,8 @@ impl TelegramChannel {
 
     /// Kicks a group member.
     pub async fn kick_member(&self, target: TelegramTarget, user_id: &str) -> TelegramResult<()> {
-        self.update_member_status(&target, user_id, crate_status_left()).await?;
+        self.update_member_status(&target, user_id, crate_status_left())
+            .await?;
         let state = self.resolve_account(&target)?;
         self.dispatch_delivery(
             &state,
@@ -977,7 +1189,11 @@ impl TelegramChannel {
     }
 
     /// Checks whether the bot has required permissions in a chat.
-    pub async fn bot_has_permissions(&self, chat_id: &str, required: &TelegramBotPermissions) -> bool {
+    pub async fn bot_has_permissions(
+        &self,
+        chat_id: &str,
+        required: &TelegramBotPermissions,
+    ) -> bool {
         let granted = self
             .store
             .bot_permissions
@@ -1000,20 +1216,16 @@ impl TelegramChannel {
         secret_token: Option<&str>,
     ) -> TelegramResult<()> {
         let state = self.require_account(account)?;
-        self.store
-            .webhook_states
-            .write()
-            .await
-            .insert(
-                account.to_string(),
-                TelegramWebhookState {
-                    active: true,
-                    url: Some(url.to_string()),
-                    secret_token: secret_token.map(ToOwned::to_owned),
-                    last_delivery_at: None,
-                    consecutive_failures: 0,
-                },
-            );
+        self.store.webhook_states.write().await.insert(
+            account.to_string(),
+            TelegramWebhookState {
+                active: true,
+                url: Some(url.to_string()),
+                secret_token: secret_token.map(ToOwned::to_owned),
+                last_delivery_at: None,
+                consecutive_failures: 0,
+            },
+        );
         let target = TelegramTarget::chat(account).with_account(account);
         self.dispatch_delivery(
             &state,
@@ -1036,7 +1248,8 @@ impl TelegramChannel {
         .await?;
         if !self.config.polling_mode {
             self.abort_poller(account).await;
-            self.mark_health(&state, TelegramAccountHealthState::WebhookOnly, None).await;
+            self.mark_health(&state, TelegramAccountHealthState::WebhookOnly, None)
+                .await;
         }
         Ok(())
     }
@@ -1044,10 +1257,11 @@ impl TelegramChannel {
     /// Removes webhook delivery for an account and optionally falls back to polling.
     pub async fn delete_webhook(&self, account: &str) -> TelegramResult<()> {
         let state = self.require_account(account)?;
-        self.store.webhook_states.write().await.insert(
-            account.to_string(),
-            TelegramWebhookState::default(),
-        );
+        self.store
+            .webhook_states
+            .write()
+            .await
+            .insert(account.to_string(), TelegramWebhookState::default());
         let target = TelegramTarget::chat(account).with_account(account);
         self.dispatch_delivery(
             &state,
@@ -1119,7 +1333,12 @@ impl TelegramChannel {
         }
         if self.config.webhook_fallback_to_polling && self.running.load(Ordering::Relaxed) {
             self.spawn_poller(account.to_string()).await;
-            self.mark_health(&state, TelegramAccountHealthState::Reconnecting, Some("webhook fallback to polling".to_string())).await;
+            self.mark_health(
+                &state,
+                TelegramAccountHealthState::Reconnecting,
+                Some("webhook fallback to polling".to_string()),
+            )
+            .await;
         }
         Ok(())
     }
@@ -1158,28 +1377,30 @@ impl TelegramChannel {
             let action = chat_action_for_operation(operation);
             self.send_chat_action(target.clone(), action).await?;
         }
-        let delivery = self.dispatch_delivery(
-            &state,
-            &target,
-            operation,
-            caption.map(ToOwned::to_owned),
-            Some(parse_mode),
-            Vec::new(),
-            vec![media],
-            None,
-            Vec::new(),
-            None,
-            None,
-            None,
-            None,
-            false,
-            None,
-            None,
-        )
-        .await?;
+        let delivery = self
+            .dispatch_delivery(
+                &state,
+                &target,
+                operation,
+                caption.map(ToOwned::to_owned),
+                Some(parse_mode),
+                Vec::new(),
+                vec![media],
+                None,
+                Vec::new(),
+                None,
+                None,
+                None,
+                None,
+                false,
+                None,
+                None,
+            )
+            .await?;
         Ok(delivery.id)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn dispatch_delivery(
         &self,
         state: &Arc<AccountState>,
@@ -1203,28 +1424,60 @@ impl TelegramChannel {
             self.wait_rate_window(&state.account.name).await;
             self.wait_for_send_slot(state, &target.chat_id).await;
 
-            if self.store.blocked_chats.read().await.contains(&target.chat_id) {
+            if self
+                .store
+                .blocked_chats
+                .read()
+                .await
+                .contains(&target.chat_id)
+            {
                 let error = TelegramApiError::blocked("telegram bot is blocked by this chat");
-                self.mark_health(state, TelegramAccountHealthState::Disconnected, Some(error.message.clone())).await;
+                self.mark_health(
+                    state,
+                    TelegramAccountHealthState::Disconnected,
+                    Some(error.message.clone()),
+                )
+                .await;
                 return Err(error);
             }
 
             if let Some(error) = state.send_errors.lock().await.pop_front() {
                 match error.kind {
                     TelegramApiErrorKind::RateLimited | TelegramApiErrorKind::FloodWait => {
-                        self.apply_rate_limit(&state.account.name, error.retry_after_seconds).await;
-                        self.mark_health(state, TelegramAccountHealthState::RateLimited, Some(error.message.clone())).await;
+                        self.apply_rate_limit(&state.account.name, error.retry_after_seconds)
+                            .await;
+                        self.mark_health(
+                            state,
+                            TelegramAccountHealthState::RateLimited,
+                            Some(error.message.clone()),
+                        )
+                        .await;
                     }
                     TelegramApiErrorKind::Unauthorized => {
-                        self.mark_health(state, TelegramAccountHealthState::AuthError, Some(error.message.clone())).await;
+                        self.mark_health(
+                            state,
+                            TelegramAccountHealthState::AuthError,
+                            Some(error.message.clone()),
+                        )
+                        .await;
                         return Err(error);
                     }
                     TelegramApiErrorKind::Blocked => {
-                        self.mark_health(state, TelegramAccountHealthState::Disconnected, Some(error.message.clone())).await;
+                        self.mark_health(
+                            state,
+                            TelegramAccountHealthState::Disconnected,
+                            Some(error.message.clone()),
+                        )
+                        .await;
                         return Err(error);
                     }
                     _ => {
-                        self.mark_health(state, TelegramAccountHealthState::Reconnecting, Some(error.message.clone())).await;
+                        self.mark_health(
+                            state,
+                            TelegramAccountHealthState::Reconnecting,
+                            Some(error.message.clone()),
+                        )
+                        .await;
                     }
                 }
 
@@ -1260,11 +1513,14 @@ impl TelegramChannel {
             };
             self.register_media(&delivery.media).await;
             self.record_delivery(delivery.clone()).await;
-            self.mark_health(state, TelegramAccountHealthState::Connected, None).await;
+            self.mark_health(state, TelegramAccountHealthState::Connected, None)
+                .await;
             return Ok(delivery);
         }
 
-        Err(TelegramApiError::server("telegram send failed after retry budget"))
+        Err(TelegramApiError::server(
+            "telegram send failed after retry budget",
+        ))
     }
 
     async fn register_media(&self, media: &[TelegramMedia]) {
@@ -1312,9 +1568,9 @@ impl TelegramChannel {
                 return;
             }
 
-            let global_wait = global.front().map(|front| {
-                Duration::from_secs(1).saturating_sub(now.duration_since(*front))
-            });
+            let global_wait = global
+                .front()
+                .map(|front| Duration::from_secs(1).saturating_sub(now.duration_since(*front)));
             let chat_wait = chat_window.front().map(|front| {
                 Duration::from_secs(self.config.per_chat_rate_window_seconds)
                     .saturating_sub(now.duration_since(*front))
@@ -1379,10 +1635,12 @@ impl TelegramChannel {
     }
 
     fn require_account(&self, account: &str) -> TelegramResult<Arc<AccountState>> {
-        self.accounts
-            .get(account)
-            .cloned()
-            .ok_or_else(|| TelegramApiError::new(TelegramApiErrorKind::Config, format!("unknown telegram account `{account}`")))
+        self.accounts.get(account).cloned().ok_or_else(|| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                format!("unknown telegram account `{account}`"),
+            )
+        })
     }
 
     fn resolve_account(&self, target: &TelegramTarget) -> TelegramResult<Arc<AccountState>> {
@@ -1394,11 +1652,12 @@ impl TelegramChannel {
                 return self.require_account(&account_name);
             }
         }
-        self.accounts
-            .values()
-            .next()
-            .cloned()
-            .ok_or_else(|| TelegramApiError::new(TelegramApiErrorKind::Config, "no telegram account configured"))
+        self.accounts.values().next().cloned().ok_or_else(|| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                "no telegram account configured",
+            )
+        })
     }
 
     fn account_for_update(&self, update: &TelegramUpdate) -> TelegramResult<String> {
@@ -1421,15 +1680,19 @@ impl TelegramChannel {
                 }
             }
         }
-        self.accounts
-            .keys()
-            .next()
-            .cloned()
-            .ok_or_else(|| TelegramApiError::new(TelegramApiErrorKind::Config, "no telegram account configured"))
+        self.accounts.keys().next().cloned().ok_or_else(|| {
+            TelegramApiError::new(
+                TelegramApiErrorKind::Config,
+                "no telegram account configured",
+            )
+        })
     }
 
     fn next_message_id(&self) -> MessageId {
-        format!("tg-{}", self.next_message_id.fetch_add(1, Ordering::Relaxed))
+        format!(
+            "tg-{}",
+            self.next_message_id.fetch_add(1, Ordering::Relaxed)
+        )
     }
 
     async fn update_member_status(
@@ -1536,7 +1799,8 @@ impl Channel for TelegramChannel {
             self.abort_poller(&name).await;
         }
         for state in self.accounts.values() {
-            self.mark_health(state, TelegramAccountHealthState::Disconnected, None).await;
+            self.mark_health(state, TelegramAccountHealthState::Disconnected, None)
+                .await;
         }
         Ok(())
     }
@@ -1554,7 +1818,11 @@ impl Channel for TelegramChannel {
                 message.silent,
             )
             .await
-            .map(|ids| ids.last().cloned().unwrap_or_else(|| self.next_message_id()))
+            .map(|ids| {
+                ids.last()
+                    .cloned()
+                    .unwrap_or_else(|| self.next_message_id())
+            })
         } else {
             let chat_id = telegram_target.chat_id.clone();
             self.upload_media(&chat_id, &message).await
@@ -1562,11 +1830,16 @@ impl Channel for TelegramChannel {
         result.map_err(map_channel_error)
     }
 
-    async fn edit(&self, _target: &str, message_id: &str, message: OutboundMessage) -> ChannelResult<()> {
+    async fn edit(
+        &self,
+        _target: &str,
+        message_id: &str,
+        message: OutboundMessage,
+    ) -> ChannelResult<()> {
         let mut deliveries = self.store.deliveries.write().await;
-        let delivery = deliveries
-            .get_mut(message_id)
-            .ok_or_else(|| ChannelError::PlatformRequest(format!("telegram message `{message_id}` not found")))?;
+        let delivery = deliveries.get_mut(message_id).ok_or_else(|| {
+            ChannelError::PlatformRequest(format!("telegram message `{message_id}` not found"))
+        })?;
         delivery.text = Some(message.text);
         delivery.parse_mode = message.parse_mode;
         delivery.keyboard = message.buttons.map(keyboard_from_framework);
@@ -1589,9 +1862,13 @@ impl Channel for TelegramChannel {
             .trim_start_matches("tg-")
             .parse::<i64>()
             .unwrap_or(0);
-        self.set_message_reaction(target, numeric_id, vec![TelegramReaction::Emoji(emoji.to_string())])
-            .await
-            .map_err(map_channel_error)
+        self.set_message_reaction(
+            target,
+            numeric_id,
+            vec![TelegramReaction::Emoji(emoji.to_string())],
+        )
+        .await
+        .map_err(map_channel_error)
     }
 }
 
@@ -1630,9 +1907,12 @@ fn media_from_attachment(attachment: MediaAttachment) -> TelegramMedia {
         .and_then(|path| fs::read(path).ok())
         .unwrap_or_else(|| vec![0, 1, 2, 3]);
     TelegramMedia {
-        file_id: attachment
-            .platform_id
-            .unwrap_or_else(|| format!("file-{}", file_name.clone().unwrap_or_else(|| "blob".to_string()))),
+        file_id: attachment.platform_id.unwrap_or_else(|| {
+            format!(
+                "file-{}",
+                file_name.clone().unwrap_or_else(|| "blob".to_string())
+            )
+        }),
         kind: match attachment.kind {
             MediaType::Image => TelegramMediaKind::Photo,
             MediaType::Voice => TelegramMediaKind::Voice,
@@ -1764,7 +2044,11 @@ mod tests {
     async fn send_text_splits_and_stores_messages() {
         let channel = build_channel();
         let sent = channel
-            .send_telegram_text("bot-a", "chat-1", &"x".repeat(TELEGRAM_MAX_MESSAGE_LEN + 32))
+            .send_telegram_text(
+                "bot-a",
+                "chat-1",
+                &"x".repeat(TELEGRAM_MAX_MESSAGE_LEN + 32),
+            )
             .await
             .unwrap();
         assert!(sent.len() >= 2);

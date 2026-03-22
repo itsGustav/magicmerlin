@@ -371,11 +371,7 @@ impl GuildManager {
     // -- Permission computation ---
 
     /// Compute effective permissions for a member in a guild (base, without channel overwrites).
-    pub async fn compute_base_permissions(
-        &self,
-        guild_id: &str,
-        user_id: &str,
-    ) -> Permissions {
+    pub async fn compute_base_permissions(&self, guild_id: &str, user_id: &str) -> Permissions {
         let guild = match self.guild(guild_id).await {
             Some(g) => g,
             None => return Permissions::NONE,
@@ -446,9 +442,7 @@ impl GuildManager {
         let mut role_allow = Permissions::NONE;
         let mut role_deny = Permissions::NONE;
         for ow in &overwrites {
-            if ow.target_kind == OverwriteKind::Role
-                && member.role_ids.contains(&ow.target_id)
-            {
+            if ow.target_kind == OverwriteKind::Role && member.role_ids.contains(&ow.target_id) {
                 role_allow = role_allow.union(ow.allow);
                 role_deny = role_deny.union(ow.deny);
             }

@@ -115,12 +115,7 @@ impl WebhookManager {
     }
 
     /// Create a new webhook in a channel.
-    pub async fn create(
-        &self,
-        channel_id: &str,
-        guild_id: Option<&str>,
-        name: &str,
-    ) -> Webhook {
+    pub async fn create(&self, channel_id: &str, guild_id: Option<&str>, name: &str) -> Webhook {
         let webhook = Webhook {
             id: self.next_id(),
             channel_id: channel_id.to_string(),

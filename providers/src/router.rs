@@ -137,21 +137,11 @@ impl TokenBucket {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct CircuitState {
     consecutive_failures: u32,
     opened_at: Option<Instant>,
     half_open_probe_in_flight: bool,
-}
-
-impl Default for CircuitState {
-    fn default() -> Self {
-        Self {
-            consecutive_failures: 0,
-            opened_at: None,
-            half_open_probe_in_flight: false,
-        }
-    }
 }
 
 /// Routing metrics snapshot.
@@ -448,7 +438,10 @@ impl ProviderRouter {
 
     async fn record_success(&self, provider: &str) {
         let mut metrics = self.metrics.lock().await;
-        let entry = metrics.success_by_provider.entry(provider.to_string()).or_default();
+        let entry = metrics
+            .success_by_provider
+            .entry(provider.to_string())
+            .or_default();
         *entry += 1;
     }
 
@@ -693,11 +686,13 @@ mod tests {
     async fn retries_and_succeeds_on_same_provider() {
         let attempts = Arc::new(Mutex::new(0));
         let router = ProviderRouter::new(setup_registry());
-        router.register_provider(Arc::new(MockProvider {
-            name: "openai".to_string(),
-            attempts: attempts.clone(),
-            fail_mode: FailMode::FirstOnly,
-        })).await;
+        router
+            .register_provider(Arc::new(MockProvider {
+                name: "openai".to_string(),
+                attempts: attempts.clone(),
+                fail_mode: FailMode::FirstOnly,
+            }))
+            .await;
 
         let response = router
             .complete_with_failover(
@@ -726,16 +721,20 @@ mod tests {
     #[tokio::test]
     async fn fails_over_to_secondary_model() {
         let router = ProviderRouter::new(setup_registry());
-        router.register_provider(Arc::new(MockProvider {
-            name: "openai".to_string(),
-            attempts: Arc::new(Mutex::new(0)),
-            fail_mode: FailMode::Always,
-        })).await;
-        router.register_provider(Arc::new(MockProvider {
-            name: "anthropic".to_string(),
-            attempts: Arc::new(Mutex::new(0)),
-            fail_mode: FailMode::Never,
-        })).await;
+        router
+            .register_provider(Arc::new(MockProvider {
+                name: "openai".to_string(),
+                attempts: Arc::new(Mutex::new(0)),
+                fail_mode: FailMode::Always,
+            }))
+            .await;
+        router
+            .register_provider(Arc::new(MockProvider {
+                name: "anthropic".to_string(),
+                attempts: Arc::new(Mutex::new(0)),
+                fail_mode: FailMode::Never,
+            }))
+            .await;
 
         let response = router
             .complete_with_failover(
@@ -764,11 +763,13 @@ mod tests {
     #[tokio::test]
     async fn middleware_applies_request_and_response_hooks() {
         let router = ProviderRouter::new(setup_registry());
-        router.register_provider(Arc::new(MockProvider {
-            name: "openai".to_string(),
-            attempts: Arc::new(Mutex::new(0)),
-            fail_mode: FailMode::Never,
-        })).await;
+        router
+            .register_provider(Arc::new(MockProvider {
+                name: "openai".to_string(),
+                attempts: Arc::new(Mutex::new(0)),
+                fail_mode: FailMode::Never,
+            }))
+            .await;
         router
             .add_request_middleware(Arc::new(AddMetadataMiddleware))
             .await;
@@ -801,11 +802,13 @@ mod tests {
     #[tokio::test]
     async fn circuit_breaker_opens_after_failures() {
         let router = ProviderRouter::new(setup_registry());
-        router.register_provider(Arc::new(MockProvider {
-            name: "openai".to_string(),
-            attempts: Arc::new(Mutex::new(0)),
-            fail_mode: FailMode::Always,
-        })).await;
+        router
+            .register_provider(Arc::new(MockProvider {
+                name: "openai".to_string(),
+                attempts: Arc::new(Mutex::new(0)),
+                fail_mode: FailMode::Always,
+            }))
+            .await;
 
         let mut failed = 0;
         for _ in 0..6 {

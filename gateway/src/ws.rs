@@ -104,7 +104,11 @@ impl WsServerState {
         }
     }
 
-    pub async fn authenticate(&self, bearer_header: Option<&str>, query_token: Option<&str>) -> bool {
+    pub async fn authenticate(
+        &self,
+        bearer_header: Option<&str>,
+        query_token: Option<&str>,
+    ) -> bool {
         let Some(expected) = self.config.auth_bearer_token.as_deref() else {
             return true;
         };
@@ -137,7 +141,11 @@ impl WsServerState {
     pub async fn register_client(
         &self,
         authenticated: bool,
-    ) -> (String, mpsc::Receiver<WireMessage>, mpsc::Sender<WireMessage>) {
+    ) -> (
+        String,
+        mpsc::Receiver<WireMessage>,
+        mpsc::Sender<WireMessage>,
+    ) {
         let id = format!("ws-{}", uuid::Uuid::new_v4());
         let now = now_unix_ms();
         let (tx, rx) = mpsc::channel(256);
@@ -229,9 +237,8 @@ impl WsServerState {
         client_id: &str,
         text: &str,
     ) -> Result<JsonRpcRequest, JsonRpcResponse> {
-        let request = serde_json::from_str::<JsonRpcRequest>(text).map_err(|err| {
-            JsonRpcResponse::error(None, -32700, format!("parse error: {err}"))
-        })?;
+        let request = serde_json::from_str::<JsonRpcRequest>(text)
+            .map_err(|err| JsonRpcResponse::error(None, -32700, format!("parse error: {err}")))?;
 
         if request.jsonrpc != "2.0" {
             return Err(JsonRpcResponse::error(

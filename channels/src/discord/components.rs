@@ -459,7 +459,10 @@ impl ComponentManager {
             message_id: None,
             values,
         };
-        self.pending_interactions.lock().await.push(interaction.clone());
+        self.pending_interactions
+            .lock()
+            .await
+            .push(interaction.clone());
         Some(interaction)
     }
 }

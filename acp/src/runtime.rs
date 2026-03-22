@@ -202,7 +202,9 @@ impl AcpRuntime {
 
         let runtime = self.clone();
         tokio::spawn(async move {
-            let _ = runtime.run_process(session_id, request.command, request.args).await;
+            let _ = runtime
+                .run_process(session_id, request.command, request.args)
+                .await;
         });
 
         Ok(session)
@@ -240,7 +242,12 @@ impl AcpRuntime {
         Ok(before.saturating_sub(sessions.len()))
     }
 
-    async fn run_process(&self, session_id: String, command: String, args: Vec<String>) -> Result<()> {
+    async fn run_process(
+        &self,
+        session_id: String,
+        command: String,
+        args: Vec<String>,
+    ) -> Result<()> {
         let mut child = Command::new(&command)
             .args(&args)
             .stdout(std::process::Stdio::piped())
@@ -561,7 +568,10 @@ mod tests {
             .await
             .expect("event timeout")
             .expect("event recv");
-        assert!(matches!(event.kind.as_str(), "started" | "stdout" | "completed"));
+        assert!(matches!(
+            event.kind.as_str(),
+            "started" | "stdout" | "completed"
+        ));
     }
 
     #[tokio::test]

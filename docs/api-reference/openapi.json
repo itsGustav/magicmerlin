@@ -1,0 +1,30 @@
+# openapi
+
+## API Reference
+
+The Magic Merlin gateway exposes an OpenAPI-compatible REST API alongside the WebSocket protocol.
+
+## Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Gateway health check |
+| `/call` | POST | JSON-RPC method invocation |
+| `/v1/chat/completions` | POST | OpenAI-compatible chat completions |
+| `/v1/responses` | POST | OpenResponses API |
+| `/hooks/:name` | POST | Webhook endpoints |
+| `/ws` | WS | WebSocket connection |
+
+## Authentication
+
+Include a bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+## See Also
+
+- [Gateway Protocol](../gateway/protocol.md)
+- [OpenAI HTTP API](../gateway/openai-http-api.md)
+- [Authentication](../gateway/authentication.md)

@@ -96,7 +96,8 @@ pub fn run_security_audit(ctx: &SecurityAuditContext) -> SecurityAuditReport {
         issues.push(SecurityIssue {
             code: "open_dm_policy".to_string(),
             severity: SecuritySeverity::Warning,
-            message: "Public bot has open DM policy; require mention or allowlist gating".to_string(),
+            message: "Public bot has open DM policy; require mention or allowlist gating"
+                .to_string(),
         });
     }
 
@@ -266,13 +267,19 @@ mod tests {
             ..SecurityAuditContext::default()
         };
         let report = run_security_audit(&ctx);
-        assert!(report.issues.iter().any(|i| i.code == "exposed_bind_address"));
+        assert!(report
+            .issues
+            .iter()
+            .any(|i| i.code == "exposed_bind_address"));
     }
 
     #[test]
     fn workspace_restriction_accepts_child_path() {
         let root = PathBuf::from("/workspace");
-        assert!(validate_workspace_path(&root, Path::new("project/file.txt")));
+        assert!(validate_workspace_path(
+            &root,
+            Path::new("project/file.txt")
+        ));
     }
 
     #[test]

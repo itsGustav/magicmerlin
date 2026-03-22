@@ -8,7 +8,9 @@ mod registry;
 mod types;
 
 pub use bridge::AutoReplyBridge;
-pub use formatting::{format_for_platform, split_for_platform, split_text_by_limit};
+pub use formatting::{
+    format_for_platform, platform_message_limit, split_for_platform, split_text_by_limit,
+};
 pub use health::{ChannelHealth, ConnectionState, HealthMonitor};
 pub use policy::{DmPolicy, DmPolicyEnforcer, MentionGate};
 pub use registry::{Channel, ChannelRegistry};

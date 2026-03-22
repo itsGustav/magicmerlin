@@ -229,15 +229,19 @@ impl MessageQueue {
         };
         let body = serde_json::to_vec_pretty(&snapshot)?;
         if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await.map_err(|source| AgentError::Io {
-                path: parent.to_path_buf(),
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(|source| AgentError::Io {
+                    path: parent.to_path_buf(),
+                    source,
+                })?;
+        }
+        tokio::fs::write(path, body)
+            .await
+            .map_err(|source| AgentError::Io {
+                path: path.clone(),
                 source,
             })?;
-        }
-        tokio::fs::write(path, body).await.map_err(|source| AgentError::Io {
-            path: path.clone(),
-            source,
-        })?;
         Ok(())
     }
 
@@ -248,10 +252,12 @@ impl MessageQueue {
         if !path.exists() {
             return Ok(());
         }
-        let body = tokio::fs::read(path).await.map_err(|source| AgentError::Io {
-            path: path.clone(),
-            source,
-        })?;
+        let body = tokio::fs::read(path)
+            .await
+            .map_err(|source| AgentError::Io {
+                path: path.clone(),
+                source,
+            })?;
         if body.is_empty() {
             return Ok(());
         }

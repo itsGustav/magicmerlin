@@ -100,7 +100,11 @@ impl GoogleProvider {
         )
     }
 
-    async fn send_request(&self, request: &CompletionRequest, stream: bool) -> Result<reqwest::Response> {
+    async fn send_request(
+        &self,
+        request: &CompletionRequest,
+        stream: bool,
+    ) -> Result<reqwest::Response> {
         let (_, value) = self
             .auth
             .header_for_provider("google", &self.client)
@@ -279,10 +283,8 @@ fn parse_stream_json_lines(raw: &str) -> Result<ProviderStream> {
         ));
     }
 
-    if let Some(last) = out.last_mut() {
-        if let Ok(last) = last {
-            last.done = true;
-        }
+    if let Some(Ok(last)) = out.last_mut() {
+        last.done = true;
     }
 
     Ok(out)

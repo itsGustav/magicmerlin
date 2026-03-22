@@ -10,12 +10,12 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::routing::post;
 use axum::Router;
 use hmac::{Hmac, Mac};
-use sha2::Sha256;
 use serde_json::Value;
+use sha2::Sha256;
 use tokio::sync::mpsc;
 
-use crate::framework::InboundMessage;
 use super::normalize::normalize_line_event;
+use crate::framework::InboundMessage;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -52,7 +52,10 @@ async fn handle_webhook(
     body: Bytes,
 ) -> StatusCode {
     // Validate signature
-    let signature = match headers.get("x-line-signature").and_then(|v| v.to_str().ok()) {
+    let signature = match headers
+        .get("x-line-signature")
+        .and_then(|v| v.to_str().ok())
+    {
         Some(sig) => sig,
         None => return StatusCode::UNAUTHORIZED,
     };

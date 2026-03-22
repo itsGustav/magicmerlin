@@ -10,9 +10,17 @@ async fn matrix_smoke_queue_lifecycle() {
         default_timeout: Duration::from_secs(30),
     });
 
-    queue.enqueue("base", "run-1", Some(Duration::from_secs(10))).await.unwrap();
-    queue.wait_turn("base", "run-1", Duration::from_secs(1)).await.unwrap();
-    queue.complete("base", "run-1", RunStatus::Completed, None).await;
+    queue
+        .enqueue("base", "run-1", Some(Duration::from_secs(10)))
+        .await
+        .unwrap();
+    queue
+        .wait_turn("base", "run-1", Duration::from_secs(1))
+        .await
+        .unwrap();
+    queue
+        .complete("base", "run-1", RunStatus::Completed, None)
+        .await;
 
     let runs = queue.list_session_runs("base").await;
     assert_eq!(runs.len(), 1);
@@ -39,7 +47,6 @@ fn matrix_smoke_backoff() {
     assert_eq!(reconnect_backoff(2), Duration::from_secs(4));
 }
 
-
 #[test]
 fn retry_policy_case_1() {
     let transient = [
@@ -58,7 +65,10 @@ fn retry_policy_case_1() {
         "bad request #1",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -97,7 +107,10 @@ fn retry_policy_case_2() {
         "bad request #2",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -136,7 +149,10 @@ fn retry_policy_case_3() {
         "bad request #3",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -175,7 +191,10 @@ fn retry_policy_case_4() {
         "bad request #4",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -214,7 +233,10 @@ fn retry_policy_case_5() {
         "bad request #5",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -253,7 +275,10 @@ fn retry_policy_case_6() {
         "bad request #6",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -292,7 +317,10 @@ fn retry_policy_case_7() {
         "bad request #7",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -331,7 +359,10 @@ fn retry_policy_case_8() {
         "bad request #8",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -370,7 +401,10 @@ fn retry_policy_case_9() {
         "bad request #9",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -409,7 +443,10 @@ fn retry_policy_case_10() {
         "bad request #10",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -448,7 +485,10 @@ fn retry_policy_case_11() {
         "bad request #11",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -487,7 +527,10 @@ fn retry_policy_case_12() {
         "bad request #12",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -526,7 +569,10 @@ fn retry_policy_case_13() {
         "bad request #13",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -565,7 +611,10 @@ fn retry_policy_case_14() {
         "bad request #14",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -604,7 +653,10 @@ fn retry_policy_case_15() {
         "bad request #15",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -643,7 +695,10 @@ fn retry_policy_case_16() {
         "bad request #16",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -682,7 +737,10 @@ fn retry_policy_case_17() {
         "bad request #17",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -721,7 +779,10 @@ fn retry_policy_case_18() {
         "bad request #18",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -760,7 +821,10 @@ fn retry_policy_case_19() {
         "bad request #19",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -799,7 +863,10 @@ fn retry_policy_case_20() {
         "bad request #20",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -838,7 +905,10 @@ fn retry_policy_case_21() {
         "bad request #21",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -877,7 +947,10 @@ fn retry_policy_case_22() {
         "bad request #22",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -916,7 +989,10 @@ fn retry_policy_case_23() {
         "bad request #23",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -955,7 +1031,10 @@ fn retry_policy_case_24() {
         "bad request #24",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -994,7 +1073,10 @@ fn retry_policy_case_25() {
         "bad request #25",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1033,7 +1115,10 @@ fn retry_policy_case_26() {
         "bad request #26",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1072,7 +1157,10 @@ fn retry_policy_case_27() {
         "bad request #27",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1111,7 +1199,10 @@ fn retry_policy_case_28() {
         "bad request #28",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1150,7 +1241,10 @@ fn retry_policy_case_29() {
         "bad request #29",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1189,7 +1283,10 @@ fn retry_policy_case_30() {
         "bad request #30",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1228,7 +1325,10 @@ fn retry_policy_case_31() {
         "bad request #31",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1267,7 +1367,10 @@ fn retry_policy_case_32() {
         "bad request #32",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1306,7 +1409,10 @@ fn retry_policy_case_33() {
         "bad request #33",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1345,7 +1451,10 @@ fn retry_policy_case_34() {
         "bad request #34",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1384,7 +1493,10 @@ fn retry_policy_case_35() {
         "bad request #35",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1423,7 +1535,10 @@ fn retry_policy_case_36() {
         "bad request #36",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1462,7 +1577,10 @@ fn retry_policy_case_37() {
         "bad request #37",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1501,7 +1619,10 @@ fn retry_policy_case_38() {
         "bad request #38",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1540,7 +1661,10 @@ fn retry_policy_case_39() {
         "bad request #39",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1579,7 +1703,10 @@ fn retry_policy_case_40() {
         "bad request #40",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1618,7 +1745,10 @@ fn retry_policy_case_41() {
         "bad request #41",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1657,7 +1787,10 @@ fn retry_policy_case_42() {
         "bad request #42",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1696,7 +1829,10 @@ fn retry_policy_case_43() {
         "bad request #43",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1735,7 +1871,10 @@ fn retry_policy_case_44() {
         "bad request #44",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1774,7 +1913,10 @@ fn retry_policy_case_45() {
         "bad request #45",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1813,7 +1955,10 @@ fn retry_policy_case_46() {
         "bad request #46",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1852,7 +1997,10 @@ fn retry_policy_case_47() {
         "bad request #47",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1891,7 +2039,10 @@ fn retry_policy_case_48() {
         "bad request #48",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1930,7 +2081,10 @@ fn retry_policy_case_49() {
         "bad request #49",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -1969,7 +2123,10 @@ fn retry_policy_case_50() {
         "bad request #50",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2008,7 +2165,10 @@ fn retry_policy_case_51() {
         "bad request #51",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2047,7 +2207,10 @@ fn retry_policy_case_52() {
         "bad request #52",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2086,7 +2249,10 @@ fn retry_policy_case_53() {
         "bad request #53",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2125,7 +2291,10 @@ fn retry_policy_case_54() {
         "bad request #54",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2164,7 +2333,10 @@ fn retry_policy_case_55() {
         "bad request #55",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2203,7 +2375,10 @@ fn retry_policy_case_56() {
         "bad request #56",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2242,7 +2417,10 @@ fn retry_policy_case_57() {
         "bad request #57",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2281,7 +2459,10 @@ fn retry_policy_case_58() {
         "bad request #58",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2320,7 +2501,10 @@ fn retry_policy_case_59() {
         "bad request #59",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2359,7 +2543,10 @@ fn retry_policy_case_60() {
         "bad request #60",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2398,7 +2585,10 @@ fn retry_policy_case_61() {
         "bad request #61",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2437,7 +2627,10 @@ fn retry_policy_case_62() {
         "bad request #62",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2476,7 +2669,10 @@ fn retry_policy_case_63() {
         "bad request #63",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2515,7 +2711,10 @@ fn retry_policy_case_64() {
         "bad request #64",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2554,7 +2753,10 @@ fn retry_policy_case_65() {
         "bad request #65",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2593,7 +2795,10 @@ fn retry_policy_case_66() {
         "bad request #66",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2632,7 +2837,10 @@ fn retry_policy_case_67() {
         "bad request #67",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2671,7 +2879,10 @@ fn retry_policy_case_68() {
         "bad request #68",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2710,7 +2921,10 @@ fn retry_policy_case_69() {
         "bad request #69",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2749,7 +2963,10 @@ fn retry_policy_case_70() {
         "bad request #70",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2788,7 +3005,10 @@ fn retry_policy_case_71() {
         "bad request #71",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2827,7 +3047,10 @@ fn retry_policy_case_72() {
         "bad request #72",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2866,7 +3089,10 @@ fn retry_policy_case_73() {
         "bad request #73",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2905,7 +3131,10 @@ fn retry_policy_case_74() {
         "bad request #74",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2944,7 +3173,10 @@ fn retry_policy_case_75() {
         "bad request #75",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -2983,7 +3215,10 @@ fn retry_policy_case_76() {
         "bad request #76",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3022,7 +3257,10 @@ fn retry_policy_case_77() {
         "bad request #77",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3061,7 +3299,10 @@ fn retry_policy_case_78() {
         "bad request #78",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3100,7 +3341,10 @@ fn retry_policy_case_79() {
         "bad request #79",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3139,7 +3383,10 @@ fn retry_policy_case_80() {
         "bad request #80",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3178,7 +3425,10 @@ fn retry_policy_case_81() {
         "bad request #81",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3217,7 +3467,10 @@ fn retry_policy_case_82() {
         "bad request #82",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3256,7 +3509,10 @@ fn retry_policy_case_83() {
         "bad request #83",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3295,7 +3551,10 @@ fn retry_policy_case_84() {
         "bad request #84",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3334,7 +3593,10 @@ fn retry_policy_case_85() {
         "bad request #85",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3373,7 +3635,10 @@ fn retry_policy_case_86() {
         "bad request #86",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3412,7 +3677,10 @@ fn retry_policy_case_87() {
         "bad request #87",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3451,7 +3719,10 @@ fn retry_policy_case_88() {
         "bad request #88",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3490,7 +3761,10 @@ fn retry_policy_case_89() {
         "bad request #89",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3529,7 +3803,10 @@ fn retry_policy_case_90() {
         "bad request #90",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3568,7 +3845,10 @@ fn retry_policy_case_91() {
         "bad request #91",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3607,7 +3887,10 @@ fn retry_policy_case_92() {
         "bad request #92",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3646,7 +3929,10 @@ fn retry_policy_case_93() {
         "bad request #93",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3685,7 +3971,10 @@ fn retry_policy_case_94() {
         "bad request #94",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3724,7 +4013,10 @@ fn retry_policy_case_95() {
         "bad request #95",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3763,7 +4055,10 @@ fn retry_policy_case_96() {
         "bad request #96",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3802,7 +4097,10 @@ fn retry_policy_case_97() {
         "bad request #97",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3841,7 +4139,10 @@ fn retry_policy_case_98() {
         "bad request #98",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3880,7 +4181,10 @@ fn retry_policy_case_99() {
         "bad request #99",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3919,7 +4223,10 @@ fn retry_policy_case_100() {
         "bad request #100",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3958,7 +4265,10 @@ fn retry_policy_case_101() {
         "bad request #101",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -3997,7 +4307,10 @@ fn retry_policy_case_102() {
         "bad request #102",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4036,7 +4349,10 @@ fn retry_policy_case_103() {
         "bad request #103",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4075,7 +4391,10 @@ fn retry_policy_case_104() {
         "bad request #104",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4114,7 +4433,10 @@ fn retry_policy_case_105() {
         "bad request #105",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4153,7 +4475,10 @@ fn retry_policy_case_106() {
         "bad request #106",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4192,7 +4517,10 @@ fn retry_policy_case_107() {
         "bad request #107",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4231,7 +4559,10 @@ fn retry_policy_case_108() {
         "bad request #108",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4270,7 +4601,10 @@ fn retry_policy_case_109() {
         "bad request #109",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4309,7 +4643,10 @@ fn retry_policy_case_110() {
         "bad request #110",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4348,7 +4685,10 @@ fn retry_policy_case_111() {
         "bad request #111",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4387,7 +4727,10 @@ fn retry_policy_case_112() {
         "bad request #112",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4426,7 +4769,10 @@ fn retry_policy_case_113() {
         "bad request #113",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4465,7 +4811,10 @@ fn retry_policy_case_114() {
         "bad request #114",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4504,7 +4853,10 @@ fn retry_policy_case_115() {
         "bad request #115",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4543,7 +4895,10 @@ fn retry_policy_case_116() {
         "bad request #116",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4582,7 +4937,10 @@ fn retry_policy_case_117() {
         "bad request #117",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4621,7 +4979,10 @@ fn retry_policy_case_118() {
         "bad request #118",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4660,7 +5021,10 @@ fn retry_policy_case_119() {
         "bad request #119",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4699,7 +5063,10 @@ fn retry_policy_case_120() {
         "bad request #120",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4738,7 +5105,10 @@ fn retry_policy_case_121() {
         "bad request #121",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4777,7 +5147,10 @@ fn retry_policy_case_122() {
         "bad request #122",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4816,7 +5189,10 @@ fn retry_policy_case_123() {
         "bad request #123",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4855,7 +5231,10 @@ fn retry_policy_case_124() {
         "bad request #124",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4894,7 +5273,10 @@ fn retry_policy_case_125() {
         "bad request #125",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4933,7 +5315,10 @@ fn retry_policy_case_126() {
         "bad request #126",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -4972,7 +5357,10 @@ fn retry_policy_case_127() {
         "bad request #127",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5011,7 +5399,10 @@ fn retry_policy_case_128() {
         "bad request #128",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5050,7 +5441,10 @@ fn retry_policy_case_129() {
         "bad request #129",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5089,7 +5483,10 @@ fn retry_policy_case_130() {
         "bad request #130",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5128,7 +5525,10 @@ fn retry_policy_case_131() {
         "bad request #131",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5167,7 +5567,10 @@ fn retry_policy_case_132() {
         "bad request #132",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5206,7 +5609,10 @@ fn retry_policy_case_133() {
         "bad request #133",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5245,7 +5651,10 @@ fn retry_policy_case_134() {
         "bad request #134",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5284,7 +5693,10 @@ fn retry_policy_case_135() {
         "bad request #135",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5323,7 +5735,10 @@ fn retry_policy_case_136() {
         "bad request #136",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5362,7 +5777,10 @@ fn retry_policy_case_137() {
         "bad request #137",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5401,7 +5819,10 @@ fn retry_policy_case_138() {
         "bad request #138",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5440,7 +5861,10 @@ fn retry_policy_case_139() {
         "bad request #139",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5479,7 +5903,10 @@ fn retry_policy_case_140() {
         "bad request #140",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5518,7 +5945,10 @@ fn retry_policy_case_141() {
         "bad request #141",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5557,7 +5987,10 @@ fn retry_policy_case_142() {
         "bad request #142",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5596,7 +6029,10 @@ fn retry_policy_case_143() {
         "bad request #143",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5635,7 +6071,10 @@ fn retry_policy_case_144() {
         "bad request #144",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5674,7 +6113,10 @@ fn retry_policy_case_145() {
         "bad request #145",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5713,7 +6155,10 @@ fn retry_policy_case_146() {
         "bad request #146",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5752,7 +6197,10 @@ fn retry_policy_case_147() {
         "bad request #147",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5791,7 +6239,10 @@ fn retry_policy_case_148() {
         "bad request #148",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5830,7 +6281,10 @@ fn retry_policy_case_149() {
         "bad request #149",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5869,7 +6323,10 @@ fn retry_policy_case_150() {
         "bad request #150",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5908,7 +6365,10 @@ fn retry_policy_case_151() {
         "bad request #151",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5947,7 +6407,10 @@ fn retry_policy_case_152() {
         "bad request #152",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -5986,7 +6449,10 @@ fn retry_policy_case_153() {
         "bad request #153",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6025,7 +6491,10 @@ fn retry_policy_case_154() {
         "bad request #154",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6064,7 +6533,10 @@ fn retry_policy_case_155() {
         "bad request #155",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6103,7 +6575,10 @@ fn retry_policy_case_156() {
         "bad request #156",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6142,7 +6617,10 @@ fn retry_policy_case_157() {
         "bad request #157",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6181,7 +6659,10 @@ fn retry_policy_case_158() {
         "bad request #158",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6220,7 +6701,10 @@ fn retry_policy_case_159() {
         "bad request #159",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6259,7 +6743,10 @@ fn retry_policy_case_160() {
         "bad request #160",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6298,7 +6785,10 @@ fn retry_policy_case_161() {
         "bad request #161",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6337,7 +6827,10 @@ fn retry_policy_case_162() {
         "bad request #162",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6376,7 +6869,10 @@ fn retry_policy_case_163() {
         "bad request #163",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6415,7 +6911,10 @@ fn retry_policy_case_164() {
         "bad request #164",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6454,7 +6953,10 @@ fn retry_policy_case_165() {
         "bad request #165",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6493,7 +6995,10 @@ fn retry_policy_case_166() {
         "bad request #166",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6532,7 +7037,10 @@ fn retry_policy_case_167() {
         "bad request #167",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6571,7 +7079,10 @@ fn retry_policy_case_168() {
         "bad request #168",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6610,7 +7121,10 @@ fn retry_policy_case_169() {
         "bad request #169",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6649,7 +7163,10 @@ fn retry_policy_case_170() {
         "bad request #170",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6688,7 +7205,10 @@ fn retry_policy_case_171() {
         "bad request #171",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6727,7 +7247,10 @@ fn retry_policy_case_172() {
         "bad request #172",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6766,7 +7289,10 @@ fn retry_policy_case_173() {
         "bad request #173",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6805,7 +7331,10 @@ fn retry_policy_case_174() {
         "bad request #174",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6844,7 +7373,10 @@ fn retry_policy_case_175() {
         "bad request #175",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6883,7 +7415,10 @@ fn retry_policy_case_176() {
         "bad request #176",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6922,7 +7457,10 @@ fn retry_policy_case_177() {
         "bad request #177",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -6961,7 +7499,10 @@ fn retry_policy_case_178() {
         "bad request #178",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7000,7 +7541,10 @@ fn retry_policy_case_179() {
         "bad request #179",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7039,7 +7583,10 @@ fn retry_policy_case_180() {
         "bad request #180",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7078,7 +7625,10 @@ fn retry_policy_case_181() {
         "bad request #181",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7117,7 +7667,10 @@ fn retry_policy_case_182() {
         "bad request #182",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7156,7 +7709,10 @@ fn retry_policy_case_183() {
         "bad request #183",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7195,7 +7751,10 @@ fn retry_policy_case_184() {
         "bad request #184",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7234,7 +7793,10 @@ fn retry_policy_case_185() {
         "bad request #185",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7273,7 +7835,10 @@ fn retry_policy_case_186() {
         "bad request #186",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7312,7 +7877,10 @@ fn retry_policy_case_187() {
         "bad request #187",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7351,7 +7919,10 @@ fn retry_policy_case_188() {
         "bad request #188",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7390,7 +7961,10 @@ fn retry_policy_case_189() {
         "bad request #189",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7429,7 +8003,10 @@ fn retry_policy_case_190() {
         "bad request #190",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7468,7 +8045,10 @@ fn retry_policy_case_191() {
         "bad request #191",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7507,7 +8087,10 @@ fn retry_policy_case_192() {
         "bad request #192",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7546,7 +8129,10 @@ fn retry_policy_case_193() {
         "bad request #193",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7585,7 +8171,10 @@ fn retry_policy_case_194() {
         "bad request #194",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7624,7 +8213,10 @@ fn retry_policy_case_195() {
         "bad request #195",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7663,7 +8255,10 @@ fn retry_policy_case_196() {
         "bad request #196",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7702,7 +8297,10 @@ fn retry_policy_case_197() {
         "bad request #197",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7741,7 +8339,10 @@ fn retry_policy_case_198() {
         "bad request #198",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7780,7 +8381,10 @@ fn retry_policy_case_199() {
         "bad request #199",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7819,7 +8423,10 @@ fn retry_policy_case_200() {
         "bad request #200",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7858,7 +8465,10 @@ fn retry_policy_case_201() {
         "bad request #201",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7897,7 +8507,10 @@ fn retry_policy_case_202() {
         "bad request #202",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7936,7 +8549,10 @@ fn retry_policy_case_203() {
         "bad request #203",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -7975,7 +8591,10 @@ fn retry_policy_case_204() {
         "bad request #204",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8014,7 +8633,10 @@ fn retry_policy_case_205() {
         "bad request #205",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8053,7 +8675,10 @@ fn retry_policy_case_206() {
         "bad request #206",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8092,7 +8717,10 @@ fn retry_policy_case_207() {
         "bad request #207",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8131,7 +8759,10 @@ fn retry_policy_case_208() {
         "bad request #208",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8170,7 +8801,10 @@ fn retry_policy_case_209() {
         "bad request #209",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8209,7 +8843,10 @@ fn retry_policy_case_210() {
         "bad request #210",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8248,7 +8885,10 @@ fn retry_policy_case_211() {
         "bad request #211",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8287,7 +8927,10 @@ fn retry_policy_case_212() {
         "bad request #212",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8326,7 +8969,10 @@ fn retry_policy_case_213() {
         "bad request #213",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8365,7 +9011,10 @@ fn retry_policy_case_214() {
         "bad request #214",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8404,7 +9053,10 @@ fn retry_policy_case_215() {
         "bad request #215",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8443,7 +9095,10 @@ fn retry_policy_case_216() {
         "bad request #216",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8482,7 +9137,10 @@ fn retry_policy_case_217() {
         "bad request #217",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8521,7 +9179,10 @@ fn retry_policy_case_218() {
         "bad request #218",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8560,7 +9221,10 @@ fn retry_policy_case_219() {
         "bad request #219",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8599,7 +9263,10 @@ fn retry_policy_case_220() {
         "bad request #220",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8638,7 +9305,10 @@ fn retry_policy_case_221() {
         "bad request #221",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8677,7 +9347,10 @@ fn retry_policy_case_222() {
         "bad request #222",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8716,7 +9389,10 @@ fn retry_policy_case_223() {
         "bad request #223",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8755,7 +9431,10 @@ fn retry_policy_case_224() {
         "bad request #224",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8794,7 +9473,10 @@ fn retry_policy_case_225() {
         "bad request #225",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8833,7 +9515,10 @@ fn retry_policy_case_226() {
         "bad request #226",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8872,7 +9557,10 @@ fn retry_policy_case_227() {
         "bad request #227",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8911,7 +9599,10 @@ fn retry_policy_case_228() {
         "bad request #228",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8950,7 +9641,10 @@ fn retry_policy_case_229() {
         "bad request #229",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -8989,7 +9683,10 @@ fn retry_policy_case_230() {
         "bad request #230",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9028,7 +9725,10 @@ fn retry_policy_case_231() {
         "bad request #231",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9067,7 +9767,10 @@ fn retry_policy_case_232() {
         "bad request #232",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9106,7 +9809,10 @@ fn retry_policy_case_233() {
         "bad request #233",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9145,7 +9851,10 @@ fn retry_policy_case_234() {
         "bad request #234",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9184,7 +9893,10 @@ fn retry_policy_case_235() {
         "bad request #235",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9223,7 +9935,10 @@ fn retry_policy_case_236() {
         "bad request #236",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9262,7 +9977,10 @@ fn retry_policy_case_237() {
         "bad request #237",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9301,7 +10019,10 @@ fn retry_policy_case_238() {
         "bad request #238",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9340,7 +10061,10 @@ fn retry_policy_case_239() {
         "bad request #239",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9379,7 +10103,10 @@ fn retry_policy_case_240() {
         "bad request #240",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9418,7 +10145,10 @@ fn retry_policy_case_241() {
         "bad request #241",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9457,7 +10187,10 @@ fn retry_policy_case_242() {
         "bad request #242",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9496,7 +10229,10 @@ fn retry_policy_case_243() {
         "bad request #243",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9535,7 +10271,10 @@ fn retry_policy_case_244() {
         "bad request #244",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9574,7 +10313,10 @@ fn retry_policy_case_245() {
         "bad request #245",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9613,7 +10355,10 @@ fn retry_policy_case_246() {
         "bad request #246",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9652,7 +10397,10 @@ fn retry_policy_case_247() {
         "bad request #247",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9691,7 +10439,10 @@ fn retry_policy_case_248() {
         "bad request #248",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9730,7 +10481,10 @@ fn retry_policy_case_249() {
         "bad request #249",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9769,7 +10523,10 @@ fn retry_policy_case_250() {
         "bad request #250",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9808,7 +10565,10 @@ fn retry_policy_case_251() {
         "bad request #251",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9847,7 +10607,10 @@ fn retry_policy_case_252() {
         "bad request #252",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9886,7 +10649,10 @@ fn retry_policy_case_253() {
         "bad request #253",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9925,7 +10691,10 @@ fn retry_policy_case_254() {
         "bad request #254",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -9964,7 +10733,10 @@ fn retry_policy_case_255() {
         "bad request #255",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10003,7 +10775,10 @@ fn retry_policy_case_256() {
         "bad request #256",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10042,7 +10817,10 @@ fn retry_policy_case_257() {
         "bad request #257",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10081,7 +10859,10 @@ fn retry_policy_case_258() {
         "bad request #258",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10120,7 +10901,10 @@ fn retry_policy_case_259() {
         "bad request #259",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10159,7 +10943,10 @@ fn retry_policy_case_260() {
         "bad request #260",
     ];
     for item in terminal {
-        assert!(!should_retry_connection(item), "expected no retry for {item}");
+        assert!(
+            !should_retry_connection(item),
+            "expected no retry for {item}"
+        );
     }
 }
 
@@ -10191,17 +10978,25 @@ async fn queue_matrix_case_1() {
     let r1 = format!("1-r1");
     let r2 = format!("1-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10223,17 +11018,25 @@ async fn queue_matrix_case_2() {
     let r1 = format!("2-r1");
     let r2 = format!("2-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10255,17 +11058,25 @@ async fn queue_matrix_case_3() {
     let r1 = format!("3-r1");
     let r2 = format!("3-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10287,17 +11098,25 @@ async fn queue_matrix_case_4() {
     let r1 = format!("4-r1");
     let r2 = format!("4-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10319,17 +11138,25 @@ async fn queue_matrix_case_5() {
     let r1 = format!("5-r1");
     let r2 = format!("5-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10351,17 +11178,25 @@ async fn queue_matrix_case_6() {
     let r1 = format!("6-r1");
     let r2 = format!("6-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10383,17 +11218,25 @@ async fn queue_matrix_case_7() {
     let r1 = format!("7-r1");
     let r2 = format!("7-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10415,17 +11258,25 @@ async fn queue_matrix_case_8() {
     let r1 = format!("8-r1");
     let r2 = format!("8-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10447,17 +11298,25 @@ async fn queue_matrix_case_9() {
     let r1 = format!("9-r1");
     let r2 = format!("9-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10479,17 +11338,25 @@ async fn queue_matrix_case_10() {
     let r1 = format!("10-r1");
     let r2 = format!("10-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10511,17 +11378,25 @@ async fn queue_matrix_case_11() {
     let r1 = format!("11-r1");
     let r2 = format!("11-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10543,17 +11418,25 @@ async fn queue_matrix_case_12() {
     let r1 = format!("12-r1");
     let r2 = format!("12-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10575,17 +11458,25 @@ async fn queue_matrix_case_13() {
     let r1 = format!("13-r1");
     let r2 = format!("13-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10607,17 +11498,25 @@ async fn queue_matrix_case_14() {
     let r1 = format!("14-r1");
     let r2 = format!("14-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10639,17 +11538,25 @@ async fn queue_matrix_case_15() {
     let r1 = format!("15-r1");
     let r2 = format!("15-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10671,17 +11578,25 @@ async fn queue_matrix_case_16() {
     let r1 = format!("16-r1");
     let r2 = format!("16-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10703,17 +11618,25 @@ async fn queue_matrix_case_17() {
     let r1 = format!("17-r1");
     let r2 = format!("17-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10735,17 +11658,25 @@ async fn queue_matrix_case_18() {
     let r1 = format!("18-r1");
     let r2 = format!("18-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10767,17 +11698,25 @@ async fn queue_matrix_case_19() {
     let r1 = format!("19-r1");
     let r2 = format!("19-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10799,17 +11738,25 @@ async fn queue_matrix_case_20() {
     let r1 = format!("20-r1");
     let r2 = format!("20-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10831,17 +11778,25 @@ async fn queue_matrix_case_21() {
     let r1 = format!("21-r1");
     let r2 = format!("21-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10863,17 +11818,25 @@ async fn queue_matrix_case_22() {
     let r1 = format!("22-r1");
     let r2 = format!("22-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10895,17 +11858,25 @@ async fn queue_matrix_case_23() {
     let r1 = format!("23-r1");
     let r2 = format!("23-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10927,17 +11898,25 @@ async fn queue_matrix_case_24() {
     let r1 = format!("24-r1");
     let r2 = format!("24-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10959,17 +11938,25 @@ async fn queue_matrix_case_25() {
     let r1 = format!("25-r1");
     let r2 = format!("25-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -10991,17 +11978,25 @@ async fn queue_matrix_case_26() {
     let r1 = format!("26-r1");
     let r2 = format!("26-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11023,17 +12018,25 @@ async fn queue_matrix_case_27() {
     let r1 = format!("27-r1");
     let r2 = format!("27-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11055,17 +12058,25 @@ async fn queue_matrix_case_28() {
     let r1 = format!("28-r1");
     let r2 = format!("28-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11087,17 +12098,25 @@ async fn queue_matrix_case_29() {
     let r1 = format!("29-r1");
     let r2 = format!("29-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11119,17 +12138,25 @@ async fn queue_matrix_case_30() {
     let r1 = format!("30-r1");
     let r2 = format!("30-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11151,17 +12178,25 @@ async fn queue_matrix_case_31() {
     let r1 = format!("31-r1");
     let r2 = format!("31-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11183,17 +12218,25 @@ async fn queue_matrix_case_32() {
     let r1 = format!("32-r1");
     let r2 = format!("32-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11215,17 +12258,25 @@ async fn queue_matrix_case_33() {
     let r1 = format!("33-r1");
     let r2 = format!("33-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11247,17 +12298,25 @@ async fn queue_matrix_case_34() {
     let r1 = format!("34-r1");
     let r2 = format!("34-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11279,17 +12338,25 @@ async fn queue_matrix_case_35() {
     let r1 = format!("35-r1");
     let r2 = format!("35-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11311,17 +12378,25 @@ async fn queue_matrix_case_36() {
     let r1 = format!("36-r1");
     let r2 = format!("36-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11343,17 +12418,25 @@ async fn queue_matrix_case_37() {
     let r1 = format!("37-r1");
     let r2 = format!("37-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11375,17 +12458,25 @@ async fn queue_matrix_case_38() {
     let r1 = format!("38-r1");
     let r2 = format!("38-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11407,17 +12498,25 @@ async fn queue_matrix_case_39() {
     let r1 = format!("39-r1");
     let r2 = format!("39-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11439,17 +12538,25 @@ async fn queue_matrix_case_40() {
     let r1 = format!("40-r1");
     let r2 = format!("40-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11471,17 +12578,25 @@ async fn queue_matrix_case_41() {
     let r1 = format!("41-r1");
     let r2 = format!("41-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11503,17 +12618,25 @@ async fn queue_matrix_case_42() {
     let r1 = format!("42-r1");
     let r2 = format!("42-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11535,17 +12658,25 @@ async fn queue_matrix_case_43() {
     let r1 = format!("43-r1");
     let r2 = format!("43-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11567,17 +12698,25 @@ async fn queue_matrix_case_44() {
     let r1 = format!("44-r1");
     let r2 = format!("44-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11599,17 +12738,25 @@ async fn queue_matrix_case_45() {
     let r1 = format!("45-r1");
     let r2 = format!("45-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11631,17 +12778,25 @@ async fn queue_matrix_case_46() {
     let r1 = format!("46-r1");
     let r2 = format!("46-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11663,17 +12818,25 @@ async fn queue_matrix_case_47() {
     let r1 = format!("47-r1");
     let r2 = format!("47-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11695,17 +12858,25 @@ async fn queue_matrix_case_48() {
     let r1 = format!("48-r1");
     let r2 = format!("48-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11727,17 +12898,25 @@ async fn queue_matrix_case_49() {
     let r1 = format!("49-r1");
     let r2 = format!("49-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11759,17 +12938,25 @@ async fn queue_matrix_case_50() {
     let r1 = format!("50-r1");
     let r2 = format!("50-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11791,17 +12978,25 @@ async fn queue_matrix_case_51() {
     let r1 = format!("51-r1");
     let r2 = format!("51-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11823,17 +13018,25 @@ async fn queue_matrix_case_52() {
     let r1 = format!("52-r1");
     let r2 = format!("52-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11855,17 +13058,25 @@ async fn queue_matrix_case_53() {
     let r1 = format!("53-r1");
     let r2 = format!("53-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11887,17 +13098,25 @@ async fn queue_matrix_case_54() {
     let r1 = format!("54-r1");
     let r2 = format!("54-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11919,17 +13138,25 @@ async fn queue_matrix_case_55() {
     let r1 = format!("55-r1");
     let r2 = format!("55-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11951,17 +13178,25 @@ async fn queue_matrix_case_56() {
     let r1 = format!("56-r1");
     let r2 = format!("56-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -11983,17 +13218,25 @@ async fn queue_matrix_case_57() {
     let r1 = format!("57-r1");
     let r2 = format!("57-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12015,17 +13258,25 @@ async fn queue_matrix_case_58() {
     let r1 = format!("58-r1");
     let r2 = format!("58-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12047,17 +13298,25 @@ async fn queue_matrix_case_59() {
     let r1 = format!("59-r1");
     let r2 = format!("59-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12079,17 +13338,25 @@ async fn queue_matrix_case_60() {
     let r1 = format!("60-r1");
     let r2 = format!("60-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12111,17 +13378,25 @@ async fn queue_matrix_case_61() {
     let r1 = format!("61-r1");
     let r2 = format!("61-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12143,17 +13418,25 @@ async fn queue_matrix_case_62() {
     let r1 = format!("62-r1");
     let r2 = format!("62-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12175,17 +13458,25 @@ async fn queue_matrix_case_63() {
     let r1 = format!("63-r1");
     let r2 = format!("63-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12207,17 +13498,25 @@ async fn queue_matrix_case_64() {
     let r1 = format!("64-r1");
     let r2 = format!("64-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12239,17 +13538,25 @@ async fn queue_matrix_case_65() {
     let r1 = format!("65-r1");
     let r2 = format!("65-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12271,17 +13578,25 @@ async fn queue_matrix_case_66() {
     let r1 = format!("66-r1");
     let r2 = format!("66-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12303,17 +13618,25 @@ async fn queue_matrix_case_67() {
     let r1 = format!("67-r1");
     let r2 = format!("67-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12335,17 +13658,25 @@ async fn queue_matrix_case_68() {
     let r1 = format!("68-r1");
     let r2 = format!("68-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12367,17 +13698,25 @@ async fn queue_matrix_case_69() {
     let r1 = format!("69-r1");
     let r2 = format!("69-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12399,17 +13738,25 @@ async fn queue_matrix_case_70() {
     let r1 = format!("70-r1");
     let r2 = format!("70-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12431,17 +13778,25 @@ async fn queue_matrix_case_71() {
     let r1 = format!("71-r1");
     let r2 = format!("71-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12463,17 +13818,25 @@ async fn queue_matrix_case_72() {
     let r1 = format!("72-r1");
     let r2 = format!("72-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12495,17 +13858,25 @@ async fn queue_matrix_case_73() {
     let r1 = format!("73-r1");
     let r2 = format!("73-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12527,17 +13898,25 @@ async fn queue_matrix_case_74() {
     let r1 = format!("74-r1");
     let r2 = format!("74-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12559,17 +13938,25 @@ async fn queue_matrix_case_75() {
     let r1 = format!("75-r1");
     let r2 = format!("75-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12591,17 +13978,25 @@ async fn queue_matrix_case_76() {
     let r1 = format!("76-r1");
     let r2 = format!("76-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12623,17 +14018,25 @@ async fn queue_matrix_case_77() {
     let r1 = format!("77-r1");
     let r2 = format!("77-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12655,17 +14058,25 @@ async fn queue_matrix_case_78() {
     let r1 = format!("78-r1");
     let r2 = format!("78-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12687,17 +14098,25 @@ async fn queue_matrix_case_79() {
     let r1 = format!("79-r1");
     let r2 = format!("79-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12719,17 +14138,25 @@ async fn queue_matrix_case_80() {
     let r1 = format!("80-r1");
     let r2 = format!("80-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12751,17 +14178,25 @@ async fn queue_matrix_case_81() {
     let r1 = format!("81-r1");
     let r2 = format!("81-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12783,17 +14218,25 @@ async fn queue_matrix_case_82() {
     let r1 = format!("82-r1");
     let r2 = format!("82-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12815,17 +14258,25 @@ async fn queue_matrix_case_83() {
     let r1 = format!("83-r1");
     let r2 = format!("83-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12847,17 +14298,25 @@ async fn queue_matrix_case_84() {
     let r1 = format!("84-r1");
     let r2 = format!("84-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12879,17 +14338,25 @@ async fn queue_matrix_case_85() {
     let r1 = format!("85-r1");
     let r2 = format!("85-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12911,17 +14378,25 @@ async fn queue_matrix_case_86() {
     let r1 = format!("86-r1");
     let r2 = format!("86-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12943,17 +14418,25 @@ async fn queue_matrix_case_87() {
     let r1 = format!("87-r1");
     let r2 = format!("87-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -12975,17 +14458,25 @@ async fn queue_matrix_case_88() {
     let r1 = format!("88-r1");
     let r2 = format!("88-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13007,17 +14498,25 @@ async fn queue_matrix_case_89() {
     let r1 = format!("89-r1");
     let r2 = format!("89-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13039,17 +14538,25 @@ async fn queue_matrix_case_90() {
     let r1 = format!("90-r1");
     let r2 = format!("90-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13071,17 +14578,25 @@ async fn queue_matrix_case_91() {
     let r1 = format!("91-r1");
     let r2 = format!("91-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13103,17 +14618,25 @@ async fn queue_matrix_case_92() {
     let r1 = format!("92-r1");
     let r2 = format!("92-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13135,17 +14658,25 @@ async fn queue_matrix_case_93() {
     let r1 = format!("93-r1");
     let r2 = format!("93-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13167,17 +14698,25 @@ async fn queue_matrix_case_94() {
     let r1 = format!("94-r1");
     let r2 = format!("94-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13199,17 +14738,25 @@ async fn queue_matrix_case_95() {
     let r1 = format!("95-r1");
     let r2 = format!("95-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13231,17 +14778,25 @@ async fn queue_matrix_case_96() {
     let r1 = format!("96-r1");
     let r2 = format!("96-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13263,17 +14818,25 @@ async fn queue_matrix_case_97() {
     let r1 = format!("97-r1");
     let r2 = format!("97-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13295,17 +14858,25 @@ async fn queue_matrix_case_98() {
     let r1 = format!("98-r1");
     let r2 = format!("98-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13327,17 +14898,25 @@ async fn queue_matrix_case_99() {
     let r1 = format!("99-r1");
     let r2 = format!("99-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13359,17 +14938,25 @@ async fn queue_matrix_case_100() {
     let r1 = format!("100-r1");
     let r2 = format!("100-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13391,17 +14978,25 @@ async fn queue_matrix_case_101() {
     let r1 = format!("101-r1");
     let r2 = format!("101-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13423,17 +15018,25 @@ async fn queue_matrix_case_102() {
     let r1 = format!("102-r1");
     let r2 = format!("102-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13455,17 +15058,25 @@ async fn queue_matrix_case_103() {
     let r1 = format!("103-r1");
     let r2 = format!("103-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13487,17 +15098,25 @@ async fn queue_matrix_case_104() {
     let r1 = format!("104-r1");
     let r2 = format!("104-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13519,17 +15138,25 @@ async fn queue_matrix_case_105() {
     let r1 = format!("105-r1");
     let r2 = format!("105-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13551,17 +15178,25 @@ async fn queue_matrix_case_106() {
     let r1 = format!("106-r1");
     let r2 = format!("106-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13583,17 +15218,25 @@ async fn queue_matrix_case_107() {
     let r1 = format!("107-r1");
     let r2 = format!("107-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13615,17 +15258,25 @@ async fn queue_matrix_case_108() {
     let r1 = format!("108-r1");
     let r2 = format!("108-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13647,17 +15298,25 @@ async fn queue_matrix_case_109() {
     let r1 = format!("109-r1");
     let r2 = format!("109-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13679,17 +15338,25 @@ async fn queue_matrix_case_110() {
     let r1 = format!("110-r1");
     let r2 = format!("110-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13711,17 +15378,25 @@ async fn queue_matrix_case_111() {
     let r1 = format!("111-r1");
     let r2 = format!("111-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13743,17 +15418,25 @@ async fn queue_matrix_case_112() {
     let r1 = format!("112-r1");
     let r2 = format!("112-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13775,17 +15458,25 @@ async fn queue_matrix_case_113() {
     let r1 = format!("113-r1");
     let r2 = format!("113-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13807,17 +15498,25 @@ async fn queue_matrix_case_114() {
     let r1 = format!("114-r1");
     let r2 = format!("114-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13839,17 +15538,25 @@ async fn queue_matrix_case_115() {
     let r1 = format!("115-r1");
     let r2 = format!("115-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13871,17 +15578,25 @@ async fn queue_matrix_case_116() {
     let r1 = format!("116-r1");
     let r2 = format!("116-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13903,17 +15618,25 @@ async fn queue_matrix_case_117() {
     let r1 = format!("117-r1");
     let r2 = format!("117-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13935,17 +15658,25 @@ async fn queue_matrix_case_118() {
     let r1 = format!("118-r1");
     let r2 = format!("118-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13967,17 +15698,25 @@ async fn queue_matrix_case_119() {
     let r1 = format!("119-r1");
     let r2 = format!("119-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -13999,17 +15738,25 @@ async fn queue_matrix_case_120() {
     let r1 = format!("120-r1");
     let r2 = format!("120-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14031,17 +15778,25 @@ async fn queue_matrix_case_121() {
     let r1 = format!("121-r1");
     let r2 = format!("121-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14063,17 +15818,25 @@ async fn queue_matrix_case_122() {
     let r1 = format!("122-r1");
     let r2 = format!("122-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14095,17 +15858,25 @@ async fn queue_matrix_case_123() {
     let r1 = format!("123-r1");
     let r2 = format!("123-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14127,17 +15898,25 @@ async fn queue_matrix_case_124() {
     let r1 = format!("124-r1");
     let r2 = format!("124-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14159,17 +15938,25 @@ async fn queue_matrix_case_125() {
     let r1 = format!("125-r1");
     let r2 = format!("125-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14191,17 +15978,25 @@ async fn queue_matrix_case_126() {
     let r1 = format!("126-r1");
     let r2 = format!("126-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14223,17 +16018,25 @@ async fn queue_matrix_case_127() {
     let r1 = format!("127-r1");
     let r2 = format!("127-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14255,17 +16058,25 @@ async fn queue_matrix_case_128() {
     let r1 = format!("128-r1");
     let r2 = format!("128-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14287,17 +16098,25 @@ async fn queue_matrix_case_129() {
     let r1 = format!("129-r1");
     let r2 = format!("129-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14319,17 +16138,25 @@ async fn queue_matrix_case_130() {
     let r1 = format!("130-r1");
     let r2 = format!("130-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14351,17 +16178,25 @@ async fn queue_matrix_case_131() {
     let r1 = format!("131-r1");
     let r2 = format!("131-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14383,17 +16218,25 @@ async fn queue_matrix_case_132() {
     let r1 = format!("132-r1");
     let r2 = format!("132-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14415,17 +16258,25 @@ async fn queue_matrix_case_133() {
     let r1 = format!("133-r1");
     let r2 = format!("133-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14447,17 +16298,25 @@ async fn queue_matrix_case_134() {
     let r1 = format!("134-r1");
     let r2 = format!("134-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14479,17 +16338,25 @@ async fn queue_matrix_case_135() {
     let r1 = format!("135-r1");
     let r2 = format!("135-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14511,17 +16378,25 @@ async fn queue_matrix_case_136() {
     let r1 = format!("136-r1");
     let r2 = format!("136-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14543,17 +16418,25 @@ async fn queue_matrix_case_137() {
     let r1 = format!("137-r1");
     let r2 = format!("137-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14575,17 +16458,25 @@ async fn queue_matrix_case_138() {
     let r1 = format!("138-r1");
     let r2 = format!("138-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14607,17 +16498,25 @@ async fn queue_matrix_case_139() {
     let r1 = format!("139-r1");
     let r2 = format!("139-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;
@@ -14639,17 +16538,25 @@ async fn queue_matrix_case_140() {
     let r1 = format!("140-r1");
     let r2 = format!("140-r2");
 
-    queue.enqueue(&sid, &r1, Some(Duration::from_secs(5))).await.unwrap();
-    queue.enqueue(&sid, &r2, Some(Duration::from_secs(5))).await.unwrap();
+    queue
+        .enqueue(&sid, &r1, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
+    queue
+        .enqueue(&sid, &r2, Some(Duration::from_secs(5)))
+        .await
+        .unwrap();
 
-    queue.wait_turn(&sid, &r1, Duration::from_secs(1)).await.unwrap();
+    queue
+        .wait_turn(&sid, &r1, Duration::from_secs(1))
+        .await
+        .unwrap();
 
     let q2 = queue.clone();
     let sid2 = sid.clone();
     let r2c = r2.clone();
-    let waiter = tokio::spawn(async move {
-        q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await
-    });
+    let waiter =
+        tokio::spawn(async move { q2.wait_turn(&sid2, &r2c, Duration::from_secs(2)).await });
 
     tokio::time::sleep(Duration::from_millis(5)).await;
     queue.complete(&sid, &r1, RunStatus::Completed, None).await;

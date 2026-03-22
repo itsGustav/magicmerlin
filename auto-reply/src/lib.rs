@@ -137,10 +137,7 @@ pub enum SlashCommand {
 
     // Admin
     /// `/approve <code> [allow-once|allow-always|deny]`
-    Approve {
-        code: String,
-        mode: Option<String>,
-    },
+    Approve { code: String, mode: Option<String> },
     /// `/logs [tail]`
     Logs { tail: Option<u32> },
     /// `/debug`
@@ -821,8 +818,8 @@ pub fn escape_telegram_v2(text: &str) -> String {
         if chars[i] == '*' {
             if let Some(end) = find_closing_marker(&chars, i + 1, '*') {
                 out.push('*');
-                for j in (i + 1)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('*');
                 i = end + 1;
@@ -834,8 +831,8 @@ pub fn escape_telegram_v2(text: &str) -> String {
         if chars[i] == '_' {
             if let Some(end) = find_closing_marker(&chars, i + 1, '_') {
                 out.push('_');
-                for j in (i + 1)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('_');
                 i = end + 1;
@@ -847,8 +844,8 @@ pub fn escape_telegram_v2(text: &str) -> String {
         if chars[i] == '~' {
             if let Some(end) = find_closing_marker(&chars, i + 1, '~') {
                 out.push('~');
-                for j in (i + 1)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('~');
                 i = end + 1;
@@ -860,13 +857,13 @@ pub fn escape_telegram_v2(text: &str) -> String {
         if chars[i] == '[' {
             if let Some((text_end, url_end)) = find_link_span(&chars, i) {
                 out.push('[');
-                for j in (i + 1)..text_end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(text_end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push_str("](");
                 // URLs are not escaped
-                for j in (text_end + 2)..url_end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(url_end).skip(text_end + 2) {
+                    out.push(*ch);
                 }
                 out.push(')');
                 i = url_end + 1;
@@ -954,8 +951,8 @@ pub fn format_for_telegram(text: &str) -> String {
         if i + 1 < len && chars[i] == '*' && chars[i + 1] == '*' {
             if let Some(end) = find_double_marker(&chars, i + 2, '*') {
                 out.push('*');
-                for j in (i + 2)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 2) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('*');
                 i = end + 2;
@@ -968,8 +965,8 @@ pub fn format_for_telegram(text: &str) -> String {
         if chars[i] == '*' && (i + 1 >= len || chars[i + 1] != '*') {
             if let Some(end) = find_closing_marker(&chars, i + 1, '*') {
                 out.push('_');
-                for j in (i + 1)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('_');
                 i = end + 1;
@@ -982,8 +979,8 @@ pub fn format_for_telegram(text: &str) -> String {
         if i + 1 < len && chars[i] == '~' && chars[i + 1] == '~' {
             if let Some(end) = find_double_marker(&chars, i + 2, '~') {
                 out.push('~');
-                for j in (i + 2)..end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(end).skip(i + 2) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push('~');
                 i = end + 2;
@@ -996,12 +993,12 @@ pub fn format_for_telegram(text: &str) -> String {
         if chars[i] == '[' {
             if let Some((text_end, url_end)) = find_link_span(&chars, i) {
                 out.push('[');
-                for j in (i + 1)..text_end {
-                    push_escaped(&mut out, chars[j]);
+                for ch in chars.iter().take(text_end).skip(i + 1) {
+                    push_escaped(&mut out, *ch);
                 }
                 out.push_str("](");
-                for j in (text_end + 2)..url_end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(url_end).skip(text_end + 2) {
+                    out.push(*ch);
                 }
                 out.push(')');
                 i = url_end + 1;
@@ -1104,8 +1101,8 @@ pub fn format_for_whatsapp(text: &str) -> String {
         if i + 1 < len && chars[i] == '*' && chars[i + 1] == '*' {
             if let Some(end) = find_double_marker(&chars, i + 2, '*') {
                 out.push('*');
-                for j in (i + 2)..end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(end).skip(i + 2) {
+                    out.push(*ch);
                 }
                 out.push('*');
                 i = end + 2;
@@ -1118,8 +1115,8 @@ pub fn format_for_whatsapp(text: &str) -> String {
         if chars[i] == '*' && (i + 1 >= len || chars[i + 1] != '*') {
             if let Some(end) = find_closing_marker(&chars, i + 1, '*') {
                 out.push('_');
-                for j in (i + 1)..end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(end).skip(i + 1) {
+                    out.push(*ch);
                 }
                 out.push('_');
                 i = end + 1;
@@ -1132,8 +1129,8 @@ pub fn format_for_whatsapp(text: &str) -> String {
         if i + 1 < len && chars[i] == '~' && chars[i + 1] == '~' {
             if let Some(end) = find_double_marker(&chars, i + 2, '~') {
                 out.push('~');
-                for j in (i + 2)..end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(end).skip(i + 2) {
+                    out.push(*ch);
                 }
                 out.push('~');
                 i = end + 2;
@@ -1145,12 +1142,12 @@ pub fn format_for_whatsapp(text: &str) -> String {
         // Link: [text](url) → text (url) — WhatsApp doesn't support markdown links
         if chars[i] == '[' {
             if let Some((text_end, url_end)) = find_link_span(&chars, i) {
-                for j in (i + 1)..text_end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(text_end).skip(i + 1) {
+                    out.push(*ch);
                 }
                 out.push_str(" (");
-                for j in (text_end + 2)..url_end {
-                    out.push(chars[j]);
+                for ch in chars.iter().take(url_end).skip(text_end + 2) {
+                    out.push(*ch);
                 }
                 out.push(')');
                 i = url_end + 1;
@@ -1217,10 +1214,12 @@ fn find_double_marker(chars: &[char], start: usize, marker: char) -> Option<usiz
     }
     let mut i = start;
     while i + 1 < chars.len() {
-        if chars[i] == marker && chars[i + 1] == marker && (i == 0 || chars[i - 1] != '\\') {
-            if i > start {
-                return Some(i);
-            }
+        if chars[i] == marker
+            && chars[i + 1] == marker
+            && (i == 0 || chars[i - 1] != '\\')
+            && i > start
+        {
+            return Some(i);
         }
         if chars[i] == '\n' {
             return None;
@@ -1514,8 +1513,7 @@ mod tests {
 
         let first_result = collector.push(now, "telegram:c1", first);
         assert!(!first_result.cancel_pending_turn);
-        let second_result =
-            collector.push(now + Duration::from_millis(500), "telegram:c1", second);
+        let second_result = collector.push(now + Duration::from_millis(500), "telegram:c1", second);
         assert!(second_result.cancel_pending_turn);
 
         let due = collector.due_batches(now + Duration::from_secs(3));

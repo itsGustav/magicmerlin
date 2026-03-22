@@ -7,8 +7,8 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::Value;
 use tokio::sync::mpsc;
 
-use crate::framework::InboundMessage;
 use super::normalize::normalize_slack_event;
+use crate::framework::InboundMessage;
 
 /// Errors from the Socket Mode connection.
 #[derive(Debug, thiserror::Error)]

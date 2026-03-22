@@ -1,115 +1,29 @@
 {
-  "generatedAt": "2026-03-03T16:51:37.407364+00:00",
+  "generatedAt": "2026-03-22T19:20:43.608177+00:00",
+  "totalPages": 332,
+  "generated": 332,
   "sections": {
-    "api-reference/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 1
-    },
-    "automation/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 8
-    },
-    "channels/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 29
-    },
-    "cli/": {
-      "done": 0,
-      "partial": 3,
-      "todo": 43
-    },
-    "concepts/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 27
-    },
-    "debug/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 1
-    },
-    "design/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 1
-    },
-    "diagnostics/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 1
-    },
-    "experiments/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 9
-    },
-    "gateway/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 33
-    },
-    "help/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 7
-    },
-    "install/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 20
-    },
-    "nodes/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 9
-    },
-    "platforms/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 27
-    },
-    "plugins/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 5
-    },
-    "providers/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 29
-    },
-    "reference/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 20
-    },
-    "root/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 10
-    },
-    "security/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 3
-    },
-    "start/": {
-      "done": 0,
-      "partial": 1,
-      "todo": 12
-    },
-    "tools/": {
-      "done": 0,
-      "partial": 0,
-      "todo": 28
-    },
-    "web/": {
-      "done": 0,
-      "partial": 1,
-      "todo": 4
-    }
+    "api-reference/": { "done": 1, "partial": 0, "todo": 0 },
+    "automation/": { "done": 8, "partial": 0, "todo": 0 },
+    "channels/": { "done": 29, "partial": 0, "todo": 0 },
+    "cli/": { "done": 46, "partial": 0, "todo": 0 },
+    "concepts/": { "done": 27, "partial": 0, "todo": 0 },
+    "debug/": { "done": 1, "partial": 0, "todo": 0 },
+    "design/": { "done": 1, "partial": 0, "todo": 0 },
+    "diagnostics/": { "done": 1, "partial": 0, "todo": 0 },
+    "experiments/": { "done": 9, "partial": 0, "todo": 0 },
+    "gateway/": { "done": 33, "partial": 0, "todo": 0 },
+    "help/": { "done": 7, "partial": 0, "todo": 0 },
+    "install/": { "done": 20, "partial": 0, "todo": 0 },
+    "nodes/": { "done": 9, "partial": 0, "todo": 0 },
+    "platforms/": { "done": 27, "partial": 0, "todo": 0 },
+    "plugins/": { "done": 5, "partial": 0, "todo": 0 },
+    "providers/": { "done": 29, "partial": 0, "todo": 0 },
+    "reference/": { "done": 20, "partial": 0, "todo": 0 },
+    "root/": { "done": 10, "partial": 0, "todo": 0 },
+    "security/": { "done": 3, "partial": 0, "todo": 0 },
+    "start/": { "done": 13, "partial": 0, "todo": 0 },
+    "tools/": { "done": 28, "partial": 0, "todo": 0 },
+    "web/": { "done": 5, "partial": 0, "todo": 0 }
   }
 }

@@ -90,8 +90,9 @@ impl Default for TelegramConfig {
 impl TelegramConfig {
     /// Loads Telegram settings from a JSON object shaped like `channels.telegram`.
     pub fn from_channels_json(root: &Value) -> Result<Self> {
-        let telegram = resolve_telegram_root(root)
-            .ok_or_else(|| ChannelError::PlatformRequest("missing channels.telegram config".to_string()))?;
+        let telegram = resolve_telegram_root(root).ok_or_else(|| {
+            ChannelError::PlatformRequest("missing channels.telegram config".to_string())
+        })?;
         Self::from_telegram_map(telegram)
     }
 
@@ -157,7 +158,12 @@ impl TelegramConfig {
 
 fn resolve_telegram_root(root: &Value) -> Option<&Map<String, Value>> {
     root.as_object()
-        .and_then(|map| map.get("channels").or_else(|| map.get("telegram")).unwrap_or(root).as_object())
+        .and_then(|map| {
+            map.get("channels")
+                .or_else(|| map.get("telegram"))
+                .unwrap_or(root)
+                .as_object()
+        })
         .and_then(|map| {
             if map.get("accounts").is_some() {
                 Some(map)

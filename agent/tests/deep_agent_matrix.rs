@@ -1821,11 +1821,7 @@ fn route_matrix_coverage() {
     for scenario in scenarios {
         let workspace_hint = scenario.workspace_hint.map(PathBuf::from);
         let decision = registry
-            .route_message(
-                scenario.channel,
-                workspace_hint.as_deref(),
-                scenario.text,
-            )
+            .route_message(scenario.channel, workspace_hint.as_deref(), scenario.text)
             .expect("decision");
         if !scenario.name.starts_with("fallback_") {
             assert_eq!(
@@ -1908,8 +1904,8 @@ fn heartbeat_and_session_matrix() {
 
     let mut state = HeartbeatState::default();
     for _ in 0..40 {
-        let run = run_heartbeat_with_state(temp.path(), Some(23), Some(5), &mut state)
-            .expect("run");
+        let run =
+            run_heartbeat_with_state(temp.path(), Some(23), Some(5), &mut state).expect("run");
         if run.quiet_hours {
             assert!(run.tasks_to_run.is_empty());
         } else {
@@ -1918,8 +1914,8 @@ fn heartbeat_and_session_matrix() {
     }
 
     let storage = Storage::new(temp.path().join("db.sqlite")).expect("storage");
-    let sessions = SessionManager::new(storage, temp.path().join("sessions"), temp.path())
-        .expect("sessions");
+    let sessions =
+        SessionManager::new(storage, temp.path().join("sessions"), temp.path()).expect("sessions");
     let mut session = sessions
         .load_or_create(SessionKey::agent_main("merlin"), "merlin")
         .expect("session");

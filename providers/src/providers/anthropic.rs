@@ -67,7 +67,11 @@ impl AnthropicProvider {
                 .collect::<Vec<_>>());
         }
 
-        if let Some(budget) = request.extra.get("thinking_budget_tokens").and_then(Value::as_u64) {
+        if let Some(budget) = request
+            .extra
+            .get("thinking_budget_tokens")
+            .and_then(Value::as_u64)
+        {
             body["thinking"] = json!({"type":"enabled", "budget_tokens": budget});
         }
 

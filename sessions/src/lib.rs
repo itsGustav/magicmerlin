@@ -169,11 +169,7 @@ impl SessionEngine {
     }
 
     /// Estimates context window utilization as a 0.0..1.0 float.
-    pub fn estimate_context_percent(
-        &self,
-        session_id: &str,
-        context_window: u64,
-    ) -> Result<f32> {
+    pub fn estimate_context_percent(&self, session_id: &str, context_window: u64) -> Result<f32> {
         if context_window == 0 {
             return Ok(0.0);
         }
@@ -438,7 +434,9 @@ mod tests {
         engine.load_or_create("test:ctx", None).expect("create");
 
         // Empty session should be ~0%
-        let pct = engine.estimate_context_percent("test:ctx", 128_000).expect("pct");
+        let pct = engine
+            .estimate_context_percent("test:ctx", 128_000)
+            .expect("pct");
         assert!(pct < 0.01);
 
         // Zero context window returns 0.0
@@ -451,7 +449,9 @@ mod tests {
                 .append_message("test:ctx", &serde_json::json!({"role":"user","content":"hello world this is a message with some content"}))
                 .expect("append");
         }
-        let pct_after = engine.estimate_context_percent("test:ctx", 128_000).expect("pct");
+        let pct_after = engine
+            .estimate_context_percent("test:ctx", 128_000)
+            .expect("pct");
         assert!(pct_after > 0.0);
     }
 
@@ -466,7 +466,9 @@ mod tests {
         engine.load_or_create("test:compact", None).expect("create");
 
         // Under threshold returns None
-        let result = engine.compact_if_needed("test:compact", 128_000, 80).expect("compact");
+        let result = engine
+            .compact_if_needed("test:compact", 128_000, 80)
+            .expect("compact");
         assert!(result.is_none());
 
         // Add many messages to exceed threshold with tiny context window
@@ -476,7 +478,9 @@ mod tests {
                 .expect("append");
         }
 
-        let result = engine.compact_if_needed("test:compact", 100, 50).expect("compact");
+        let result = engine
+            .compact_if_needed("test:compact", 100, 50)
+            .expect("compact");
         assert!(result.is_some());
         let cr = result.expect("compaction result");
         assert!(cr.messages_before >= 100);

@@ -1,1332 +1,255 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magic Merlin</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
       --bg: #0d1117;
-      --bg2: #161b22;
-      --bg3: #21262d;
+      --surface: #161b22;
       --border: #30363d;
       --text: #c9d1d9;
-      --text-dim: #8b949e;
       --accent: #58a6ff;
       --green: #3fb950;
       --red: #f85149;
       --yellow: #d29922;
-      --purple: #bc8cff;
+      --radius: 8px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'SF Mono', 'Consolas', 'Monaco', 'Menlo', monospace;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-    }
-    .logo {
-      font-size: 16px;
-      font-weight: bold;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-    }
-    .logo span { color: var(--purple); }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .header-right input {
-      width: 240px;
-      font-size: 12px;
-    }
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-    .status-dot.error { background: var(--red); }
-    .status-dot.warn { background: var(--yellow); }
-
-    /* Nav tabs */
-    .nav {
-      display: flex;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      padding: 0 16px;
-      overflow-x: auto;
-    }
-    .nav-tab {
-      padding: 10px 16px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      color: var(--text-dim);
-      font-size: 13px;
-      white-space: nowrap;
-      transition: color 0.15s, border-color 0.15s;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      font-family: inherit;
-      border-radius: 0;
-    }
-    .nav-tab:hover { color: var(--text); background: none; }
-    .nav-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-      background: none;
-    }
-
-    /* Cards */
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 16px;
-      margin: 8px 0;
-    }
-    .card h3 {
-      font-size: 12px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-    .card .value {
-      font-size: 24px;
-      font-weight: bold;
-      color: var(--text);
-    }
-    .card .sub {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-top: 4px;
-    }
-
-    /* Tables */
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+    nav { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .logo { font-weight: 700; font-size: 16px; color: var(--accent); white-space: nowrap; }
+    .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tabs button { background: none; border: none; color: var(--text); padding: 6px 12px; cursor: pointer; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    .tabs button:hover, .tabs button.active { background: var(--accent); color: #fff; }
+    main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .card h3 { font-size: 12px; text-transform: uppercase; color: #6e7681; margin-bottom: 12px; letter-spacing: 0.5px; }
     table { width: 100%; border-collapse: collapse; }
-    th {
-      color: var(--text-dim);
-      font-weight: 600;
-      text-align: left;
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
-    }
-    tr:hover td { background: rgba(88,166,255,0.04); }
-    .clickable-row { cursor: pointer; }
-
-    /* Status dots */
-    .dot-green::before { content: '\25CF'; color: var(--green); margin-right: 6px; }
-    .dot-red::before { content: '\25CF'; color: var(--red); margin-right: 6px; }
-    .dot-yellow::before { content: '\25CF'; color: var(--yellow); margin-right: 6px; }
-
-    /* Buttons */
-    button {
-      background: var(--bg3);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 12px;
-      transition: background 0.15s, color 0.15s;
-    }
-    button:hover { background: var(--accent); color: #000; }
-    button.primary { background: var(--accent); color: #000; border-color: var(--accent); }
-    button.primary:hover { background: #79bbff; }
-    button.danger { background: transparent; color: var(--red); border-color: var(--red); }
-    button.danger:hover { background: var(--red); color: #fff; }
-    button.success { background: transparent; color: var(--green); border-color: var(--green); }
-    button.success:hover { background: var(--green); color: #000; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* Input */
-    input, textarea, select {
-      background: var(--bg3);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 13px;
-    }
-    input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    textarea { min-height: 100px; resize: vertical; }
-
-    /* Layout */
-    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    .flex-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .mt-8 { margin-top: 8px; }
-    .mt-16 { margin-top: 16px; }
-    .mb-8 { margin-bottom: 8px; }
-    .mb-16 { margin-bottom: 16px; }
-
-    /* Badge */
-    .badge {
-      display: inline-block;
-      background: var(--bg3);
-      color: var(--text-dim);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-    }
-    .badge.green { background: rgba(63,185,80,0.15); color: var(--green); }
-    .badge.red { background: rgba(248,81,73,0.15); color: var(--red); }
-    .badge.yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
-    .badge.blue { background: rgba(88,166,255,0.15); color: var(--accent); }
-    .badge.purple { background: rgba(188,140,255,0.15); color: var(--purple); }
-
-    /* Log lines */
-    .log-line { padding: 2px 0; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+    th { color: #6e7681; font-weight: 500; }
+    .dot-green::before { content: "\25CF"; color: var(--green); margin-right: 6px; }
+    .dot-red::before { content: "\25CF"; color: var(--red); margin-right: 6px; }
+    .dot-yellow::before { content: "\25CF"; color: var(--yellow); margin-right: 6px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+    .badge-green { background: rgba(63,185,80,0.15); color: var(--green); }
+    .badge-red { background: rgba(248,81,73,0.15); color: var(--red); }
+    pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
     .log-error { color: var(--red); }
     .log-warn { color: var(--yellow); }
     .log-info { color: var(--text); }
-    .log-debug { color: var(--text-dim); }
-
-    /* Pre / code */
-    pre {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 12px;
-      overflow: auto;
-      max-height: 400px;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    code { background: var(--bg3); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      width: 90%;
-      max-width: 700px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    .modal h2 { font-size: 16px; margin-bottom: 16px; }
-    .modal-close {
-      float: right;
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 18px;
-      cursor: pointer;
-      padding: 0;
-    }
-    .modal-close:hover { color: var(--text); background: none; }
-
-    /* Chat transcript */
-    .transcript { max-height: 500px; overflow-y: auto; }
-    .msg {
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 8px;
-      max-width: 85%;
-    }
-    .msg.user {
-      background: rgba(88,166,255,0.12);
-      border: 1px solid rgba(88,166,255,0.25);
-      margin-left: auto;
-    }
-    .msg.assistant {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-    }
-    .msg .role {
-      font-size: 10px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 4px;
-      letter-spacing: 0.5px;
-    }
-    .msg .content { white-space: pre-wrap; word-break: break-word; }
-
-    /* Activity feed */
-    .activity-item {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 12px;
-    }
-    .activity-item:last-child { border-bottom: none; }
-    .activity-time { color: var(--text-dim); margin-right: 8px; }
-
-    /* Empty state */
-    .empty {
-      text-align: center;
-      padding: 32px;
-      color: var(--text-dim);
-    }
-
-    /* Form group */
-    .form-group { margin-bottom: 12px; }
-    .form-group label {
-      display: block;
-      font-size: 11px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--border); }
-
-    @media (max-width: 768px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-      .container { padding: 8px; }
-      .header { flex-direction: column; gap: 8px; }
-      .header-right input { width: 100%; }
-    }
+    .log-debug { color: #6e7681; }
+    #gateway-status { font-size: 20px; color: var(--green); margin-left: auto; }
+    .empty { color: #6e7681; padding: 20px; text-align: center; }
+    .mono { font-family: 'SF Mono', Consolas, Monaco, Menlo, monospace; font-size: 12px; }
   </style>
 </head>
 <body>
+  <nav>
+    <div class="logo">&#x1F9D9; Magic Merlin</div>
+    <div class="tabs">
+      <button onclick="showTab('overview')" class="active">Overview</button>
+      <button onclick="showTab('sessions')">Sessions</button>
+      <button onclick="showTab('cron')">Cron</button>
+      <button onclick="showTab('agents')">Agents</button>
+      <button onclick="showTab('logs')">Logs</button>
+    </div>
+    <div id="gateway-status">&#x25CF;</div>
+  </nav>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">Magic <span>Merlin</span></div>
-  <div class="header-right">
-    <div class="status-indicator">
-      <div class="status-dot" id="connDot"></div>
-      <span id="connStatus">Connected</span>
-    </div>
-    <input id="apiKey" placeholder="API key (optional)" type="password" />
-  </div>
-</div>
+  <main id="content"></main>
 
-<!-- Navigation -->
-<nav class="nav" id="navBar">
-  <button class="nav-tab active" data-tab="overview">Overview</button>
-  <button class="nav-tab" data-tab="agents">Agents</button>
-  <button class="nav-tab" data-tab="sessions">Sessions</button>
-  <button class="nav-tab" data-tab="cron">Cron</button>
-  <button class="nav-tab" data-tab="channels">Channels</button>
-  <button class="nav-tab" data-tab="logs">Logs</button>
-  <button class="nav-tab" data-tab="config">Config</button>
-</nav>
-
-<!-- Tab Content -->
-<div class="container">
-
-  <!-- ========== OVERVIEW ========== -->
-  <div class="tab-content active" id="tab-overview">
-    <div class="flex-between mb-16">
-      <h2>Dashboard</h2>
-      <div class="flex-row">
-        <button onclick="renderOverview()">Refresh</button>
-        <button class="danger" onclick="quickAction('gateway.restart')">Restart Gateway</button>
-      </div>
-    </div>
-    <div class="grid-4" id="overviewStats"></div>
-    <div class="grid-2 mt-16">
-      <div class="card">
-        <h3>System Info</h3>
-        <div id="systemInfo"><div class="empty">Loading...</div></div>
-      </div>
-      <div class="card">
-        <h3>Recent Activity</h3>
-        <div id="activityFeed"><div class="empty">Loading...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== AGENTS ========== -->
-  <div class="tab-content" id="tab-agents">
-    <div class="flex-between mb-16">
-      <h2>Agents</h2>
-      <div class="flex-row">
-        <button onclick="renderAgents()">Refresh</button>
-      </div>
-    </div>
-    <div class="card">
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Model</th>
-              <th>Status</th>
-              <th>Channels</th>
-              <th>Last Active</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="agentsBody"></tbody>
-        </table>
-      </div>
-      <div id="agentsEmpty" class="empty" style="display:none">No agents found</div>
-    </div>
-    <!-- Run turn section -->
-    <div class="card mt-16">
-      <h3>Run Agent Turn</h3>
-      <div class="grid-2 mt-8">
-        <div class="form-group">
-          <label>Agent / Session</label>
-          <input id="runAgentTarget" placeholder="agent name or session key" />
-        </div>
-        <div class="form-group">
-          <label>Model (optional)</label>
-          <input id="runAgentModel" placeholder="default" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea id="runAgentMsg" placeholder="Type a message to send..."></textarea>
-      </div>
-      <div class="flex-row">
-        <button class="primary" onclick="runAgentTurn()">Run Turn</button>
-      </div>
-      <pre id="runAgentOut" class="mt-8" style="display:none"></pre>
-    </div>
-  </div>
-
-  <!-- ========== SESSIONS ========== -->
-  <div class="tab-content" id="tab-sessions">
-    <div class="flex-between mb-16">
-      <h2>Sessions</h2>
-      <div class="flex-row">
-        <button onclick="renderSessions()">Refresh</button>
-      </div>
-    </div>
-    <div class="card">
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Session Key</th>
-              <th>Messages</th>
-              <th>Tokens</th>
-              <th>Last Active</th>
-              <th>Model</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="sessionsBody"></tbody>
-        </table>
-      </div>
-      <div id="sessionsEmpty" class="empty" style="display:none">No sessions found</div>
-    </div>
-  </div>
-
-  <!-- ========== CRON ========== -->
-  <div class="tab-content" id="tab-cron">
-    <div class="flex-between mb-16">
-      <h2>Cron Jobs</h2>
-      <div class="flex-row">
-        <button onclick="renderCron()">Refresh</button>
-        <button class="primary" onclick="showAddCronModal()">Add Job</button>
-      </div>
-    </div>
-    <div class="card">
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Schedule</th>
-              <th>Last Run</th>
-              <th>Next Run</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="cronBody"></tbody>
-        </table>
-      </div>
-      <div id="cronEmpty" class="empty" style="display:none">No cron jobs</div>
-    </div>
-    <div class="card mt-16">
-      <h3>Run History</h3>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Run ID</th>
-              <th>Job</th>
-              <th>Started</th>
-              <th>Ended</th>
-              <th>Status</th>
-              <th>Error</th>
-            </tr>
-          </thead>
-          <tbody id="cronRunsBody"></tbody>
-        </table>
-      </div>
-      <div id="cronRunsEmpty" class="empty" style="display:none">No runs yet</div>
-    </div>
-  </div>
-
-  <!-- ========== CHANNELS ========== -->
-  <div class="tab-content" id="tab-channels">
-    <div class="flex-between mb-16">
-      <h2>Channels</h2>
-      <div class="flex-row">
-        <button onclick="renderChannels()">Refresh</button>
-      </div>
-    </div>
-    <div class="card">
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Platform</th>
-              <th>Account</th>
-              <th>Status</th>
-              <th>Last Message</th>
-              <th>Error</th>
-            </tr>
-          </thead>
-          <tbody id="channelsBody"></tbody>
-        </table>
-      </div>
-      <div id="channelsEmpty" class="empty" style="display:none">No channels configured</div>
-    </div>
-    <div class="card mt-16">
-      <h3>Recent Messages</h3>
-      <div id="channelMessages"><div class="empty">Select a channel to view messages</div></div>
-    </div>
-  </div>
-
-  <!-- ========== LOGS ========== -->
-  <div class="tab-content" id="tab-logs">
-    <div class="flex-between mb-16">
-      <h2>Live Logs</h2>
-      <div class="flex-row">
-        <input id="logFilter" placeholder="Filter logs..." style="width:200px" oninput="filterLogs()" />
-        <select id="logLevel" onchange="filterLogs()" style="width:100px">
-          <option value="all">All levels</option>
-          <option value="ERROR">Error</option>
-          <option value="WARN">Warn</option>
-          <option value="INFO">Info</option>
-          <option value="DEBUG">Debug</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-dim)">
-          <input type="checkbox" id="logAutoScroll" checked /> Auto-scroll
-        </label>
-        <button id="logToggle" onclick="toggleLogs()">Start</button>
-        <button class="danger" onclick="clearLogs()">Clear</button>
-      </div>
-    </div>
-    <div class="card" style="padding:0">
-      <div id="logsContainer" style="height:500px;overflow-y:auto;padding:12px;font-size:12px"></div>
-    </div>
-    <div class="flex-row mt-8" style="font-size:11px;color:var(--text-dim)">
-      <span>Lines: <span id="logCount">0</span></span>
-      <span>|</span>
-      <span>Polling: <span id="logPolling">stopped</span></span>
-    </div>
-  </div>
-
-  <!-- ========== CONFIG ========== -->
-  <div class="tab-content" id="tab-config">
-    <div class="flex-between mb-16">
-      <h2>Configuration</h2>
-      <div class="flex-row">
-        <button onclick="renderConfig()">Reload</button>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <h3>Config Editor</h3>
-        <textarea id="configEditor" style="width:100%;height:400px;font-size:12px" spellcheck="false"></textarea>
-        <div class="flex-row mt-8">
-          <button class="primary" onclick="saveConfig()">Save Changes</button>
-          <button class="danger" onclick="renderConfig()">Reset</button>
-        </div>
-        <div id="configStatus" class="mt-8" style="font-size:12px"></div>
-      </div>
-      <div class="card">
-        <h3>Quick Config</h3>
-        <div class="form-group">
-          <label>Config path</label>
-          <input id="configPath" placeholder="e.g. gateway.port" />
-        </div>
-        <div class="form-group">
-          <label>Value</label>
-          <input id="configValue" placeholder="value" />
-        </div>
-        <div class="flex-row">
-          <button onclick="configGet()">Get</button>
-          <button class="primary" onclick="configSet()">Set</button>
-          <button class="danger" onclick="configUnset()">Unset</button>
-        </div>
-        <pre id="configOut" class="mt-8">(no request yet)</pre>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Modal overlay -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" id="modalContent"></div>
-</div>
-
-<script>
-// ============================================================
-// API Client
-// ============================================================
-const API = {
-  headers() {
-    const h = { 'Content-Type': 'application/json' };
-    const key = document.getElementById('apiKey').value.trim();
-    if (key) h['x-magicmerlin-api-key'] = key;
-    return h;
-  },
-  async call(method, params = {}) {
-    try {
-      const r = await fetch('/call', {
-        method: 'POST',
-        headers: this.headers(),
-        body: JSON.stringify({ method, params })
-      });
-      const data = await r.json();
-      if (!r.ok) return { ok: false, data };
-      return { ok: true, data };
-    } catch (e) {
-      return { ok: false, data: { error: e.message } };
+  <script>
+    async function call(method, params) {
+      try {
+        var r = await fetch('/call', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({method: method, params: params || {}})
+        });
+        return await r.json();
+      } catch(e) {
+        return {error: e.message};
+      }
     }
-  },
-  async get(path) {
-    try {
-      const r = await fetch(path, { headers: this.headers() });
-      return { ok: r.ok, data: await r.json() };
-    } catch (e) {
-      return { ok: false, data: { error: e.message } };
+
+    var currentTab = 'overview';
+
+    function showTab(name) {
+      currentTab = name;
+      var btns = document.querySelectorAll('.tabs button');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+      var target = document.querySelector('.tabs button[onclick="showTab(\'' + name + '\')"]');
+      if (target) target.classList.add('active');
+      renderTab();
     }
-  }
-};
 
-// ============================================================
-// State
-// ============================================================
-const tabs = ['overview', 'agents', 'sessions', 'cron', 'channels', 'logs', 'config'];
-let currentTab = 'overview';
-let refreshTimer = null;
-let logsTimer = null;
-let logsRunning = false;
-let logsCursor = 0;
-let allLogLines = [];
-const REFRESH_MS = 3000;
-
-// ============================================================
-// Tab Routing
-// ============================================================
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.nav-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.tab === tab)
-  );
-  document.querySelectorAll('.tab-content').forEach(c =>
-    c.classList.toggle('active', c.id === 'tab-' + tab)
-  );
-  renderTab(tab);
-}
-
-document.getElementById('navBar').addEventListener('click', e => {
-  if (e.target.classList.contains('nav-tab')) {
-    switchTab(e.target.dataset.tab);
-  }
-});
-
-async function renderTab(tab) {
-  switch (tab) {
-    case 'overview': await renderOverview(); break;
-    case 'agents': await renderAgents(); break;
-    case 'sessions': await renderSessions(); break;
-    case 'cron': await renderCron(); break;
-    case 'channels': await renderChannels(); break;
-    case 'logs': await renderLogs(); break;
-    case 'config': await renderConfig(); break;
-  }
-}
-
-// ============================================================
-// Helpers
-// ============================================================
-function esc(s) {
-  if (s == null) return '';
-  const d = document.createElement('div');
-  d.textContent = String(s);
-  return d.innerHTML;
-}
-
-function timeAgo(ts) {
-  if (!ts) return '-';
-  const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
-  if (isNaN(d.getTime())) return String(ts);
-  const secs = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (secs < 60) return secs + 's ago';
-  if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
-  if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
-  return Math.floor(secs / 86400) + 'd ago';
-}
-
-function fmtDate(ts) {
-  if (!ts) return '-';
-  const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
-  if (isNaN(d.getTime())) return String(ts);
-  return d.toLocaleString();
-}
-
-function statusBadge(status) {
-  if (!status) return '<span class="badge">unknown</span>';
-  const s = String(status).toLowerCase();
-  if (s === 'running' || s === 'active' || s === 'connected' || s === 'ok' || s === 'enabled' || s === 'true')
-    return '<span class="badge green">' + esc(status) + '</span>';
-  if (s === 'error' || s === 'failed' || s === 'dead' || s === 'false' || s === 'disabled')
-    return '<span class="badge red">' + esc(status) + '</span>';
-  if (s === 'pending' || s === 'degraded' || s === 'paused')
-    return '<span class="badge yellow">' + esc(status) + '</span>';
-  return '<span class="badge">' + esc(status) + '</span>';
-}
-
-function showModal(html) {
-  document.getElementById('modalContent').innerHTML = html;
-  document.getElementById('modalOverlay').classList.add('active');
-}
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('active');
-}
-
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-});
-
-async function quickAction(method, params) {
-  if (!confirm('Run ' + method + '?')) return;
-  const res = await API.call(method, params || {});
-  if (!res.ok) alert('Error: ' + JSON.stringify(res.data));
-}
-
-// ============================================================
-// OVERVIEW TAB
-// ============================================================
-async function renderOverview() {
-  const [statusRes, sessionsRes, cronRes] = await Promise.all([
-    API.get('/status'),
-    API.call('sessions.list', { limit: 100 }),
-    API.call('cron.list')
-  ]);
-
-  const status = statusRes.data || {};
-  const compat = status.compat || {};
-  const sched = status.scheduler || {};
-  const sessions = sessionsRes.ok ? (sessionsRes.data.sessions || sessionsRes.data || []) : [];
-  const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
-  const jobs = cronRes.ok ? (cronRes.data.jobs || cronRes.data || []) : [];
-  const jobCount = Array.isArray(jobs) ? jobs.length : 0;
-
-  // Stats cards
-  const statsEl = document.getElementById('overviewStats');
-  statsEl.innerHTML = [
-    { label: 'Sessions', value: sessionCount, cls: 'blue' },
-    { label: 'Cron Jobs', value: jobCount, cls: 'purple' },
-    { label: 'Next Cron', value: sched.nextRunAt ? fmtDate(sched.nextRunAt) : 'none', cls: '' },
-    { label: 'Health', value: status.openclawStatus ? 'OK' : 'Degraded', cls: status.openclawStatus ? 'green' : 'yellow' },
-  ].map(s => `
-    <div class="card">
-      <h3>${esc(s.label)}</h3>
-      <div class="value">${esc(s.value)}</div>
-    </div>
-  `).join('');
-
-  // System info
-  const infoEl = document.getElementById('systemInfo');
-  infoEl.innerHTML = `
-    <table>
-      <tr><td style="color:var(--text-dim)">Version</td><td>${esc(compat.compatVersion || '-')}</td></tr>
-      <tr><td style="color:var(--text-dim)">Fingerprint</td><td><code>${esc(compat.fingerprint || '-')}</code></td></tr>
-      <tr><td style="color:var(--text-dim)">Cron Jobs</td><td>${esc(sched.jobCount ?? jobCount)}</td></tr>
-      <tr><td style="color:var(--text-dim)">PID</td><td>${esc(status.pid || '-')}</td></tr>
-    </table>
-  `;
-
-  // Activity feed
-  const feedEl = document.getElementById('activityFeed');
-  const eventsRes = await API.get('/events?limit=10');
-  const events = eventsRes.ok ? (eventsRes.data.events || []) : [];
-  if (events.length === 0) {
-    feedEl.innerHTML = '<div class="empty">No recent activity</div>';
-  } else {
-    feedEl.innerHTML = events.map(ev => `
-      <div class="activity-item">
-        <span class="activity-time">${fmtDate(ev.timestamp || ev.time)}</span>
-        ${esc(ev.text || ev.message || JSON.stringify(ev))}
-      </div>
-    `).join('');
-  }
-
-  updateConnStatus(true);
-}
-
-// ============================================================
-// AGENTS TAB
-// ============================================================
-async function renderAgents() {
-  const res = await API.call('agents.list');
-  const agents = res.ok ? (res.data.agents || res.data || []) : [];
-  const tbody = document.getElementById('agentsBody');
-  const emptyEl = document.getElementById('agentsEmpty');
-
-  if (!Array.isArray(agents) || agents.length === 0) {
-    tbody.innerHTML = '';
-    emptyEl.style.display = '';
-    return;
-  }
-  emptyEl.style.display = 'none';
-
-  tbody.innerHTML = agents.map(a => `
-    <tr>
-      <td><strong>${esc(a.name || a.id)}</strong></td>
-      <td><code>${esc(a.model || '-')}</code></td>
-      <td>${statusBadge(a.status || 'active')}</td>
-      <td>${esc(a.channels ? (Array.isArray(a.channels) ? a.channels.join(', ') : a.channels) : '-')}</td>
-      <td>${timeAgo(a.lastActive || a.last_active || a.updatedAt)}</td>
-      <td>
-        <div class="flex-row">
-          <button onclick="showAgentDetail('${esc(a.name || a.id)}')">Details</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function showAgentDetail(name) {
-  const res = await API.call('agents.get', { name });
-  const agent = res.ok ? res.data : {};
-  showModal(`
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <h2>Agent: ${esc(name)}</h2>
-    <pre>${esc(JSON.stringify(agent, null, 2))}</pre>
-  `);
-}
-
-async function runAgentTurn() {
-  const target = document.getElementById('runAgentTarget').value.trim();
-  const msg = document.getElementById('runAgentMsg').value.trim();
-  const model = document.getElementById('runAgentModel').value.trim();
-  if (!target || !msg) return alert('Agent/session and message are required');
-
-  const outEl = document.getElementById('runAgentOut');
-  outEl.style.display = '';
-  outEl.textContent = 'Running...';
-
-  const params = { message: msg };
-  if (model) params.model = model;
-
-  // Try agent.run first, then fall back to chat.send
-  let res = await API.call('agent.run', { agent: target, message: msg, model: model || undefined });
-  if (!res.ok) {
-    res = await API.call('chat.send', { session: target, message: msg });
-  }
-  outEl.textContent = JSON.stringify(res.data, null, 2);
-}
-
-// ============================================================
-// SESSIONS TAB
-// ============================================================
-async function renderSessions() {
-  const res = await API.call('sessions.list', { limit: 100 });
-  const sessions = res.ok ? (res.data.sessions || res.data || []) : [];
-  const tbody = document.getElementById('sessionsBody');
-  const emptyEl = document.getElementById('sessionsEmpty');
-
-  if (!Array.isArray(sessions) || sessions.length === 0) {
-    tbody.innerHTML = '';
-    emptyEl.style.display = '';
-    return;
-  }
-  emptyEl.style.display = 'none';
-
-  tbody.innerHTML = sessions.map(s => {
-    const key = s.id || s.key || s.session_id || '-';
-    return `
-      <tr class="clickable-row" onclick="showSessionTranscript('${esc(key)}')">
-        <td><code>${esc(key)}</code></td>
-        <td>${esc(s.messageCount ?? s.message_count ?? s.messages ?? '-')}</td>
-        <td>${esc(s.tokenCount ?? s.token_count ?? s.tokens ?? '-')}</td>
-        <td>${timeAgo(s.updatedAt || s.updated_at || s.lastActive)}</td>
-        <td><code>${esc(s.model || '-')}</code></td>
-        <td>
-          <div class="flex-row" onclick="event.stopPropagation()">
-            <button onclick="showSessionTranscript('${esc(key)}')">View</button>
-            <button onclick="compactSession('${esc(key)}')">Compact</button>
-            <button class="danger" onclick="deleteSession('${esc(key)}')">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-async function showSessionTranscript(id) {
-  const res = await API.call('sessions.history', { id });
-  let messages = [];
-  if (res.ok) {
-    messages = res.data.messages || res.data.history || res.data || [];
-  }
-  // Fallback to sessions.show
-  if (!Array.isArray(messages) || messages.length === 0) {
-    const res2 = await API.get('/sessions/' + encodeURIComponent(id));
-    if (res2.ok) {
-      messages = res2.data.messages || res2.data.history || [];
-      if (!Array.isArray(messages)) messages = [];
+    async function renderTab() {
+      var el = document.getElementById('content');
+      el.innerHTML = '<p class="empty">Loading\u2026</p>';
+      switch(currentTab) {
+        case 'overview': el.innerHTML = await renderOverview(); break;
+        case 'sessions': el.innerHTML = await renderSessions(); break;
+        case 'cron':     el.innerHTML = await renderCron();     break;
+        case 'agents':   el.innerHTML = await renderAgents();   break;
+        case 'logs':     el.innerHTML = await renderLogs();     break;
+      }
     }
-  }
 
-  let html = `
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <h2>Session: ${esc(id)}</h2>
-    <div class="transcript">
-  `;
-
-  if (messages.length === 0) {
-    html += '<div class="empty">No messages in this session</div>';
-  } else {
-    for (const m of messages) {
-      const role = m.role || 'unknown';
-      const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content, null, 2);
-      html += `
-        <div class="msg ${role === 'user' ? 'user' : 'assistant'}">
-          <div class="role">${esc(role)}</div>
-          <div class="content">${esc(content)}</div>
-        </div>
-      `;
+    function escHtml(s) {
+      if (typeof s !== 'string') s = String(s);
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-  }
 
-  html += '</div>';
-  showModal(html);
-}
-
-async function compactSession(id) {
-  if (!confirm('Compact session ' + id + '?')) return;
-  await API.call('sessions.compact', { id });
-  renderSessions();
-}
-
-async function deleteSession(id) {
-  if (!confirm('Delete session ' + id + '?')) return;
-  await API.call('sessions.delete', { id });
-  renderSessions();
-}
-
-// ============================================================
-// CRON TAB
-// ============================================================
-async function renderCron() {
-  const [jobsRes, runsRes] = await Promise.all([
-    API.call('cron.list'),
-    API.call('cron.runs', { limit: 20 })
-  ]);
-
-  // Jobs table
-  const jobs = jobsRes.ok ? (jobsRes.data.jobs || jobsRes.data || []) : [];
-  const cronBody = document.getElementById('cronBody');
-  const cronEmpty = document.getElementById('cronEmpty');
-
-  if (!Array.isArray(jobs) || jobs.length === 0) {
-    cronBody.innerHTML = '';
-    cronEmpty.style.display = '';
-  } else {
-    cronEmpty.style.display = 'none';
-    cronBody.innerHTML = jobs.map(j => `
-      <tr>
-        <td><code>${esc(j.id)}</code></td>
-        <td>${esc(j.name)}</td>
-        <td><code>${esc(j.schedule)}</code></td>
-        <td>${fmtDate(j.lastRunAt || j.last_run_at)}</td>
-        <td>${fmtDate(j.nextRunAt || j.next_run_at)}</td>
-        <td>${statusBadge(j.enabled ? 'enabled' : 'disabled')}</td>
-        <td>
-          <div class="flex-row">
-            <button onclick="cronRunNow('${esc(j.id)}')">Run</button>
-            <button onclick="cronToggle('${esc(j.id)}', ${!!j.enabled})">${j.enabled ? 'Disable' : 'Enable'}</button>
-            <button class="danger" onclick="cronDelete('${esc(j.id)}')">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  // Runs table
-  const runs = runsRes.ok ? (runsRes.data.runs || runsRes.data || []) : [];
-  const runsBody = document.getElementById('cronRunsBody');
-  const runsEmpty = document.getElementById('cronRunsEmpty');
-
-  if (!Array.isArray(runs) || runs.length === 0) {
-    runsBody.innerHTML = '';
-    runsEmpty.style.display = '';
-  } else {
-    runsEmpty.style.display = 'none';
-    runsBody.innerHTML = runs.map(r => `
-      <tr>
-        <td><code>${esc(r.id || r.run_id)}</code></td>
-        <td>${esc(r.jobName || r.job_name || r.jobId || r.job_id || '-')}</td>
-        <td>${fmtDate(r.startedAt || r.started_at)}</td>
-        <td>${fmtDate(r.endedAt || r.ended_at)}</td>
-        <td>${statusBadge(r.status)}</td>
-        <td style="color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(r.error || '')}</td>
-      </tr>
-    `).join('');
-  }
-}
-
-async function cronRunNow(id) {
-  await fetch('/cron/run/' + encodeURIComponent(id), { method: 'POST', headers: API.headers() });
-  renderCron();
-}
-
-async function cronToggle(id, enabled) {
-  const endpoint = enabled ? '/cron/pause/' : '/cron/resume/';
-  await fetch(endpoint + encodeURIComponent(id), { method: 'POST', headers: API.headers() });
-  renderCron();
-}
-
-async function cronDelete(id) {
-  if (!confirm('Delete cron job ' + id + '?')) return;
-  await API.call('cron.remove', { id });
-  renderCron();
-}
-
-function showAddCronModal() {
-  showModal(`
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <h2>Add Cron Job</h2>
-    <div class="form-group">
-      <label>Name</label>
-      <input id="cronNewName" placeholder="my-job" />
-    </div>
-    <div class="form-group">
-      <label>Schedule (cron expression)</label>
-      <input id="cronNewSchedule" placeholder="*/5 * * * *" />
-    </div>
-    <div class="form-group">
-      <label>Kind</label>
-      <select id="cronNewKind">
-        <option value="agent_turn">agent_turn</option>
-        <option value="http_get">http_get</option>
-        <option value="discord_webhook">discord_webhook</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Payload (JSON)</label>
-      <textarea id="cronNewPayload" placeholder='{"message": "hello", "session": "default"}'></textarea>
-    </div>
-    <div class="flex-row mt-8">
-      <button class="primary" onclick="addCronJob()">Create Job</button>
-      <button onclick="closeModal()">Cancel</button>
-    </div>
-    <div id="cronAddStatus" class="mt-8" style="font-size:12px"></div>
-  `);
-}
-
-async function addCronJob() {
-  const name = document.getElementById('cronNewName').value.trim();
-  const schedule = document.getElementById('cronNewSchedule').value.trim();
-  const kind = document.getElementById('cronNewKind').value;
-  const payloadStr = document.getElementById('cronNewPayload').value.trim();
-  const statusEl = document.getElementById('cronAddStatus');
-
-  if (!name || !schedule) {
-    statusEl.innerHTML = '<span style="color:var(--red)">Name and schedule are required</span>';
-    return;
-  }
-
-  let payload = {};
-  if (payloadStr) {
-    try { payload = JSON.parse(payloadStr); }
-    catch { statusEl.innerHTML = '<span style="color:var(--red)">Invalid JSON payload</span>'; return; }
-  }
-
-  const res = await API.call('cron.add', { name, schedule, kind, payload });
-  if (res.ok) {
-    closeModal();
-    renderCron();
-  } else {
-    statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + esc(JSON.stringify(res.data)) + '</span>';
-  }
-}
-
-// ============================================================
-// CHANNELS TAB
-// ============================================================
-async function renderChannels() {
-  const res = await API.call('channels.list');
-  const channels = res.ok ? (res.data.channels || res.data || []) : [];
-  const tbody = document.getElementById('channelsBody');
-  const emptyEl = document.getElementById('channelsEmpty');
-
-  if (!Array.isArray(channels) || channels.length === 0) {
-    tbody.innerHTML = '';
-    emptyEl.style.display = '';
-    document.getElementById('channelMessages').innerHTML = '<div class="empty">No channels configured</div>';
-    return;
-  }
-  emptyEl.style.display = 'none';
-
-  tbody.innerHTML = channels.map(ch => {
-    const status = ch.status || ch.state || 'unknown';
-    const statusClass = status === 'connected' || status === 'active' ? 'dot-green'
-      : status === 'error' || status === 'failed' ? 'dot-red' : 'dot-yellow';
-    return `
-      <tr>
-        <td><strong>${esc(ch.platform || ch.type || '-')}</strong></td>
-        <td>${esc(ch.account || ch.name || ch.id || '-')}</td>
-        <td><span class="${statusClass}">${esc(status)}</span></td>
-        <td>${timeAgo(ch.lastMessage || ch.last_message_at)}</td>
-        <td style="color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(ch.error || '')}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// ============================================================
-// LOGS TAB
-// ============================================================
-async function renderLogs() {
-  // Just update state display, don't restart polling
-  document.getElementById('logCount').textContent = allLogLines.length;
-  document.getElementById('logPolling').textContent = logsRunning ? 'active' : 'stopped';
-  document.getElementById('logToggle').textContent = logsRunning ? 'Stop' : 'Start';
-}
-
-function toggleLogs() {
-  if (logsRunning) {
-    stopLogs();
-  } else {
-    startLogs();
-  }
-}
-
-function startLogs() {
-  logsRunning = true;
-  document.getElementById('logToggle').textContent = 'Stop';
-  document.getElementById('logPolling').textContent = 'active';
-  pollLogs();
-  logsTimer = setInterval(pollLogs, 2000);
-}
-
-function stopLogs() {
-  logsRunning = false;
-  if (logsTimer) { clearInterval(logsTimer); logsTimer = null; }
-  document.getElementById('logToggle').textContent = 'Start';
-  document.getElementById('logPolling').textContent = 'stopped';
-}
-
-async function pollLogs() {
-  const res = await API.get('/events?since=' + logsCursor + '&limit=200');
-  if (!res.ok) return;
-
-  const events = res.data.events || [];
-  for (const ev of events) {
-    const level = (ev.level || ev.severity || 'INFO').toUpperCase();
-    const ts = ev.timestamp || ev.time || '';
-    const msg = ev.text || ev.message || JSON.stringify(ev);
-    allLogLines.push({ level, ts, msg, raw: ev });
-  }
-
-  if (res.data.nextCursor) logsCursor = res.data.nextCursor;
-  document.getElementById('logCount').textContent = allLogLines.length;
-  filterLogs();
-}
-
-function filterLogs() {
-  const container = document.getElementById('logsContainer');
-  const filterText = document.getElementById('logFilter').value.toLowerCase();
-  const levelFilter = document.getElementById('logLevel').value;
-
-  let filtered = allLogLines;
-  if (levelFilter !== 'all') {
-    filtered = filtered.filter(l => l.level === levelFilter);
-  }
-  if (filterText) {
-    filtered = filtered.filter(l => l.msg.toLowerCase().includes(filterText));
-  }
-
-  // Show last 500 lines max
-  const visible = filtered.slice(-500);
-  container.innerHTML = visible.map(l => {
-    const cls = l.level === 'ERROR' ? 'log-error'
-      : l.level === 'WARN' ? 'log-warn'
-      : l.level === 'DEBUG' ? 'log-debug' : 'log-info';
-    return '<div class="log-line ' + cls + '">'
-      + '<span style="color:var(--text-dim)">' + esc(fmtDate(l.ts)) + '</span> '
-      + '<span class="badge ' + (l.level === 'ERROR' ? 'red' : l.level === 'WARN' ? 'yellow' : '') + '">'
-      + esc(l.level) + '</span> '
-      + esc(l.msg)
-      + '</div>';
-  }).join('');
-
-  if (document.getElementById('logAutoScroll').checked) {
-    container.scrollTop = container.scrollHeight;
-  }
-}
-
-function clearLogs() {
-  allLogLines = [];
-  logsCursor = 0;
-  document.getElementById('logsContainer').innerHTML = '';
-  document.getElementById('logCount').textContent = '0';
-}
-
-// ============================================================
-// CONFIG TAB
-// ============================================================
-async function renderConfig() {
-  const res = await API.call('config.list');
-  const editor = document.getElementById('configEditor');
-  if (res.ok) {
-    editor.value = JSON.stringify(res.data, null, 2);
-  } else {
-    // Try config.export as fallback
-    const res2 = await API.call('config.export');
-    if (res2.ok) {
-      editor.value = JSON.stringify(res2.data, null, 2);
-    } else {
-      editor.value = '// Could not load config\n' + JSON.stringify(res.data, null, 2);
+    function fmtUptime(secs) {
+      if (!secs && secs !== 0) return '\u2014';
+      var d = Math.floor(secs / 86400);
+      var h = Math.floor((secs % 86400) / 3600);
+      var m = Math.floor((secs % 3600) / 60);
+      var parts = [];
+      if (d) parts.push(d + 'd');
+      if (h) parts.push(h + 'h');
+      parts.push(m + 'm');
+      return parts.join(' ');
     }
-  }
-  document.getElementById('configStatus').textContent = '';
-}
 
-async function saveConfig() {
-  const editor = document.getElementById('configEditor');
-  const statusEl = document.getElementById('configStatus');
-  let parsed;
-  try {
-    parsed = JSON.parse(editor.value);
-  } catch (e) {
-    statusEl.innerHTML = '<span style="color:var(--red)">Invalid JSON: ' + esc(e.message) + '</span>';
-    return;
-  }
-  const res = await API.call('gateway.config.patch', parsed);
-  if (res.ok) {
-    statusEl.innerHTML = '<span style="color:var(--green)">Config saved</span>';
-  } else {
-    statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + esc(JSON.stringify(res.data)) + '</span>';
-  }
-}
-
-async function configGet() {
-  const path = document.getElementById('configPath').value.trim();
-  if (!path) return;
-  const res = await API.call('config.get', { path });
-  document.getElementById('configOut').textContent = JSON.stringify(res.data, null, 2);
-}
-
-async function configSet() {
-  const path = document.getElementById('configPath').value.trim();
-  const value = document.getElementById('configValue').value.trim();
-  if (!path) return;
-  let parsed = value;
-  try { parsed = JSON.parse(value); } catch {}
-  const res = await API.call('config.set', { path, value: parsed });
-  document.getElementById('configOut').textContent = JSON.stringify(res.data, null, 2);
-}
-
-async function configUnset() {
-  const path = document.getElementById('configPath').value.trim();
-  if (!path || !confirm('Unset ' + path + '?')) return;
-  const res = await API.call('config.unset', { path });
-  document.getElementById('configOut').textContent = JSON.stringify(res.data, null, 2);
-}
-
-// ============================================================
-// Connection Status
-// ============================================================
-function updateConnStatus(ok) {
-  const dot = document.getElementById('connDot');
-  const txt = document.getElementById('connStatus');
-  if (ok) {
-    dot.className = 'status-dot';
-    txt.textContent = 'Connected';
-  } else {
-    dot.className = 'status-dot error';
-    txt.textContent = 'Error';
-  }
-}
-
-// ============================================================
-// Auto-refresh
-// ============================================================
-function startAutoRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => {
-    // Only auto-refresh overview, agents, sessions, channels
-    if (['overview', 'agents', 'sessions', 'channels'].includes(currentTab)) {
-      renderTab(currentTab);
+    async function renderOverview() {
+      var results = await Promise.all([
+        call('gateway.status'),
+        call('channels.list')
+      ]);
+      var s = results[0] || {};
+      var chData = results[1] || {};
+      var ch = chData.channels || [];
+      return '<div class="grid">' +
+        '<div class="card">' +
+          '<h3>Gateway</h3>' +
+          '<table>' +
+            '<tr><td>Status</td><td><span class="dot-green"></span>Online</td></tr>' +
+            '<tr><td>Uptime</td><td>' + fmtUptime(s.uptime) + '</td></tr>' +
+            '<tr><td>Version</td><td>' + escHtml(s.version || '0.1.0') + '</td></tr>' +
+            '<tr><td>Model</td><td>' + escHtml(s.model || '\u2014') + '</td></tr>' +
+            '<tr><td>PID</td><td class="mono">' + escHtml(s.pid || '\u2014') + '</td></tr>' +
+            '<tr><td>Sessions</td><td>' + (s.sessions != null ? s.sessions : '\u2014') + '</td></tr>' +
+          '</table>' +
+        '</div>' +
+        '<div class="card">' +
+          '<h3>Channels (' + ch.length + ')</h3>' +
+          (ch.length === 0 ? '<p class="empty">No channels configured</p>' :
+          '<table>' +
+            ch.map(function(c) {
+              var connected = c.status === 'connected' || c.configured;
+              return '<tr>' +
+                '<td class="' + (connected ? 'dot-green' : 'dot-red') + '">' + escHtml(c.name || c.platform || '') + '</td>' +
+                '<td>' + escHtml(c.platform || c.type || '') + '</td>' +
+                '<td><span class="badge ' + (connected ? 'badge-green' : 'badge-red') + '">' + escHtml(c.status || 'unknown') + '</span></td>' +
+              '</tr>';
+            }).join('')) +
+          '</table>' +
+        '</div>' +
+      '</div>';
     }
-  }, REFRESH_MS);
-}
 
-// ============================================================
-// Init
-// ============================================================
-switchTab('overview');
-startAutoRefresh();
-</script>
+    async function renderSessions() {
+      var r = await call('sessions.list', {limit: 50});
+      var sessions = r.sessions || [];
+      return '<div class="card">' +
+        '<h3>Sessions (' + sessions.length + ')</h3>' +
+        (sessions.length === 0 ? '<p class="empty">No sessions</p>' :
+        '<table>' +
+          '<tr><th>Key</th><th>Channel</th><th>Status</th><th>Updated</th></tr>' +
+          sessions.map(function(s) {
+            return '<tr>' +
+              '<td class="mono">' + escHtml(s.key || s.id || '') + '</td>' +
+              '<td>' + escHtml(s.channel || '\u2014') + '</td>' +
+              '<td><span class="badge ' + (s.status === 'active' ? 'badge-green' : 'badge-red') + '">' + escHtml(s.status || '\u2014') + '</span></td>' +
+              '<td>' + escHtml(s.updatedAt || s.updated_at || '\u2014') + '</td>' +
+            '</tr>';
+          }).join('')) +
+        '</table>' +
+      '</div>';
+    }
+
+    async function renderCron() {
+      var r = await call('cron.list');
+      var jobs = r.jobs || [];
+      return '<div class="card">' +
+        '<h3>Cron Jobs (' + jobs.length + ')</h3>' +
+        (jobs.length === 0 ? '<p class="empty">No cron jobs</p>' :
+        '<table>' +
+          '<tr><th>ID</th><th>Name</th><th>Schedule</th><th>Last Run</th><th>Status</th></tr>' +
+          jobs.map(function(j) {
+            var sched = j.schedule || j.cron_expr || j.cronExpr || '\u2014';
+            if (typeof sched === 'object') sched = sched.expr || sched.everyMs || JSON.stringify(sched);
+            var enabled = j.enabled !== false && j.paused !== true;
+            return '<tr>' +
+              '<td class="mono">' + escHtml(String(j.id || '').slice(0, 8)) + '</td>' +
+              '<td>' + escHtml(j.name || '\u2014') + '</td>' +
+              '<td class="mono">' + escHtml(sched) + '</td>' +
+              '<td>' + escHtml(j.lastRun || j.last_run || j.lastRunAt || '\u2014') + '</td>' +
+              '<td><span class="badge ' + (enabled ? 'badge-green' : 'badge-red') + '">' + (enabled ? 'enabled' : 'disabled') + '</span></td>' +
+            '</tr>';
+          }).join('')) +
+        '</table>' +
+      '</div>';
+    }
+
+    async function renderAgents() {
+      var r = await call('agents.list');
+      var agents = r.agents || [];
+      return '<div class="card">' +
+        '<h3>Agents (' + agents.length + ')</h3>' +
+        (agents.length === 0 ? '<p class="empty">No agents</p>' :
+        '<table>' +
+          '<tr><th>Name</th><th>Model</th><th>Status</th><th>Description</th></tr>' +
+          agents.map(function(a) {
+            var active = a.status === 'active';
+            return '<tr>' +
+              '<td>' + escHtml(a.name || a.id || '') + '</td>' +
+              '<td class="mono">' + escHtml(a.model || '\u2014') + '</td>' +
+              '<td><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + escHtml(a.status || '\u2014') + '</span></td>' +
+              '<td>' + escHtml(a.description || '\u2014') + '</td>' +
+            '</tr>';
+          }).join('')) +
+        '</table>' +
+      '</div>';
+    }
+
+    async function renderLogs() {
+      var r = await call('logs.tail', {lines: 200});
+      var entries = r.entries || [];
+      if (entries.length === 0) {
+        return '<div class="card"><h3>Recent Logs</h3><p class="empty">No log entries</p></div>';
+      }
+      var html = entries.map(function(entry) {
+        var line = (typeof entry === 'string') ? entry : (entry.line || JSON.stringify(entry));
+        var level = 'info';
+        if (/\bERROR\b/i.test(line)) level = 'error';
+        else if (/\bWARN/i.test(line)) level = 'warn';
+        else if (/\bDEBUG\b/i.test(line)) level = 'debug';
+        return '<span class="log-' + level + '">' + escHtml(line) + '</span>';
+      }).join('\n');
+      return '<div class="card"><h3>Recent Logs (' + entries.length + ')</h3><pre>' + html + '</pre></div>';
+    }
+
+    async function refresh() {
+      await renderTab();
+      try {
+        var r = await fetch('/health');
+        if (r.ok) {
+          document.getElementById('gateway-status').style.color = 'var(--green)';
+        } else {
+          document.getElementById('gateway-status').style.color = 'var(--red)';
+        }
+      } catch(e) {
+        document.getElementById('gateway-status').style.color = 'var(--red)';
+      }
+    }
+
+    setInterval(refresh, 10000);
+    renderTab();
+  </script>
 </body>
 </html>

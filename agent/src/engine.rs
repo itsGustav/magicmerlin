@@ -112,7 +112,10 @@ pub trait ToolExecutor: Send + Sync {
     async fn execute_tool(&self, tool_call: &ToolCall) -> Result<ToolExecutionResult>;
 
     /// Executes multiple calls concurrently if implementation supports it.
-    async fn execute_tools_parallel(&self, tool_calls: &[ToolCall]) -> Result<Vec<ToolExecutionResult>> {
+    async fn execute_tools_parallel(
+        &self,
+        tool_calls: &[ToolCall],
+    ) -> Result<Vec<ToolExecutionResult>> {
         let mut results = Vec::new();
         for call in tool_calls {
             results.push(self.execute_tool(call).await?);
@@ -210,7 +213,9 @@ impl AgentEngine {
         self.check_abort(abort_signal)?;
 
         // Pre-turn compaction check with context % logging
-        let ctx_pct = self.sessions.estimate_context_percent(session, self.config.context_window);
+        let ctx_pct = self
+            .sessions
+            .estimate_context_percent(session, self.config.context_window);
         if let Some(compaction) = self.sessions.compact_if_needed(
             session,
             self.config.context_window,
@@ -229,7 +234,8 @@ impl AgentEngine {
         self.sessions
             .append_message(session, json!({"role":"user","content":user_message}))?;
 
-        let assembler = SystemPromptAssembler::new(&self.config.workspace_dir, &self.config.agent_dir, 8_000);
+        let assembler =
+            SystemPromptAssembler::new(&self.config.workspace_dir, &self.config.agent_dir, 8_000);
         let system_prompt = assembler.assemble_with_context(
             &PromptRuntimeMetadata::now(
                 self.config.model.clone(),
@@ -268,9 +274,7 @@ impl AgentEngine {
                 )));
             }
 
-            let response = self
-                .request_completion(messages.clone())
-                .await?;
+            let response = self.request_completion(messages.clone()).await?;
 
             let assistant_text = response
                 .content
@@ -389,7 +393,10 @@ impl AgentEngine {
     }
 
     fn check_abort(&self, abort_signal: Option<&AbortSignal>) -> Result<()> {
-        if abort_signal.map(|signal| signal.is_cancelled()).unwrap_or(false) {
+        if abort_signal
+            .map(|signal| signal.is_cancelled())
+            .unwrap_or(false)
+        {
             return Err(AgentError::Cancelled("agent turn aborted".to_string()));
         }
         Ok(())

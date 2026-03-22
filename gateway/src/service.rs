@@ -45,7 +45,7 @@ pub fn is_process_running(pid: u32) -> bool {
             .arg("-0")
             .arg(pid.to_string())
             .status();
-        return status.map(|s| s.success()).unwrap_or(false);
+        status.map(|s| s.success()).unwrap_or(false)
     }
 
     #[cfg(not(unix))]
@@ -124,6 +124,7 @@ pub fn generate_systemd_unit(gateway_bin: &Path, port: u16) -> String {
 }
 
 /// Build launchctl load command arguments.
+#[allow(dead_code)]
 pub fn launchctl_load_args(plist_path: &Path) -> Vec<String> {
     vec![
         "bootstrap".to_string(),
@@ -133,6 +134,7 @@ pub fn launchctl_load_args(plist_path: &Path) -> Vec<String> {
 }
 
 /// Build launchctl unload command arguments.
+#[allow(dead_code)]
 pub fn launchctl_unload_args(plist_path: &Path) -> Vec<String> {
     vec![
         "bootout".to_string(),
@@ -142,17 +144,26 @@ pub fn launchctl_unload_args(plist_path: &Path) -> Vec<String> {
 }
 
 /// Build systemctl args for user-service operations.
+#[allow(dead_code)]
 pub fn systemctl_user_args(action: &str, unit_name: &str) -> Vec<String> {
-    vec!["--user".to_string(), action.to_string(), unit_name.to_string()]
+    vec![
+        "--user".to_string(),
+        action.to_string(),
+        unit_name.to_string(),
+    ]
 }
 
+#[allow(dead_code)]
 fn nix_uid() -> u32 {
     #[cfg(unix)]
     {
         // Portable enough for this crate without extra deps.
         if let Ok(output) = std::process::Command::new("id").arg("-u").output() {
             if output.status.success() {
-                if let Ok(uid) = String::from_utf8_lossy(&output.stdout).trim().parse::<u32>() {
+                if let Ok(uid) = String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .parse::<u32>()
+                {
                     return uid;
                 }
             }

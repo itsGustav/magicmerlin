@@ -3,8 +3,8 @@
 mod error;
 mod model;
 mod paths;
-mod security;
 mod secrets;
+mod security;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -13,11 +13,11 @@ use std::path::{Path, PathBuf};
 pub use error::ConfigError;
 pub use model::{Config, GatewayConfig};
 pub use paths::{PathScope, StatePaths};
+pub use secrets::{Secrets, SecretsError};
 pub use security::{
     is_tool_allowed, run_security_audit, validate_trusted_proxy, validate_workspace_path,
     SecurityAuditContext, SecurityAuditReport, SecurityIssue, SecuritySeverity,
 };
-pub use secrets::{Secrets, SecretsError};
 use serde_json::Value;
 
 /// Runtime options that control where configuration and state are resolved.
@@ -133,7 +133,10 @@ impl ConfigManager {
 
     /// Imports a JSON object, merging it into the current config.
     pub fn import_json(&mut self, value: Value) -> Result<(), ConfigError> {
-        let merged = merge_json(serde_json::to_value(&self.config).map_err(ConfigError::Serialize)?, value);
+        let merged = merge_json(
+            serde_json::to_value(&self.config).map_err(ConfigError::Serialize)?,
+            value,
+        );
         self.config = serde_json::from_value(merged).map_err(ConfigError::Deserialize)?;
         self.config.validate()?;
         Ok(())

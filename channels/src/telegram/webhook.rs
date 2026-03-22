@@ -32,4 +32,3 @@ async fn handle_webhook(
         Err(_) => StatusCode::UNAUTHORIZED,
     }
 }
-

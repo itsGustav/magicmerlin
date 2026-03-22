@@ -174,9 +174,16 @@ impl RunQueue {
             };
 
             if start.elapsed() > queue_timeout {
-                self.complete(session_id, run_id, RunStatus::Dropped, Some("queue timeout".into()))
-                    .await;
-                return Err(format!("timed out waiting in queue for session {session_id}"));
+                self.complete(
+                    session_id,
+                    run_id,
+                    RunStatus::Dropped,
+                    Some("queue timeout".into()),
+                )
+                .await;
+                return Err(format!(
+                    "timed out waiting in queue for session {session_id}"
+                ));
             }
 
             tokio::time::timeout(Duration::from_secs(1), notify.notified())

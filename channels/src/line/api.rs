@@ -58,11 +58,7 @@ impl LineApiClient {
     // ── Reply ───────────────────────────────────────────────────────────
 
     /// Reply to a webhook event using the reply token (expires in 30s).
-    pub async fn reply_message(
-        &self,
-        reply_token: &str,
-        messages: Vec<LineMessage>,
-    ) -> Result<()> {
+    pub async fn reply_message(&self, reply_token: &str, messages: Vec<LineMessage>) -> Result<()> {
         let msgs: Vec<Value> = messages.iter().map(LineMessage::to_json).collect();
         let body = serde_json::json!({
             "replyToken": reply_token,
@@ -99,7 +95,10 @@ impl LineApiClient {
         if !resp.status().is_success() {
             let body: Value = resp.json().await.unwrap_or_default();
             return Err(LineApiError::Api(
-                body["message"].as_str().unwrap_or("profile_error").to_string(),
+                body["message"]
+                    .as_str()
+                    .unwrap_or("profile_error")
+                    .to_string(),
             ));
         }
         resp.json().await.map_err(|_| LineApiError::BadResponse)

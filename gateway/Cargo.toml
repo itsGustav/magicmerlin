@@ -34,3 +34,9 @@ magicmerlin-tools = { path = "../tools" }
 magicmerlin-plugins = { path = "../plugins" }
 magicmerlin-acp = { path = "../acp" }
 tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+uuid = { version = "1", features = ["v4"] }

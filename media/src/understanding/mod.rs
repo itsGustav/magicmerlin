@@ -221,6 +221,7 @@ impl UnderstandingClient {
             .await
     }
 
+    #[allow(dead_code)]
     async fn pdf_to_text(&self, request: AnalysisRequest) -> Result<AnalysisResult> {
         let path = request.source.file_path().ok_or_else(|| {
             MediaError::InvalidInput("pdf fallback requires file source".to_string())
@@ -250,6 +251,7 @@ impl UnderstandingClient {
         })
     }
 
+    #[allow(dead_code)]
     async fn extract_video_frames(&self, path: &Path) -> Result<Vec<PathBuf>> {
         let dir = tempfile::Builder::new()
             .prefix("media-frames-")

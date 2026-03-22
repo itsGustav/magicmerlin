@@ -241,11 +241,7 @@ impl LineChannel {
     }
 
     /// Legacy reply_message for local tracking.
-    pub async fn reply_message(
-        &self,
-        reply_token: &str,
-        message: &OutboundMessage,
-    ) -> Result<()> {
+    pub async fn reply_message(&self, reply_token: &str, message: &OutboundMessage) -> Result<()> {
         self.messages
             .write()
             .await
@@ -415,10 +411,7 @@ mod tests {
             LineMessage::Flex { alt_text, contents } => {
                 assert_eq!(alt_text, "Hello");
                 assert_eq!(contents["type"], "bubble");
-                assert_eq!(
-                    contents["body"]["contents"][0]["text"],
-                    "hello"
-                );
+                assert_eq!(contents["body"]["contents"][0]["text"], "hello");
             }
             _ => panic!("expected Flex message"),
         }

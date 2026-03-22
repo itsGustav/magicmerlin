@@ -185,10 +185,7 @@ impl SlackApiClient {
                 serde_json::json!({"types": "public_channel,private_channel,im,mpim"}),
             )
             .await?;
-        let channels = resp["channels"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default();
+        let channels = resp["channels"].as_array().cloned().unwrap_or_default();
         let mut out = Vec::with_capacity(channels.len());
         for ch in channels {
             if let Ok(c) = serde_json::from_value(ch) {
@@ -217,8 +214,8 @@ impl SlackApiClient {
         content: &[u8],
     ) -> Result<String> {
         let url = format!("{}/files.uploadV2", self.base_url);
-        let part = reqwest::multipart::Part::bytes(content.to_vec())
-            .file_name(filename.to_string());
+        let part =
+            reqwest::multipart::Part::bytes(content.to_vec()).file_name(filename.to_string());
         let form = reqwest::multipart::Form::new()
             .text("channel_id", channel.to_string())
             .text("filename", filename.to_string())
@@ -241,7 +238,10 @@ impl SlackApiClient {
                 .ok_or(SlackApiError::BadResponse)
         } else {
             Err(SlackApiError::Api(
-                resp["error"].as_str().unwrap_or("upload_failed").to_string(),
+                resp["error"]
+                    .as_str()
+                    .unwrap_or("upload_failed")
+                    .to_string(),
             ))
         }
     }

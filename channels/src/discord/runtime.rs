@@ -19,7 +19,7 @@ use super::types::{
     session_scope, DiscordApiError, DiscordAttachment, DiscordConfig, DiscordEmbed,
     DiscordGatewayState, DiscordHealth, DiscordHello, DiscordInteraction,
     DiscordInteractionResponse, DiscordMessage, DiscordPresence, DiscordProcessedEvent,
-    DiscordResponseKind, DiscordSession, DiscordThread, DISCORD_MAX_MESSAGE_LEN, DurationHolder,
+    DiscordResponseKind, DiscordSession, DiscordThread, DurationHolder, DISCORD_MAX_MESSAGE_LEN,
 };
 use super::voice::VoiceStateTracker;
 use super::webhook::WebhookManager;
@@ -264,7 +264,10 @@ impl DiscordChannel {
     }
 
     pub async fn approve_paired_user(&self, user_id: &str) {
-        self.dm_policy.lock().await.approve_pairing(user_id.to_string());
+        self.dm_policy
+            .lock()
+            .await
+            .approve_pairing(user_id.to_string());
     }
 
     pub async fn allows_inbound(
@@ -277,7 +280,11 @@ impl DiscordChannel {
     ) -> Result<()> {
         if let Some(guild_id) = guild_id {
             if !self.config.guild_allowlist.is_empty()
-                && !self.config.guild_allowlist.iter().any(|allowed| allowed == guild_id)
+                && !self
+                    .config
+                    .guild_allowlist
+                    .iter()
+                    .any(|allowed| allowed == guild_id)
             {
                 return Err(ChannelError::PlatformRequest(format!(
                     "discord forbidden: guild {guild_id} not allowlisted"
@@ -360,29 +367,38 @@ impl DiscordChannel {
     }
 
     pub async fn defer_interaction(&self, interaction_id: &str) -> Result<()> {
-        self.interaction_responses.lock().await.push(DiscordInteractionResponse {
-            interaction_id: interaction_id.to_string(),
-            kind: DiscordResponseKind::Deferred,
-            content: String::new(),
-        });
+        self.interaction_responses
+            .lock()
+            .await
+            .push(DiscordInteractionResponse {
+                interaction_id: interaction_id.to_string(),
+                kind: DiscordResponseKind::Deferred,
+                content: String::new(),
+            });
         Ok(())
     }
 
     pub async fn respond_to_interaction(&self, interaction_id: &str, content: &str) -> Result<()> {
-        self.interaction_responses.lock().await.push(DiscordInteractionResponse {
-            interaction_id: interaction_id.to_string(),
-            kind: DiscordResponseKind::Immediate,
-            content: content.to_string(),
-        });
+        self.interaction_responses
+            .lock()
+            .await
+            .push(DiscordInteractionResponse {
+                interaction_id: interaction_id.to_string(),
+                kind: DiscordResponseKind::Immediate,
+                content: content.to_string(),
+            });
         Ok(())
     }
 
     pub async fn followup_interaction(&self, interaction_id: &str, content: &str) -> Result<()> {
-        self.interaction_responses.lock().await.push(DiscordInteractionResponse {
-            interaction_id: interaction_id.to_string(),
-            kind: DiscordResponseKind::Followup,
-            content: content.to_string(),
-        });
+        self.interaction_responses
+            .lock()
+            .await
+            .push(DiscordInteractionResponse {
+                interaction_id: interaction_id.to_string(),
+                kind: DiscordResponseKind::Followup,
+                content: content.to_string(),
+            });
         Ok(())
     }
 
@@ -436,7 +452,10 @@ impl DiscordChannel {
         let mut channels = messages
             .keys()
             .filter(|key| key.starts_with(&format!("guild:{guild_id}:")))
-            .map(|key| key.trim_start_matches(&format!("guild:{guild_id}:")).to_string())
+            .map(|key| {
+                key.trim_start_matches(&format!("guild:{guild_id}:"))
+                    .to_string()
+            })
             .collect::<Vec<_>>();
         channels.sort();
         channels.dedup();
@@ -444,13 +463,16 @@ impl DiscordChannel {
     }
 
     pub async fn send_typing_indicator(&self, channel_id: &str) -> Result<()> {
-        self.processed_events.lock().await.push(DiscordProcessedEvent {
-            kind: "typing".to_string(),
-            channel_id: channel_id.to_string(),
-            guild_id: None,
-            thread_id: None,
-            session_scope: format!("discord:channel:{channel_id}"),
-        });
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "typing".to_string(),
+                channel_id: channel_id.to_string(),
+                guild_id: None,
+                thread_id: None,
+                session_scope: format!("discord:channel:{channel_id}"),
+            });
         Ok(())
     }
 
@@ -690,7 +712,13 @@ impl DiscordChannel {
     ) -> Result<MessageId> {
         let msg_id = self
             .send_message(
-                channel_id, guild_id, author_id, message, embeds, attachments, thread_id,
+                channel_id,
+                guild_id,
+                author_id,
+                message,
+                embeds,
+                attachments,
+                thread_id,
             )
             .await?;
         self.component_manager
@@ -706,9 +734,7 @@ impl DiscordChannel {
 
     /// Push a component interaction (button click, select, modal submit).
     pub async fn push_component_interaction(&self, interaction: ComponentInteraction) {
-        self.component_manager
-            .push_interaction(interaction)
-            .await;
+        self.component_manager.push_interaction(interaction).await;
     }
 
     /// Pop the next component interaction.

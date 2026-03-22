@@ -118,7 +118,11 @@ impl AgentRegistry {
 
     /// Adds or replaces descriptor.
     pub fn upsert(&mut self, descriptor: AgentDescriptor) {
-        if let Some(existing) = self.agents.iter_mut().find(|agent| agent.id == descriptor.id) {
+        if let Some(existing) = self
+            .agents
+            .iter_mut()
+            .find(|agent| agent.id == descriptor.id)
+        {
             *existing = descriptor;
             return;
         }

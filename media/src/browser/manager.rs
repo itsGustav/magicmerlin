@@ -156,9 +156,11 @@ impl BrowserManager {
         port: u16,
         startup_timeout: Duration,
     ) -> BrowserLaunchOptions {
-        let mut opts = BrowserLaunchOptions::default();
-        opts.remote_debugging_port = port;
-        opts.startup_timeout = startup_timeout;
+        let mut opts = BrowserLaunchOptions {
+            remote_debugging_port: port,
+            startup_timeout,
+            ..Default::default()
+        };
         if profile == BrowserProfile::Relay {
             opts.headless = false;
             opts.extra_args.push("--start-maximized".to_string());

@@ -8,6 +8,8 @@ members = [
   "tools",
   "sentinel",
   "cli", "config", "logging", "infra", "storage", "providers", "agent", "agent-tools", "sessions", "auto-reply", "channels",
+  "tests/integration",
+  "tools/docgen",
 ]
 
 [workspace.package]

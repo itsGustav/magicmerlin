@@ -95,7 +95,9 @@ impl OpenAiCompatProvider {
                 let name = response_format
                     .schema_name
                     .unwrap_or_else(|| "structured_output".to_string());
-                let schema = response_format.schema.unwrap_or_else(|| json!({"type": "object"}));
+                let schema = response_format
+                    .schema
+                    .unwrap_or_else(|| json!({"type": "object"}));
                 body["response_format"] = json!({
                     "type": "json_schema",
                     "json_schema": {
@@ -258,7 +260,11 @@ impl LlmProvider for OpenAiCompatProvider {
                 delta_content: message
                     .get("content")
                     .and_then(Value::as_str)
-                    .map(|text| vec![ContentBlock::Text { text: text.to_string() }])
+                    .map(|text| {
+                        vec![ContentBlock::Text {
+                            text: text.to_string(),
+                        }]
+                    })
                     .unwrap_or_default(),
                 tool_calls: parse_openai_tool_calls(&message),
                 usage: raw.get("usage").map(|u| parse_usage(Some(u))),
@@ -448,7 +454,8 @@ fn parse_sse_events(raw: &str) -> Vec<SseEvent> {
     for line in raw.lines() {
         let line = line.trim_end_matches('\r');
         if line.is_empty() {
-            if !current.data_lines.is_empty() || current.event.is_some() || current.retry.is_some() {
+            if !current.data_lines.is_empty() || current.event.is_some() || current.retry.is_some()
+            {
                 events.push(current.clone());
                 current = SseEvent::default();
             }
@@ -547,7 +554,10 @@ fn parse_sse_stream_to_chunks(raw: &str) -> Result<ProviderStream> {
                             .to_string();
 
                         let key = if id.is_empty() {
-                            format!("{}:unknown", call.get("index").and_then(Value::as_u64).unwrap_or(0))
+                            format!(
+                                "{}:unknown",
+                                call.get("index").and_then(Value::as_u64).unwrap_or(0)
+                            )
                         } else {
                             id.clone()
                         };
@@ -699,15 +709,18 @@ mod tests {
                 .unwrap_or(false)
         }));
 
-        assert!(chunks.iter().any(|c| {
-            c.as_ref().ok().map(|chunk| chunk.done).unwrap_or(false)
-        }));
+        assert!(chunks
+            .iter()
+            .any(|c| { c.as_ref().ok().map(|chunk| chunk.done).unwrap_or(false) }));
     }
 
     #[test]
     fn parse_retry_after_header() {
         let mut headers = reqwest::header::HeaderMap::new();
-        headers.insert("retry-after", reqwest::header::HeaderValue::from_static("7"));
+        headers.insert(
+            "retry-after",
+            reqwest::header::HeaderValue::from_static("7"),
+        );
         assert_eq!(parse_retry_after(&headers), Some(7));
     }
 }

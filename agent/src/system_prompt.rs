@@ -216,10 +216,7 @@ impl SystemPromptAssembler {
                     // BOOTSTRAP.md gets a missing marker when absent
                     if file == "BOOTSTRAP.md" {
                         let expected = self.workspace_dir.join(file);
-                        sections.push(format!(
-                            "[MISSING] Expected at: {}",
-                            expected.display()
-                        ));
+                        sections.push(format!("[MISSING] Expected at: {}", expected.display()));
                     }
                 }
             }
@@ -238,11 +235,7 @@ impl SystemPromptAssembler {
         Ok(())
     }
 
-    fn try_inject_memory_date(
-        &self,
-        sections: &mut Vec<String>,
-        date: NaiveDate,
-    ) -> Result<()> {
+    fn try_inject_memory_date(&self, sections: &mut Vec<String>, date: NaiveDate) -> Result<()> {
         let filename = format!("memory/{}.md", date.format("%Y-%m-%d"));
         let from_agent = self.agent_dir.join(&filename);
         let from_workspace = self.workspace_dir.join(&filename);
@@ -336,8 +329,8 @@ fn render_inbound_context(inbound: &InboundContext) -> String {
     }
 
     if !inbound.extra.is_empty() {
-        let serialized = serde_json::to_string_pretty(&inbound.extra)
-            .unwrap_or_else(|_| "{}".to_string());
+        let serialized =
+            serde_json::to_string_pretty(&inbound.extra).unwrap_or_else(|_| "{}".to_string());
         lines.push("extra_json=<<<JSON".to_string());
         lines.push(serialized);
         lines.push("JSON".to_string());
@@ -743,8 +736,7 @@ mod tests {
         let temp = tempfile::tempdir().expect("tmp");
         let skills_dir = temp.path().join(".codex/skills/calculator");
         std::fs::create_dir_all(&skills_dir).expect("mkdir");
-        std::fs::write(skills_dir.join("SKILL.md"), "Just content, no frontmatter")
-            .expect("write");
+        std::fs::write(skills_dir.join("SKILL.md"), "Just content, no frontmatter").expect("write");
 
         let assembler = SystemPromptAssembler::new(temp.path(), temp.path(), 4_000);
         let prompt = assembler
@@ -760,8 +752,7 @@ mod tests {
 
     #[test]
     fn parse_skill_frontmatter_works() {
-        let content =
-            "---\nname: test-skill\ndescription: A test skill\n---\n# Test\nBody content";
+        let content = "---\nname: test-skill\ndescription: A test skill\n---\n# Test\nBody content";
         let path = PathBuf::from("/skills/fallback/SKILL.md");
         let (name, desc) = parse_skill_frontmatter(content, &path);
         assert_eq!(name, "test-skill");

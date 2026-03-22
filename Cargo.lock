@@ -1329,6 +1329,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "magicmerlin-docgen"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "magicmerlin-gateway"
 version = "0.0.0"
 dependencies = [
@@ -1370,6 +1381,21 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "magicmerlin-integration-tests"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "magicmerlin-agent",
+ "magicmerlin-providers",
+ "magicmerlin-sessions",
+ "magicmerlin-storage",
+ "reqwest",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1472,6 +1498,11 @@ dependencies = [
 [[package]]
 name = "magicmerlin-tools"
 version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "markup5ever"

@@ -1,8 +1,6 @@
 #![cfg(feature = "telegram")]
 
-use magicmerlin_channels::telegram::{
-    parse_html, parse_markdown_v2, TelegramEntityKind,
-};
+use magicmerlin_channels::telegram::{parse_html, parse_markdown_v2, TelegramEntityKind};
 
 macro_rules! markdown_case {
     (

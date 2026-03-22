@@ -334,25 +334,13 @@ pub struct TelegramCallbackAnswer {
 }
 
 /// Telegram webhook status for an account.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TelegramWebhookState {
     pub active: bool,
     pub url: Option<String>,
     pub secret_token: Option<String>,
     pub last_delivery_at: Option<DateTime<Utc>>,
     pub consecutive_failures: usize,
-}
-
-impl Default for TelegramWebhookState {
-    fn default() -> Self {
-        Self {
-            active: false,
-            url: None,
-            secret_token: None,
-            last_delivery_at: None,
-            consecutive_failures: 0,
-        }
-    }
 }
 
 /// Inbound Telegram update.
@@ -640,4 +628,3 @@ impl TelegramApiError {
         )
     }
 }
-
