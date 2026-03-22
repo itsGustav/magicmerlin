@@ -47,10 +47,22 @@ pub struct DiscordSession {
 pub struct DiscordEmbed {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub url: Option<String>,
     pub color: Option<u32>,
     pub fields: Vec<DiscordEmbedField>,
     pub footer: Option<String>,
     pub thumbnail_url: Option<String>,
+    pub image_url: Option<String>,
+    pub author: Option<DiscordEmbedAuthor>,
+    pub timestamp: Option<String>,
+}
+
+/// Embed author block.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiscordEmbedAuthor {
+    pub name: String,
+    pub url: Option<String>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -70,10 +82,14 @@ impl DiscordEmbed {
 pub struct DiscordEmbedBuilder {
     title: Option<String>,
     description: Option<String>,
+    url: Option<String>,
     color: Option<u32>,
     fields: Vec<DiscordEmbedField>,
     footer: Option<String>,
     thumbnail_url: Option<String>,
+    image_url: Option<String>,
+    author: Option<DiscordEmbedAuthor>,
+    timestamp: Option<String>,
 }
 
 impl DiscordEmbedBuilder {
@@ -111,14 +127,47 @@ impl DiscordEmbedBuilder {
         self
     }
 
+    pub fn image(mut self, url: impl Into<String>) -> Self {
+        self.image_url = Some(url.into());
+        self
+    }
+
+    pub fn url(mut self, url: impl Into<String>) -> Self {
+        self.url = Some(url.into());
+        self
+    }
+
+    pub fn author(
+        mut self,
+        name: impl Into<String>,
+        url: Option<String>,
+        icon_url: Option<String>,
+    ) -> Self {
+        self.author = Some(DiscordEmbedAuthor {
+            name: name.into(),
+            url,
+            icon_url,
+        });
+        self
+    }
+
+    pub fn timestamp(mut self, ts: impl Into<String>) -> Self {
+        self.timestamp = Some(ts.into());
+        self
+    }
+
     pub fn build(self) -> DiscordEmbed {
         DiscordEmbed {
             title: self.title,
             description: self.description,
+            url: self.url,
             color: self.color,
             fields: self.fields,
             footer: self.footer,
             thumbnail_url: self.thumbnail_url,
+            image_url: self.image_url,
+            author: self.author,
+            timestamp: self.timestamp,
         }
     }
 }

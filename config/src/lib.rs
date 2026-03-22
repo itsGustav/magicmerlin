@@ -126,6 +126,19 @@ impl ConfigManager {
         Ok(())
     }
 
+    /// Returns the full config as a JSON Value.
+    pub fn raw_json(&self) -> Value {
+        serde_json::to_value(&self.config).unwrap_or(Value::Null)
+    }
+
+    /// Imports a JSON object, merging it into the current config.
+    pub fn import_json(&mut self, value: Value) -> Result<(), ConfigError> {
+        let merged = merge_json(serde_json::to_value(&self.config).map_err(ConfigError::Serialize)?, value);
+        self.config = serde_json::from_value(merged).map_err(ConfigError::Deserialize)?;
+        self.config.validate()?;
+        Ok(())
+    }
+
     /// Persists the current config as pretty JSON to disk.
     pub fn save(&self) -> Result<(), ConfigError> {
         if let Some(parent) = self.config_path.parent() {
@@ -265,6 +278,24 @@ fn unset_at_path(root: &mut Value, path: &str) -> Result<(), ConfigError> {
     }
 
     Ok(())
+}
+
+/// Deep-merges two JSON Values, preferring values from `overlay`.
+fn merge_json(base: Value, overlay: Value) -> Value {
+    match (base, overlay) {
+        (Value::Object(mut base_map), Value::Object(overlay_map)) => {
+            for (key, val) in overlay_map {
+                let merged = if let Some(existing) = base_map.remove(&key) {
+                    merge_json(existing, val)
+                } else {
+                    val
+                };
+                base_map.insert(key, merged);
+            }
+            Value::Object(base_map)
+        }
+        (_, overlay) => overlay,
+    }
 }
 
 /// Returns a one-level key-value snapshot suitable for CLI display.

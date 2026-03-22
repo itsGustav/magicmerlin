@@ -261,6 +261,26 @@ impl RunQueue {
         rows
     }
 
+    pub async fn list_runs(&self) -> Vec<RunRecord> {
+        let sessions = self.sessions.lock().await;
+        let mut all: Vec<RunRecord> = sessions
+            .values()
+            .flat_map(|q| q.records.values().cloned())
+            .collect();
+        all.sort_by_key(|r| std::cmp::Reverse(r.queued_at_unix_ms));
+        all
+    }
+
+    pub async fn get_run_status(&self, run_id: &str) -> Option<RunRecord> {
+        let sessions = self.sessions.lock().await;
+        for session in sessions.values() {
+            if let Some(record) = session.records.get(run_id) {
+                return Some(record.clone());
+            }
+        }
+        None
+    }
+
     pub async fn snapshot(&self) -> HashMap<String, Vec<RunRecord>> {
         let sessions = self.sessions.lock().await;
         sessions

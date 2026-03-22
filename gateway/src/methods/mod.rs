@@ -2,27 +2,45 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 pub mod agent_run;
+pub mod agents;
 pub mod approvals;
+pub mod browser;
+pub mod channels;
 pub mod config;
 pub mod cron;
+pub mod directory;
 pub mod health;
+pub mod hooks;
+pub mod logs;
+pub mod memory;
+pub mod models;
+pub mod nodes;
 pub mod plugins;
+pub mod run;
+pub mod sandbox;
 pub mod sessions;
+pub mod skills;
 pub mod status;
 pub mod system;
 
 pub const SUPPORTED_METHODS: &[&str] = &[
+    // Core
     "health",
     "status",
     "system-presence",
+    // Agent execution
     "agent.run",
     "agent.abort",
+    // Sessions
     "sessions.list",
     "sessions.get",
     "sessions.send",
     "sessions.spawn",
     "sessions.compact",
     "sessions.delete",
+    "sessions.history",
+    "sessions.export",
+    // Cron
     "cron.list",
     "cron.add",
     "cron.edit",
@@ -30,20 +48,88 @@ pub const SUPPORTED_METHODS: &[&str] = &[
     "cron.run",
     "cron.enable",
     "cron.disable",
+    // Config
     "config.get",
     "config.set",
     "config.unset",
     "config.validate",
+    "config.list",
+    "config.export",
+    "config.import",
+    // Approvals
     "approvals.list",
     "approvals.approve",
     "approvals.deny",
+    // Plugins
     "plugins.list",
     "plugins.enable",
     "plugins.disable",
+    "plugins.install",
+    // System
     "system.event",
     "system.heartbeat",
     "system.presence",
     "system.restart",
+    "system.info",
+    "system.env",
+    // Memory
+    "memory.search",
+    "memory.get",
+    "memory.list",
+    // Models
+    "models.list",
+    "models.set",
+    "models.test",
+    "models.status",
+    // Channels
+    "channels.list",
+    "channels.status",
+    "channels.login",
+    "channels.logout",
+    "channels.restart",
+    "channels.send",
+    // Hooks
+    "hooks.list",
+    "hooks.add",
+    "hooks.remove",
+    "hooks.test",
+    // Logs
+    "logs.tail",
+    "logs.query",
+    // Run queue
+    "run.list",
+    "run.status",
+    // Agents management
+    "agents.list",
+    "agents.get",
+    "agents.add",
+    "agents.remove",
+    "agents.config",
+    // Skills
+    "skills.list",
+    "skills.get",
+    // Directory
+    "directory.search",
+    "directory.get",
+    // Nodes
+    "nodes.list",
+    "nodes.describe",
+    "nodes.run",
+    "nodes.invoke",
+    // Sandbox
+    "sandbox.list",
+    "sandbox.start",
+    "sandbox.stop",
+    "sandbox.status",
+    "sandbox.exec",
+    // Browser
+    "browser.start",
+    "browser.stop",
+    "browser.status",
+    "browser.navigate",
+    "browser.screenshot",
+    "browser.act",
+    "browser.snapshot",
     // Back-compat methods still exposed.
     "cron.remove",
     "cron.pause",

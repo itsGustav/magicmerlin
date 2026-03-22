@@ -5,14 +5,24 @@ use std::time::{Duration, Instant};
 
 use tokio::sync::{Mutex, RwLock};
 
-use crate::framework::{Channel, ChatType, MessageId, OutboundMessage, Platform, Result};
+use crate::framework::{
+    Channel, ChannelError, ChatType, DmPolicy, DmPolicyEnforcer, InboundMessage, MentionGate,
+    MessageId, OutboundMessage, Platform, Result, Sender,
+};
 
+use super::audit::AuditLogStore;
+use super::channel_mgmt::ChannelManager;
+use super::components::{ActionRow, ComponentInteraction, ComponentManager, Modal};
+use super::guild::GuildManager;
+use super::scheduled_events::ScheduledEventManager;
 use super::types::{
     session_scope, DiscordApiError, DiscordAttachment, DiscordConfig, DiscordEmbed,
     DiscordGatewayState, DiscordHealth, DiscordHello, DiscordInteraction,
     DiscordInteractionResponse, DiscordMessage, DiscordPresence, DiscordProcessedEvent,
     DiscordResponseKind, DiscordSession, DiscordThread, DISCORD_MAX_MESSAGE_LEN, DurationHolder,
 };
+use super::voice::VoiceStateTracker;
+use super::webhook::WebhookManager;
 
 #[derive(Debug, Clone)]
 struct RateLimitBucket {
@@ -91,11 +101,22 @@ pub struct DiscordChannel {
     interactions: Arc<Mutex<VecDeque<DiscordInteraction>>>,
     interaction_responses: Arc<Mutex<Vec<DiscordInteractionResponse>>>,
     processed_events: Arc<Mutex<Vec<DiscordProcessedEvent>>>,
+    dm_policy: Arc<Mutex<DmPolicyEnforcer>>,
+    mention_gate: MentionGate,
+    pinned: Arc<RwLock<HashMap<String, Vec<String>>>>,
+    component_manager: ComponentManager,
+    guild_manager: GuildManager,
+    webhook_manager: WebhookManager,
+    voice_tracker: VoiceStateTracker,
+    audit_log: AuditLogStore,
+    channel_manager: ChannelManager,
+    event_manager: ScheduledEventManager,
     next_id: AtomicU64,
 }
 
 impl DiscordChannel {
     pub fn new(config: DiscordConfig) -> Self {
+        let dm_enabled = config.dm_enabled;
         Self {
             config,
             connected: AtomicBool::new(false),
@@ -126,6 +147,20 @@ impl DiscordChannel {
             interactions: Arc::new(Mutex::new(VecDeque::new())),
             interaction_responses: Arc::new(Mutex::new(Vec::new())),
             processed_events: Arc::new(Mutex::new(Vec::new())),
+            dm_policy: Arc::new(Mutex::new(if dm_enabled {
+                DmPolicyEnforcer::new(DmPolicy::Open)
+            } else {
+                DmPolicyEnforcer::new(DmPolicy::Allowlist)
+            })),
+            mention_gate: MentionGate::new("magicmerlin", true),
+            pinned: Arc::new(RwLock::new(HashMap::new())),
+            component_manager: ComponentManager::new(),
+            guild_manager: GuildManager::new(),
+            webhook_manager: WebhookManager::new(),
+            voice_tracker: VoiceStateTracker::new(),
+            audit_log: AuditLogStore::new(),
+            channel_manager: ChannelManager::new(),
+            event_manager: ScheduledEventManager::new(),
             next_id: AtomicU64::new(1),
         }
     }
@@ -222,6 +257,76 @@ impl DiscordChannel {
 
     pub async fn queue_interaction(&self, interaction: DiscordInteraction) {
         self.interactions.lock().await.push_back(interaction);
+    }
+
+    pub async fn allow_dm_user(&self, user_id: &str) {
+        self.dm_policy.lock().await.allow_user(user_id.to_string());
+    }
+
+    pub async fn approve_paired_user(&self, user_id: &str) {
+        self.dm_policy.lock().await.approve_pairing(user_id.to_string());
+    }
+
+    pub async fn allows_inbound(
+        &self,
+        chat_type: ChatType,
+        guild_id: Option<&str>,
+        channel_id: &str,
+        user_id: &str,
+        text: Option<&str>,
+    ) -> Result<()> {
+        if let Some(guild_id) = guild_id {
+            if !self.config.guild_allowlist.is_empty()
+                && !self.config.guild_allowlist.iter().any(|allowed| allowed == guild_id)
+            {
+                return Err(ChannelError::PlatformRequest(format!(
+                    "discord forbidden: guild {guild_id} not allowlisted"
+                )));
+            }
+        }
+
+        if !self.config.channel_allowlist.is_empty()
+            && !self
+                .config
+                .channel_allowlist
+                .iter()
+                .any(|allowed| allowed == channel_id)
+        {
+            return Err(ChannelError::PlatformRequest(format!(
+                "discord forbidden: channel {channel_id} not allowlisted"
+            )));
+        }
+
+        let inbound = InboundMessage {
+            id: "discord-inbound".to_string(),
+            platform: Platform::Discord,
+            chat_id: channel_id.to_string(),
+            chat_type,
+            sender: Sender {
+                id: user_id.to_string(),
+                name: user_id.to_string(),
+                username: None,
+            },
+            text: text.map(ToString::to_string),
+            reply_to: None,
+            media: Vec::new(),
+            timestamp: chrono::Utc::now(),
+            raw: serde_json::json!({}),
+        };
+
+        if !self.dm_policy.lock().await.allows(&inbound) {
+            return Err(ChannelError::PlatformRequest(
+                "discord forbidden: dm policy blocked sender".to_string(),
+            ));
+        }
+
+        if !self.mention_gate.should_process(&inbound) {
+            return Err(ChannelError::PlatformRequest(
+                "discord forbidden: mention gate blocked group message".to_string(),
+            ));
+        }
+
+        Ok(())
     }
 
     pub async fn process_next_interaction(&self) -> Result<Option<DiscordProcessedEvent>> {
@@ -510,6 +615,142 @@ impl DiscordChannel {
         }
 
         parts
+    }
+
+    // -- Bulk operations ---
+
+    /// Delete multiple messages at once (Discord allows up to 100).
+    pub async fn bulk_delete_messages(&self, message_ids: &[&str]) -> Result<u64> {
+        let mut messages = self.messages.write().await;
+        let mut deleted = 0u64;
+        for id in message_ids {
+            if messages.remove(*id).is_some() {
+                deleted += 1;
+            }
+        }
+        Ok(deleted)
+    }
+
+    // -- Pin / Unpin ---
+
+    /// Pin a message in a channel.
+    pub async fn pin_message(&self, channel_id: &str, message_id: &str) -> Result<()> {
+        let messages = self.messages.read().await;
+        if !messages.contains_key(message_id) {
+            return Err(ChannelError::PlatformRequest(
+                DiscordApiError::invalid_input("message not found").to_string(),
+            ));
+        }
+        drop(messages);
+        let mut pinned = self.pinned.write().await;
+        let channel_pins = pinned.entry(channel_id.to_string()).or_default();
+        if !channel_pins.contains(&message_id.to_string()) {
+            channel_pins.push(message_id.to_string());
+        }
+        Ok(())
+    }
+
+    /// Unpin a message from a channel.
+    pub async fn unpin_message(&self, channel_id: &str, message_id: &str) -> Result<()> {
+        let mut pinned = self.pinned.write().await;
+        if let Some(channel_pins) = pinned.get_mut(channel_id) {
+            channel_pins.retain(|id| id != message_id);
+        }
+        Ok(())
+    }
+
+    /// Get pinned messages in a channel.
+    pub async fn pinned_messages(&self, channel_id: &str) -> Vec<DiscordMessage> {
+        let pinned = self.pinned.read().await;
+        let pin_ids = match pinned.get(channel_id) {
+            Some(ids) => ids.clone(),
+            None => return Vec::new(),
+        };
+        drop(pinned);
+        let messages = self.messages.read().await;
+        pin_ids
+            .iter()
+            .filter_map(|id| messages.get(id).cloned())
+            .collect()
+    }
+
+    // -- Component sends ---
+
+    /// Send a message with action rows (buttons / select menus).
+    pub async fn send_message_with_components(
+        &self,
+        channel_id: &str,
+        guild_id: Option<&str>,
+        author_id: &str,
+        message: OutboundMessage,
+        embeds: Vec<DiscordEmbed>,
+        attachments: Vec<DiscordAttachment>,
+        components: Vec<ActionRow>,
+        thread_id: Option<&str>,
+    ) -> Result<MessageId> {
+        let msg_id = self
+            .send_message(
+                channel_id, guild_id, author_id, message, embeds, attachments, thread_id,
+            )
+            .await?;
+        self.component_manager
+            .attach_components(&msg_id, components)
+            .await;
+        Ok(msg_id)
+    }
+
+    /// Show a modal dialog to a user (in response to a component interaction).
+    pub async fn show_modal(&self, user_id: &str, modal: Modal) {
+        self.component_manager.show_modal(user_id, modal).await;
+    }
+
+    /// Push a component interaction (button click, select, modal submit).
+    pub async fn push_component_interaction(&self, interaction: ComponentInteraction) {
+        self.component_manager
+            .push_interaction(interaction)
+            .await;
+    }
+
+    /// Pop the next component interaction.
+    pub async fn pop_component_interaction(&self) -> Option<ComponentInteraction> {
+        self.component_manager.pop_interaction().await
+    }
+
+    // -- Sub-manager accessors ---
+
+    /// Access the component manager.
+    pub fn components(&self) -> &ComponentManager {
+        &self.component_manager
+    }
+
+    /// Access the guild manager.
+    pub fn guilds(&self) -> &GuildManager {
+        &self.guild_manager
+    }
+
+    /// Access the webhook manager.
+    pub fn webhooks(&self) -> &WebhookManager {
+        &self.webhook_manager
+    }
+
+    /// Access the voice state tracker.
+    pub fn voice(&self) -> &VoiceStateTracker {
+        &self.voice_tracker
+    }
+
+    /// Access the audit log store.
+    pub fn audit(&self) -> &AuditLogStore {
+        &self.audit_log
+    }
+
+    /// Access the channel manager.
+    pub fn channel_mgmt(&self) -> &ChannelManager {
+        &self.channel_manager
+    }
+
+    /// Access the scheduled event manager.
+    pub fn events(&self) -> &ScheduledEventManager {
+        &self.event_manager
     }
 
     fn next_message_id(&self) -> MessageId {
