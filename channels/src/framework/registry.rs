@@ -151,9 +151,58 @@ impl ChannelRegistry {
         Ok(ids)
     }
 
+    /// Adds a reaction to a message on the given platform.
+    pub async fn react(
+        &self,
+        platform: Platform,
+        target: &str,
+        message_id: &str,
+        emoji: &str,
+    ) -> Result<()> {
+        let channel = self
+            .channels
+            .get(&platform)
+            .ok_or(ChannelError::ChannelNotRegistered(platform))?
+            .clone();
+        let read = channel.read().await;
+        read.react(target, message_id, emoji).await
+    }
+
+    /// Deletes a message on the given platform.
+    pub async fn delete(
+        &self,
+        platform: Platform,
+        target: &str,
+        message_id: &str,
+    ) -> Result<()> {
+        let channel = self
+            .channels
+            .get(&platform)
+            .ok_or(ChannelError::ChannelNotRegistered(platform))?
+            .clone();
+        let read = channel.read().await;
+        read.delete(target, message_id).await
+    }
+
+    /// Returns the health status for all registered platforms.
+    pub async fn health_status(&self) -> Vec<(Platform, super::ChannelHealth)> {
+        let mut result = Vec::new();
+        for &platform in self.channels.keys() {
+            if let Some(health) = self.health.get(platform).await {
+                result.push((platform, health));
+            }
+        }
+        result
+    }
+
     /// Returns true if a channel exists for a platform.
     pub fn has_platform(&self, platform: Platform) -> bool {
         self.channels.contains_key(&platform)
+    }
+
+    /// Returns list of registered platforms.
+    pub fn registered_platforms(&self) -> Vec<Platform> {
+        self.channels.keys().copied().collect()
     }
 }
 
