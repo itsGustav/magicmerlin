@@ -2668,7 +2668,7 @@ fn tokenize(text: &str) -> Vec<String> {
 }
 
 #[cfg(test)]
-fn bm25_score(query: &[String], doc: &[String], avg_doc_len: f64) -> f64 {
+fn bm25_score_simple(query: &[String], doc: &[String], avg_doc_len: f64) -> f64 {
     if query.is_empty() || doc.is_empty() {
         return 0.0;
     }
@@ -3286,7 +3286,7 @@ mod tests {
     fn bm25_scores_nonzero_for_matches() {
         let q = tokenize("hello world");
         let d = tokenize("hello there world");
-        assert!(bm25_score(&q, &d, 10.0) > 0.0);
+        assert!(bm25_score_simple(&q, &d, 10.0) > 0.0);
     }
 
     #[test]

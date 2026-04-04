@@ -6,7 +6,7 @@ use crate::ConfigError;
 
 /// Full OpenClaw-shaped configuration document.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default, deny_unknown_fields)]
+#[serde(default)]
 pub struct Config {
     /// Metadata section.
     pub meta: Section,
@@ -22,8 +22,9 @@ pub struct Config {
     pub agents: AgentsConfig,
     /// Tools section.
     pub tools: Section,
-    /// Bindings section.
-    pub bindings: Section,
+    /// Bindings — can be array or object in OpenClaw configs.
+    #[serde(default)]
+    pub bindings: serde_json::Value,
     /// Messages section.
     pub messages: Section,
     /// Commands section.
@@ -107,13 +108,34 @@ pub struct NamedAgentConfig {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AgentDefaults {
-    /// Default model identifier.
+    /// Default model identifier — accepts both a plain string and an object like
+    /// `{"primary": "...", "fallbacks": [...]}` from OpenClaw config files.
+    #[serde(default, deserialize_with = "deserialize_model_field")]
     pub model: Option<String>,
     /// Turn timeout in seconds.
     pub timeout_seconds: Option<u64>,
     /// Additional fields not currently typed.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Deserializes the `model` field which can be either a plain string
+/// (`"openai/gpt-4o"`) or an object (`{"primary": "...", "fallbacks": [...]}`).
+fn deserialize_model_field<'de, D>(de: D) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let v = Option::<serde_json::Value>::deserialize(de)?;
+    Ok(match v {
+        None => None,
+        Some(serde_json::Value::String(s)) => Some(s),
+        Some(serde_json::Value::Object(map)) => map
+            .get("primary")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        Some(_) => None,
+    })
 }
 
 /// Gateway-specific typed fields.

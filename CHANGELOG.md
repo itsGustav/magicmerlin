@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.0.0] - 2026-04-04
+
+### Added
+- Full AgentEngine integration — real LLM loop with tool execution (no more echo stub)
+- Telegram channel end-to-end wiring (inbound → agent → reply)
+- Discord: threads, embeds, slash commands, full event loop
+- Signal channel (signal-cli subprocess bridge)
+- WhatsApp channel (subprocess bridge + Cloud API fallback)
+- iMessage channel (macOS, osascript bridge)
+- Semantic memory search via fastembed (AllMiniLML6V2, cosine similarity)
+- Session compaction with automatic memory extraction to daily files
+- Multi-agent config support (named agents: merlin, henry, paylobster, lobsterprime)
+- All 257 CLI commands wired — zero unimplemented!()
+- All gateway methods returning real data — zero stubs
+- ChannelRegistry integrated into AppState for live channel dispatch
+- HEARTBEAT_OK and NO_REPLY reply suppression
+- [[reply_to_current]] / [[reply_to:<id>]] tag extraction and Telegram reply threading
+- DmGate / authorized sender enforcement
+- Control UI: 8-tab dark SPA with live polling
+- Session compaction with memory candidate extraction
+- Docker multi-stage image (debian:bookworm-slim)
+- GitHub Actions CI matrix (macOS ARM + Linux x86)
+- OpenClaw openclaw.json config file compatibility (parse real configs)
+- 13,198 tests passing
+- 331 docs pages generated
+
+### Changed
+- Version 0.0.0 → 1.0.0
+- Config model: removed deny_unknown_fields; bindings accepts array or object
+- AgentDefaults.model: accepts plain string or OpenClaw object {primary, fallbacks}
+
+### Fixed
+- Session file locking
+- Memory search upgraded from BM25 to fastembed semantic embeddings
+- web_fetch real HTML extraction via scraper
+- TTS audio delivery via OpenAI audio speech API
+- Config parsing of real openclaw.json files
+
 ## [0.2.0] - 2026-03-08
 
 ### Added
