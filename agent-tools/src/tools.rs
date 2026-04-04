@@ -16,6 +16,7 @@ use crate::gateway::gateway_call;
 use crate::registry::{NodeConfig, Tool, ToolContext, ToolRegistry, ToolResult};
 
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
+use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use std::io::Read as StdRead;
 
 const READ_MAX_BYTES: usize = 50 * 1024;
@@ -684,7 +685,7 @@ impl Tool for MemorySearchTool {
     }
 
     fn description(&self) -> &str {
-        "Performs semantic-style search over MEMORY.md and memory/*.md files using chunked TF-IDF."
+        "Performs semantic search over MEMORY.md and memory/*.md files using fastembed embeddings (BM25 fallback)."
     }
 
     fn schema(&self) -> Value {
@@ -703,7 +704,6 @@ impl Tool for MemorySearchTool {
 
     async fn execute(&self, params: Value, ctx: &ToolContext) -> Result<ToolResult> {
         let query = required_string(&params, "query", self.name())?;
-        let query_terms = tokenize(&query);
         let max_results = params
             .get("maxResults")
             .or_else(|| params.get("limit"))
@@ -724,87 +724,58 @@ impl Tool for MemorySearchTool {
             }
         }
 
-        // Build chunks (~200-word segments with overlap context)
-        let mut all_chunks: Vec<MemoryChunk> = Vec::new();
+        // Build chunks (~200-word segments)
+        let mut chunks: Vec<(PathBuf, usize, usize, String)> = Vec::new();
         for path in &files {
             let body = std::fs::read_to_string(path).map_err(|source| ToolError::Io {
                 path: path.clone(),
                 source,
             })?;
-            let chunks = chunk_text(&body, 200);
-            for chunk in chunks {
-                let terms = tokenize(&chunk.text);
-                if !terms.is_empty() {
-                    all_chunks.push(MemoryChunk {
-                        path: path.clone(),
-                        start_line: chunk.start_line,
-                        end_line: chunk.end_line,
-                        text: chunk.text,
-                        terms,
-                    });
+            for chunk in chunk_text(&body, 200) {
+                if !chunk.text.trim().is_empty() {
+                    chunks.push((path.clone(), chunk.start_line, chunk.end_line, chunk.text));
                 }
             }
         }
 
-        // Compute IDF across all chunks for each query term
-        let total_docs = all_chunks.len().max(1) as f64;
-        let mut idf_map: HashMap<String, f64> = HashMap::new();
-        for qt in &query_terms {
-            let doc_freq = all_chunks.iter().filter(|c| c.terms.contains(qt)).count() as f64;
-            let idf = ((total_docs - doc_freq + 0.5) / (doc_freq + 0.5) + 1.0).ln();
-            idf_map.insert(qt.clone(), idf.max(0.1));
+        if chunks.is_empty() {
+            return Ok(ToolResult::success(json!({"results": []})));
         }
 
-        // Score each chunk with TF-IDF / BM25
-        let avg_dl = if all_chunks.is_empty() {
-            1.0
-        } else {
-            all_chunks.iter().map(|c| c.terms.len()).sum::<usize>() as f64 / total_docs
+        // Try fastembed; fall back to BM25 on failure
+        let scored = match embed_and_score(&query, &chunks, min_score) {
+            Ok(s) => s,
+            Err(_) => bm25_score(&query, &chunks, min_score),
         };
 
-        let mut scored: Vec<(f64, &MemoryChunk)> = Vec::new();
-        for chunk in &all_chunks {
-            let mut score = 0.0_f64;
-            let dl = chunk.terms.len() as f64;
-            let k1 = 1.2_f64;
-            let b = 0.75_f64;
-            for qt in &query_terms {
-                let tf = chunk.terms.iter().filter(|t| *t == qt).count() as f64;
-                if tf == 0.0 {
-                    continue;
-                }
-                let idf = idf_map.get(qt).copied().unwrap_or(0.1);
-                let denom = tf + k1 * (1.0 - b + b * dl / avg_dl.max(1.0));
-                score += idf * (tf * (k1 + 1.0)) / denom;
-            }
-            if score >= min_score {
-                scored.push((score, chunk));
-            }
-        }
+        let provider = if scored.first().map_or(false, |(_, _, is_embed)| *is_embed) {
+            "fastembed"
+        } else {
+            "bm25"
+        };
 
-        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
         let results: Vec<Value> = scored
             .into_iter()
             .take(max_results)
-            .map(|(score, chunk)| {
-                let rel_path = chunk
-                    .path
+            .map(|(score, idx, _)| {
+                let (path, start, end, text) = &chunks[idx];
+                let rel_path = path
                     .strip_prefix(&ctx.state_paths.state_dir)
-                    .or_else(|_| chunk.path.strip_prefix(&ctx.workspace_dir))
-                    .unwrap_or(&chunk.path);
+                    .or_else(|_| path.strip_prefix(&ctx.workspace_dir))
+                    .unwrap_or(path);
                 json!({
                     "path": rel_path,
-                    "startLine": chunk.start_line,
-                    "endLine": chunk.end_line,
+                    "startLine": start,
+                    "endLine": end,
                     "score": (score * 1000.0).round() / 1000.0,
-                    "snippet": truncate_chars(&chunk.text, 500),
+                    "snippet": truncate_chars(text, 500),
                     "source": "memory",
-                    "citation": format!("{}#L{}-L{}", rel_path.display(), chunk.start_line, chunk.end_line),
+                    "citation": format!("{}#L{}-L{}", rel_path.display(), start, end),
                 })
             })
             .collect();
 
-        Ok(ToolResult::success(json!({"results": results})))
+        Ok(ToolResult::success(json!({"results": results, "provider": provider, "model": "AllMiniLML6V2"})))
     }
 }
 
@@ -2516,14 +2487,6 @@ async fn atomic_write(path: &Path, content: &[u8]) -> Result<()> {
         })
 }
 
-struct MemoryChunk {
-    path: PathBuf,
-    start_line: usize,
-    end_line: usize,
-    text: String,
-    terms: Vec<String>,
-}
-
 struct RawChunk {
     start_line: usize,
     end_line: usize,
@@ -2594,6 +2557,91 @@ fn collect_memory_files(root: &Path) -> Result<Vec<PathBuf>> {
         }
     }
     Ok(files)
+}
+
+fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
+    let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+    let mag_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let mag_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if mag_a == 0.0 || mag_b == 0.0 {
+        return 0.0;
+    }
+    (dot / (mag_a * mag_b)) as f64
+}
+
+/// Embed query + chunks with fastembed and return scored results.
+/// Returns Vec<(score, chunk_index, is_embedding)>.
+fn embed_and_score(
+    query: &str,
+    chunks: &[(PathBuf, usize, usize, String)],
+    min_score: f64,
+) -> std::result::Result<Vec<(f64, usize, bool)>, String> {
+    let model = TextEmbedding::try_new(
+        InitOptions::new(EmbeddingModel::AllMiniLML6V2).with_show_download_progress(false),
+    )
+    .map_err(|e| format!("fastembed init: {e}"))?;
+
+    let chunk_texts: Vec<&str> = chunks.iter().map(|(_, _, _, t)| t.as_str()).collect();
+    let mut all_texts = vec![query];
+    all_texts.extend_from_slice(&chunk_texts);
+
+    let embeddings = model
+        .embed(all_texts, None)
+        .map_err(|e| format!("embed: {e}"))?;
+
+    let query_vec = &embeddings[0];
+    let chunk_vecs = &embeddings[1..];
+
+    let mut scored: Vec<(f64, usize, bool)> = chunk_vecs
+        .iter()
+        .enumerate()
+        .map(|(i, vec)| (cosine_similarity(query_vec, vec), i, true))
+        .filter(|(score, _, _)| *score >= min_score)
+        .collect();
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
+    Ok(scored)
+}
+
+/// BM25 fallback scoring.
+fn bm25_score(
+    query: &str,
+    chunks: &[(PathBuf, usize, usize, String)],
+    min_score: f64,
+) -> Vec<(f64, usize, bool)> {
+    let query_terms = tokenize(query);
+    let chunk_terms: Vec<Vec<String>> = chunks.iter().map(|(_, _, _, t)| tokenize(t)).collect();
+    let total_docs = chunk_terms.len().max(1) as f64;
+
+    let mut idf_map: HashMap<String, f64> = HashMap::new();
+    for qt in &query_terms {
+        let doc_freq = chunk_terms.iter().filter(|t| t.contains(qt)).count() as f64;
+        let idf = ((total_docs - doc_freq + 0.5) / (doc_freq + 0.5) + 1.0).ln();
+        idf_map.insert(qt.clone(), idf.max(0.1));
+    }
+
+    let avg_dl = chunk_terms.iter().map(|t| t.len()).sum::<usize>() as f64 / total_docs.max(1.0);
+    let k1 = 1.2_f64;
+    let b = 0.75_f64;
+
+    let mut scored: Vec<(f64, usize, bool)> = Vec::new();
+    for (i, terms) in chunk_terms.iter().enumerate() {
+        let mut score = 0.0_f64;
+        let dl = terms.len() as f64;
+        for qt in &query_terms {
+            let tf = terms.iter().filter(|t| *t == qt).count() as f64;
+            if tf == 0.0 {
+                continue;
+            }
+            let idf = idf_map.get(qt).copied().unwrap_or(0.1);
+            let denom = tf + k1 * (1.0 - b + b * dl / avg_dl.max(1.0));
+            score += idf * (tf * (k1 + 1.0)) / denom;
+        }
+        if score >= min_score {
+            scored.push((score, i, false));
+        }
+    }
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
+    scored
 }
 
 fn shell_command(command: &str) -> Command {
