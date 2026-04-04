@@ -294,6 +294,8 @@ enum GatewayCommand {
         #[arg(long, default_value = "{}")]
         params: String,
     },
+    Install,
+    Uninstall,
 }
 
 #[derive(Subcommand, Debug)]
@@ -795,6 +797,7 @@ enum RunCommand {
 enum SubagentsCommand {
     List,
     Kill { session: String },
+    Steer { session: String, message: String },
 }
 
 #[derive(Subcommand, Debug)]
@@ -1781,9 +1784,27 @@ async fn main() -> Result<()> {
         }
 
         Command::Update => {
-            app.output(json!({"ok": true, "message": "update placeholder"}), || {
-                "update placeholder".to_string()
-            })?;
+            println!("Checking for updates...");
+            let status = ProcessCommand::new("cargo")
+                .args(["install", "--path", ".", "--locked"])
+                .status();
+            match status {
+                Ok(s) if s.success() => {
+                    app.output(json!({"ok": true, "action": "updated"}), || {
+                        format!("{} magicmerlin updated successfully", green("✓", c))
+                    })?;
+                }
+                Ok(_) => {
+                    app.output(json!({"ok": false, "action": "update_failed"}), || {
+                        format!("{} update failed — try: cargo install --path .", red("✗", c))
+                    })?;
+                }
+                Err(_) => {
+                    app.output(json!({"ok": false, "action": "cargo_not_found"}), || {
+                        format!("{} cargo not found — install Rust toolchain first", red("✗", c))
+                    })?;
+                }
+            }
         }
 
         Command::Reset => {
@@ -2285,16 +2306,16 @@ async fn main() -> Result<()> {
         }
 
         Command::Secrets { command } => {
-            let result = match command {
-                SecretsCommand::Reload => json!({"ok": true, "action": "reload"}),
-                SecretsCommand::List => {
-                    json!({"ok": true, "secrets": [], "note": "secrets are not listed for security"})
+            app.ensure_gateway_running().await?;
+            let (method, params) = match command {
+                SecretsCommand::Reload => ("secrets.reload", json!({})),
+                SecretsCommand::List => ("secrets.list", json!({})),
+                SecretsCommand::Set { key, value } => {
+                    ("secrets.set", json!({"key": key, "value": value}))
                 }
-                SecretsCommand::Set { key, value: _ } => {
-                    json!({"ok": true, "key": key, "action": "set"})
-                }
-                SecretsCommand::Unset { key } => json!({"ok": true, "key": key, "action": "unset"}),
+                SecretsCommand::Unset { key } => ("secrets.unset", json!({"key": key})),
             };
+            let result = app.call_gateway(method, params).await?;
             app.output(result.clone(), || result.to_string())?;
         }
 
@@ -2625,6 +2646,9 @@ async fn main() -> Result<()> {
                 SubagentsCommand::Kill { session } => {
                     ("subagents.kill", json!({"session": session}))
                 }
+                SubagentsCommand::Steer { session, message } => {
+                    ("subagents.steer", json!({"session": session, "message": message}))
+                }
             };
             let result = app.call_gateway(method, params).await?;
             app.output(result.clone(), || result.to_string())?;
@@ -2770,6 +2794,80 @@ async fn handle_gateway_command(app: &App, command: GatewayCommand, c: bool) -> 
             let params = serde_json::from_str::<Value>(&params).context("--params must be JSON")?;
             let result = app.call_gateway(&method, params).await?;
             app.output(result.clone(), || result.to_string())
+        }
+        GatewayCommand::Install => {
+            #[cfg(target_os = "macos")]
+            {
+                let plist_dir = PathBuf::from(std::env::var("HOME").unwrap_or_default())
+                    .join("Library/LaunchAgents");
+                fs::create_dir_all(&plist_dir).ok();
+                let plist_path = plist_dir.join("dev.magicmerlin.gateway.plist");
+                let bin = find_binary("magicmerlin-gateway")
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| "magicmerlin-gateway".to_string());
+                let plist = format!(
+                    r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.magicmerlin.gateway</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{bin}</string>
+    <string>--serve</string><string>18789</string>
+    <string>--bind</string><string>127.0.0.1</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/tmp/magicmerlin-gateway.log</string>
+  <key>StandardErrorPath</key><string>/tmp/magicmerlin-gateway.err</string>
+</dict>
+</plist>"#
+                );
+                fs::write(&plist_path, plist).context("write LaunchAgent plist")?;
+                let _ = ProcessCommand::new("launchctl")
+                    .args(["load", "-w"])
+                    .arg(&plist_path)
+                    .status();
+                app.output(json!({"ok": true, "path": plist_path}), || {
+                    format!(
+                        "{} installed LaunchAgent at {}",
+                        green("✓", c),
+                        plist_path.display()
+                    )
+                })
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                app.output(
+                    json!({"ok": false, "message": "service install supported on macOS only for now"}),
+                    || "Service install supported on macOS only for now".to_string(),
+                )
+            }
+        }
+        GatewayCommand::Uninstall => {
+            #[cfg(target_os = "macos")]
+            {
+                let plist_path = PathBuf::from(std::env::var("HOME").unwrap_or_default())
+                    .join("Library/LaunchAgents/dev.magicmerlin.gateway.plist");
+                if plist_path.exists() {
+                    let _ = ProcessCommand::new("launchctl")
+                        .args(["unload", "-w"])
+                        .arg(&plist_path)
+                        .status();
+                    fs::remove_file(&plist_path).ok();
+                }
+                app.output(json!({"ok": true}), || {
+                    format!("{} LaunchAgent removed", green("✓", c))
+                })
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                app.output(
+                    json!({"ok": false, "message": "service uninstall supported on macOS only for now"}),
+                    || "Service uninstall supported on macOS only for now".to_string(),
+                )
+            }
         }
     }
 }
