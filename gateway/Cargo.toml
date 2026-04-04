@@ -33,6 +33,11 @@ magicmerlin-sessions = { path = "../sessions" }
 magicmerlin-tools = { path = "../tools" }
 magicmerlin-plugins = { path = "../plugins" }
 magicmerlin-acp = { path = "../acp" }
+magicmerlin-agent = { path = "../agent" }
+magicmerlin-agent-tools = { path = "../agent-tools" }
+magicmerlin-providers = { path = "../providers" }
+magicmerlin-storage = { path = "../storage" }
+async-trait = "0.1"
 tracing = "0.1"
 
 [dev-dependencies]
