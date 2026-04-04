@@ -1354,6 +1354,7 @@ dependencies = [
  "magicmerlin-agent",
  "magicmerlin-agent-tools",
  "magicmerlin-auto-reply",
+ "magicmerlin-channels",
  "magicmerlin-compat",
  "magicmerlin-config",
  "magicmerlin-logging",

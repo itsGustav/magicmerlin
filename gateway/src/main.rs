@@ -44,6 +44,7 @@ use tokio::sync::{broadcast, Mutex};
 use tracing::info;
 
 mod approvals;
+mod channel_loop;
 mod plugins;
 mod scheduler;
 mod service;
@@ -1229,6 +1230,9 @@ async fn serve_http(
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
+    // Start Telegram channel loop (if configured)
+    channel_loop::spawn_telegram_loop(state.clone()).await;
+
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
@@ -1362,6 +1366,9 @@ async fn serve_http_with_daemon(
         port,
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
+
+    // Start Telegram channel loop (if configured)
+    channel_loop::spawn_telegram_loop(state.clone()).await;
 
     let app = build_router(state);
 
@@ -1603,7 +1610,7 @@ struct JsonRpcAuth {
 }
 
 #[derive(Debug, Error)]
-enum RpcError {
+pub(crate) enum RpcError {
     #[error("unauthorized")]
     Unauthorized,
     #[error("invalid params: {0}")]

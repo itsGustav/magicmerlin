@@ -37,6 +37,7 @@ magicmerlin-agent = { path = "../agent" }
 magicmerlin-agent-tools = { path = "../agent-tools" }
 magicmerlin-providers = { path = "../providers" }
 magicmerlin-storage = { path = "../storage" }
+magicmerlin-channels = { path = "../channels", features = ["telegram"] }
 async-trait = "0.1"
 tracing = "0.1"
 
