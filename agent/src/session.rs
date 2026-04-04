@@ -25,6 +25,8 @@ pub struct CompactionResult {
     pub tokens_after: u64,
     /// Content flushed to daily memory, if any.
     pub memory_extracted: Option<String>,
+    /// Number of memory candidates extracted during compaction.
+    pub memory_candidates_extracted: usize,
 }
 
 /// Canonical session key.
@@ -301,6 +303,11 @@ impl SessionManager {
             .sum::<usize>() as u64;
 
         let memory_extracted = self.pre_compaction_memory_flush(session, used_pct)?;
+        let memory_candidates_extracted = memory_extracted
+            .as_ref()
+            .map(|s| s.lines().count())
+            .unwrap_or(0);
+
         let _lock = self.acquire_transcript_lock(&session.transcript)?;
         session.transcript.compact(self.compaction_keep_last)?;
 
@@ -321,6 +328,7 @@ impl SessionManager {
             tokens_before,
             tokens_after,
             memory_extracted,
+            memory_candidates_extracted,
         })
     }
 
@@ -390,24 +398,23 @@ impl SessionManager {
     ) -> Result<Option<String>> {
         let lines = extract_memory_candidates(&session.transcript.read(0, None)?)
             .into_iter()
-            .take(12)
+            .take(20)
             .collect::<Vec<_>>();
 
+        let now = Utc::now();
         let note = format!(
             "Compacting session {} at {}% context utilization; extracted {} memory hints",
-            session.key.0,
-            used_pct,
-            lines.len()
+            session.key.0, used_pct, lines.len()
         );
         self.memory
-            .append_daily_entry(Utc::now().date_naive(), &note)
+            .append_daily_entry(now.date_naive(), &note)
             .map_err(AgentError::from)?;
 
         if lines.is_empty() {
             return Ok(None);
         }
 
-        self.write_memory_summary(Utc::now().date_naive(), &session.key.0, &lines)?;
+        self.write_memory_summary(now.date_naive(), &session.key.0, &lines)?;
 
         let summary = lines.join("\n");
         Ok(Some(summary))
@@ -440,32 +447,54 @@ impl SessionManager {
 }
 
 fn extract_memory_candidates(entries: &[Value]) -> Vec<String> {
-    entries
-        .iter()
-        .filter_map(|entry| {
-            let role = entry
-                .get("role")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            let content = entry
-                .get("content")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            if content.is_empty() {
-                return None;
-            }
+    let mut candidates = Vec::new();
+    for entry in entries {
+        let role = entry
+            .get("role")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let content = entry
+            .get("content")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if content.is_empty() {
+            continue;
+        }
 
+        if role == "assistant" {
+            // Extract lines with explicit memory markers
+            for line in content.lines() {
+                let l = line.trim();
+                if l.starts_with("Remember:")
+                    || l.starts_with("Note:")
+                    || l.starts_with("Important:")
+                    || l.starts_with("Key insight:")
+                    || l.starts_with("I'll remember")
+                    || l.starts_with("Decision:")
+                {
+                    candidates.push(l.to_string());
+                } else if l.len() > 20
+                    && l.len() < 200
+                    && (l.contains("0x") && l.contains("contract"))
+                {
+                    // Capture contract addresses / web3 facts
+                    candidates.push(l.to_string());
+                }
+            }
+        }
+
+        // Keep broad-stroke extraction for user messages with actionable content
+        if role == "user" {
             let important = content.contains("TODO")
                 || content.contains("remember")
                 || content.contains("deadline")
-                || content.contains("follow up")
-                || role == "user";
-            if !important {
-                return None;
+                || content.contains("follow up");
+            if important {
+                candidates.push(format!("[{role}] {}", truncate(content, 160)));
             }
-            Some(format!("[{role}] {}", truncate(content, 160)))
-        })
-        .collect()
+        }
+    }
+    candidates
 }
 
 fn truncate(input: &str, max: usize) -> String {

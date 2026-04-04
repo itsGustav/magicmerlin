@@ -44,6 +44,14 @@
     #gateway-status { font-size: 20px; color: var(--green); margin-left: auto; }
     .empty { color: #6e7681; padding: 20px; text-align: center; }
     .mono { font-family: 'SF Mono', Consolas, Monaco, Menlo, monospace; font-size: 12px; }
+    .error-banner { background: rgba(248,81,73,0.15); border: 1px solid var(--red); color: var(--red); padding: 10px 16px; border-radius: var(--radius); margin-bottom: 16px; display: none; }
+    input[type="text"], input[type="search"] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 13px; font-family: inherit; width: 100%; }
+    input[type="text"]:focus, input[type="search"]:focus { outline: none; border-color: var(--accent); }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+    .btn:hover { opacity: 0.9; }
+    .btn-sm { padding: 3px 8px; font-size: 11px; }
+    .config-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .config-row input { flex: 1; }
   </style>
 </head>
 <body>
@@ -52,16 +60,22 @@
     <div class="tabs">
       <button onclick="showTab('overview')" class="active">Overview</button>
       <button onclick="showTab('sessions')">Sessions</button>
-      <button onclick="showTab('cron')">Cron</button>
       <button onclick="showTab('agents')">Agents</button>
+      <button onclick="showTab('cron')">Cron</button>
+      <button onclick="showTab('config')">Config</button>
+      <button onclick="showTab('memory')">Memory</button>
       <button onclick="showTab('logs')">Logs</button>
     </div>
     <div id="gateway-status">&#x25CF;</div>
   </nav>
 
+  <div id="error-banner" class="error-banner"></div>
   <main id="content"></main>
 
   <script>
+    var currentTab = 'overview';
+    var reconnectTimer = null;
+
     async function call(method, params) {
       try {
         var r = await fetch('/call', {
@@ -69,13 +83,26 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({method: method, params: params || {}})
         });
+        if (!r.ok) {
+          showError('Gateway returned ' + r.status + ' for ' + method);
+          return {error: r.statusText};
+        }
+        hideError();
         return await r.json();
       } catch(e) {
+        showError('Connection lost: ' + e.message);
         return {error: e.message};
       }
     }
 
-    var currentTab = 'overview';
+    function showError(msg) {
+      var el = document.getElementById('error-banner');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+    function hideError() {
+      document.getElementById('error-banner').style.display = 'none';
+    }
 
     function showTab(name) {
       currentTab = name;
@@ -90,11 +117,13 @@
       var el = document.getElementById('content');
       el.innerHTML = '<p class="empty">Loading\u2026</p>';
       switch(currentTab) {
-        case 'overview': el.innerHTML = await renderOverview(); break;
-        case 'sessions': el.innerHTML = await renderSessions(); break;
-        case 'cron':     el.innerHTML = await renderCron();     break;
-        case 'agents':   el.innerHTML = await renderAgents();   break;
-        case 'logs':     el.innerHTML = await renderLogs();     break;
+        case 'overview':  el.innerHTML = await renderOverview(); break;
+        case 'sessions':  el.innerHTML = await renderSessions(); break;
+        case 'agents':    el.innerHTML = await renderAgents();   break;
+        case 'cron':      el.innerHTML = await renderCron();     break;
+        case 'config':    el.innerHTML = await renderConfig();   break;
+        case 'memory':    el.innerHTML = await renderMemory();   break;
+        case 'logs':      el.innerHTML = await renderLogs();     break;
       }
     }
 
@@ -115,24 +144,50 @@
       return parts.join(' ');
     }
 
+    function fmtTime(ts) {
+      if (!ts) return '\u2014';
+      try {
+        var d = new Date(typeof ts === 'number' ? ts * 1000 : ts);
+        return d.toLocaleString();
+      } catch(e) { return String(ts); }
+    }
+
     async function renderOverview() {
       var results = await Promise.all([
         call('gateway.status'),
-        call('channels.list')
+        call('channels.list'),
+        call('agents.list')
       ]);
       var s = results[0] || {};
       var chData = results[1] || {};
       var ch = chData.channels || [];
+      var agData = results[2] || {};
+      var agents = agData.agents || [];
       return '<div class="grid">' +
         '<div class="card">' +
           '<h3>Gateway</h3>' +
           '<table>' +
             '<tr><td>Status</td><td><span class="dot-green"></span>Online</td></tr>' +
             '<tr><td>Uptime</td><td>' + fmtUptime(s.uptime) + '</td></tr>' +
-            '<tr><td>Version</td><td>' + escHtml(s.version || '0.1.0') + '</td></tr>' +
+            '<tr><td>Version</td><td>' + escHtml(s.version || '0.9.0') + '</td></tr>' +
             '<tr><td>Model</td><td>' + escHtml(s.model || '\u2014') + '</td></tr>' +
             '<tr><td>PID</td><td class="mono">' + escHtml(s.pid || '\u2014') + '</td></tr>' +
             '<tr><td>Sessions</td><td>' + (s.sessions != null ? s.sessions : '\u2014') + '</td></tr>' +
+          '</table>' +
+        '</div>' +
+        '<div class="card">' +
+          '<h3>Agents (' + agents.length + ')</h3>' +
+          (agents.length === 0 ? '<p class="empty">No agents</p>' :
+          '<table>' +
+            '<tr><th>Name</th><th>Model</th><th>Status</th></tr>' +
+            agents.map(function(a) {
+              var active = a.status === 'active';
+              return '<tr>' +
+                '<td>' + escHtml(a.name || a.id || '') + '</td>' +
+                '<td class="mono">' + escHtml(a.model || '\u2014') + '</td>' +
+                '<td><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + escHtml(a.status || '\u2014') + '</span></td>' +
+              '</tr>';
+            }).join('')) +
           '</table>' +
         '</div>' +
         '<div class="card">' +
@@ -159,13 +214,37 @@
         '<h3>Sessions (' + sessions.length + ')</h3>' +
         (sessions.length === 0 ? '<p class="empty">No sessions</p>' :
         '<table>' +
-          '<tr><th>Key</th><th>Channel</th><th>Status</th><th>Updated</th></tr>' +
+          '<tr><th>Key</th><th>Channel</th><th>Status</th><th>Messages</th><th>Updated</th></tr>' +
           sessions.map(function(s) {
+            var msgCount = s.message_count || s.messageCount || '\u2014';
             return '<tr>' +
               '<td class="mono">' + escHtml(s.key || s.id || '') + '</td>' +
               '<td>' + escHtml(s.channel || '\u2014') + '</td>' +
               '<td><span class="badge ' + (s.status === 'active' ? 'badge-green' : 'badge-red') + '">' + escHtml(s.status || '\u2014') + '</span></td>' +
-              '<td>' + escHtml(s.updatedAt || s.updated_at || '\u2014') + '</td>' +
+              '<td>' + escHtml(msgCount) + '</td>' +
+              '<td>' + fmtTime(s.updatedAt || s.updated_at) + '</td>' +
+            '</tr>';
+          }).join('')) +
+        '</table>' +
+      '</div>';
+    }
+
+    async function renderAgents() {
+      var r = await call('agents.list');
+      var agents = r.agents || [];
+      return '<div class="card">' +
+        '<h3>Agents (' + agents.length + ')</h3>' +
+        (agents.length === 0 ? '<p class="empty">No agents</p>' :
+        '<table>' +
+          '<tr><th>Name</th><th>Model</th><th>Status</th><th>Last Message</th><th>Description</th></tr>' +
+          agents.map(function(a) {
+            var active = a.status === 'active';
+            return '<tr>' +
+              '<td>' + escHtml(a.name || a.id || '') + '</td>' +
+              '<td class="mono">' + escHtml(a.model || '\u2014') + '</td>' +
+              '<td><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + escHtml(a.status || '\u2014') + '</span></td>' +
+              '<td>' + fmtTime(a.lastMessageAt || a.last_message_at) + '</td>' +
+              '<td>' + escHtml(a.description || '\u2014') + '</td>' +
             '</tr>';
           }).join('')) +
         '</table>' +
@@ -188,7 +267,7 @@
               '<td class="mono">' + escHtml(String(j.id || '').slice(0, 8)) + '</td>' +
               '<td>' + escHtml(j.name || '\u2014') + '</td>' +
               '<td class="mono">' + escHtml(sched) + '</td>' +
-              '<td>' + escHtml(j.lastRun || j.last_run || j.lastRunAt || '\u2014') + '</td>' +
+              '<td>' + fmtTime(j.lastRun || j.last_run || j.lastRunAt) + '</td>' +
               '<td><span class="badge ' + (enabled ? 'badge-green' : 'badge-red') + '">' + (enabled ? 'enabled' : 'disabled') + '</span></td>' +
             '</tr>';
           }).join('')) +
@@ -196,25 +275,74 @@
       '</div>';
     }
 
-    async function renderAgents() {
-      var r = await call('agents.list');
-      var agents = r.agents || [];
-      return '<div class="card">' +
-        '<h3>Agents (' + agents.length + ')</h3>' +
-        (agents.length === 0 ? '<p class="empty">No agents</p>' :
-        '<table>' +
-          '<tr><th>Name</th><th>Model</th><th>Status</th><th>Description</th></tr>' +
-          agents.map(function(a) {
-            var active = a.status === 'active';
-            return '<tr>' +
-              '<td>' + escHtml(a.name || a.id || '') + '</td>' +
-              '<td class="mono">' + escHtml(a.model || '\u2014') + '</td>' +
-              '<td><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + escHtml(a.status || '\u2014') + '</span></td>' +
-              '<td>' + escHtml(a.description || '\u2014') + '</td>' +
-            '</tr>';
-          }).join('')) +
-        '</table>' +
+    async function renderConfig() {
+      var r = await call('config.list');
+      var entries = [];
+      if (r && typeof r === 'object' && !r.error) {
+        // config.list may return { config: {...} } or flat key-value
+        var cfg = r.config || r;
+        if (typeof cfg === 'object') {
+          Object.keys(cfg).forEach(function(k) {
+            if (k !== 'error') entries.push({key: k, value: cfg[k]});
+          });
+        }
+      }
+      var html = '<div class="card">' +
+        '<h3>Configuration (' + entries.length + ' keys)</h3>';
+
+      // Add/edit form
+      html += '<div class="config-row" style="margin-bottom:16px">' +
+        '<input type="text" id="cfg-key" placeholder="Key">' +
+        '<input type="text" id="cfg-val" placeholder="Value">' +
+        '<button class="btn btn-sm" onclick="setConfig()">Set</button>' +
       '</div>';
+
+      if (entries.length === 0) {
+        html += '<p class="empty">No configuration entries</p>';
+      } else {
+        html += '<table><tr><th>Key</th><th>Value</th></tr>';
+        entries.forEach(function(e) {
+          var v = typeof e.value === 'object' ? JSON.stringify(e.value) : String(e.value);
+          html += '<tr><td class="mono">' + escHtml(e.key) + '</td><td>' + escHtml(v) + '</td></tr>';
+        });
+        html += '</table>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    async function setConfig() {
+      var key = document.getElementById('cfg-key').value.trim();
+      var val = document.getElementById('cfg-val').value.trim();
+      if (!key) return;
+      // Try to parse JSON value
+      var parsed = val;
+      try { parsed = JSON.parse(val); } catch(e) { /* use string */ }
+      await call('config.set', {key: key, value: parsed});
+      renderTab();
+    }
+
+    async function renderMemory() {
+      var html = '<div class="card">' +
+        '<h3>Memory Search</h3>' +
+        '<div class="config-row" style="margin-bottom:16px">' +
+          '<input type="search" id="mem-query" placeholder="Search memory (e.g. contract, TODO, deadline)" onkeydown="if(event.key===\'Enter\')searchMemory()">' +
+          '<button class="btn btn-sm" onclick="searchMemory()">Search</button>' +
+        '</div>' +
+        '<div id="mem-results"><p class="empty">Enter a query to search session memories</p></div>' +
+      '</div>';
+      return html;
+    }
+
+    async function searchMemory() {
+      var query = document.getElementById('mem-query').value.trim();
+      if (!query) return;
+      var el = document.getElementById('mem-results');
+      el.innerHTML = '<p class="empty">Searching\u2026</p>';
+      var r = await call('agent.run', {session_id: 'ui', message: '/memory ' + query});
+      var reply = r.reply || r.result || r.error || 'No results';
+      if (typeof reply === 'object') reply = JSON.stringify(reply, null, 2);
+      el.innerHTML = '<pre>' + escHtml(reply) + '</pre>';
     }
 
     async function renderLogs() {
@@ -240,15 +368,18 @@
         var r = await fetch('/health');
         if (r.ok) {
           document.getElementById('gateway-status').style.color = 'var(--green)';
+          hideError();
         } else {
           document.getElementById('gateway-status').style.color = 'var(--red)';
+          showError('Gateway health check failed (HTTP ' + r.status + ')');
         }
       } catch(e) {
         document.getElementById('gateway-status').style.color = 'var(--red)';
+        showError('Connection lost \u2014 reconnecting\u2026');
       }
     }
 
-    setInterval(refresh, 10000);
+    setInterval(refresh, 5000);
     renderTab();
   </script>
 </body>

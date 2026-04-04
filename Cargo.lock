@@ -1887,7 +1887,7 @@ checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "magicmerlin"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1903,7 +1903,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-acp"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -1916,7 +1916,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-agent"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1937,7 +1937,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-agent-tools"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1962,7 +1962,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-auto-reply"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "magicmerlin-sessions",
  "serde",
@@ -1971,7 +1971,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-channels"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -1993,7 +1993,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-compat"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -2004,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-config"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2024,7 +2024,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-gateway"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2060,7 +2060,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-infra"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -2074,7 +2074,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-integration-tests"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "magicmerlin-agent",
@@ -2089,7 +2089,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-logging"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "tempfile",
  "thiserror 1.0.69",
@@ -2116,7 +2116,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-plugins"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -2127,7 +2127,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-providers"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "magicmerlin-config",
@@ -2141,7 +2141,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-sentinel"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2157,7 +2157,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-sessions"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2172,7 +2172,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-storage"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "chrono",
  "r2d2",
@@ -2186,7 +2186,7 @@ dependencies = [
 
 [[package]]
 name = "magicmerlin-tools"
-version = "0.0.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "serde",

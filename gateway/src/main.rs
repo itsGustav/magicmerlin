@@ -4355,7 +4355,25 @@ async fn run_agent_turn(
     if let Some(command) = parse_slash_command(&message) {
         let reply = match command {
             SlashCommand::Status => "session is active".to_string(),
-            SlashCommand::Compact => "session compaction requested".to_string(),
+            SlashCommand::Compact => {
+                let sm = state.session_manager.clone();
+                let key = magicmerlin_agent::SessionKey(session_id.clone());
+                match sm.load_or_create(key, &agent_name) {
+                    Ok(mut sess) => {
+                        // Force compact (threshold = 0)
+                        match sm.compact_now(&mut sess) {
+                            Ok(c) => format!(
+                                "Compacted: {} → {} messages, {} → {} tokens, {} memories extracted",
+                                c.messages_before, c.messages_after,
+                                c.tokens_before, c.tokens_after,
+                                c.memory_candidates_extracted,
+                            ),
+                            Err(e) => format!("compaction failed: {e}"),
+                        }
+                    }
+                    Err(e) => format!("failed to load session: {e}"),
+                }
+            }
             SlashCommand::Reasoning { on } => format!("reasoning mode: {:?}", on),
             SlashCommand::Model { name } => {
                 format!("model {}", name.unwrap_or_else(|| "unchanged".to_string()))
