@@ -25,6 +25,9 @@ use magicmerlin_agent::{
 };
 use magicmerlin_agent_tools::{ProcessManager, ToolContext, ToolRegistry, register_default_tools};
 use magicmerlin_auto_reply::{format_reply, parse_slash_command, Platform, SlashCommand};
+use magicmerlin_channels::{
+    ChannelRegistry, OutboundMessage, Platform as ChannelPlatform,
+};
 use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
     COMPAT_VERSION,
@@ -1083,6 +1086,7 @@ struct AppState {
     tool_registry: Arc<ToolRegistry>,
     session_manager: Arc<SessionManager>,
     process_manager: ProcessManager,
+    channel_registry: Arc<ChannelRegistry>,
     workspace_dir: PathBuf,
     port: u16,
 }
@@ -1230,6 +1234,10 @@ async fn serve_http(
 
     let process_manager = ProcessManager::new();
 
+    // Build channel registry from config
+    let channel_registry = build_channel_registry(&loaded_config);
+    let channel_registry = Arc::new(channel_registry);
+
     let state = AppState {
         providers,
         info,
@@ -1252,6 +1260,7 @@ async fn serve_http(
         tool_registry,
         session_manager,
         process_manager,
+        channel_registry,
         workspace_dir,
         port,
     };
@@ -1392,6 +1401,10 @@ async fn serve_http_with_daemon(
 
     let process_manager = ProcessManager::new();
 
+    // Build channel registry from config (daemon)
+    let channel_registry = build_channel_registry(&daemon_loaded_config);
+    let channel_registry = Arc::new(channel_registry);
+
     let state = AppState {
         providers,
         info,
@@ -1414,6 +1427,7 @@ async fn serve_http_with_daemon(
         tool_registry,
         session_manager,
         process_manager,
+        channel_registry,
         workspace_dir,
         port,
     };
@@ -1897,7 +1911,7 @@ async fn dispatch_ws_method(
             presence.connected_clients = state.ws_state.connected_clients().await.len();
             let config = state.config.lock().await;
             Ok(serde_json::json!({
-                "agents": { "count": 1, "default": "merlin" },
+                "agents": { "count": state.agent_engines.len(), "default": "merlin", "names": state.agent_engines.keys().collect::<Vec<_>>() },
                 "sessions": sessions::list_sessions(&state.db_path, 100).await.map_err(|e| RpcError::Internal(e.to_string()))?.len(),
                 "models": config.config().agents.defaults.model,
                 "config": config.config().gateway,
@@ -1999,7 +2013,25 @@ async fn dispatch_ws_method(
             )
             .await
             .map_err(|e| RpcError::Internal(e.to_string()))?;
-            Ok(serde_json::json!({"ok": true}))
+            // Append to transcript
+            let cfg = state.config.lock().await;
+            let state_dir = cfg.state_paths().state_dir.clone();
+            drop(cfg);
+            let transcript_path = state_dir.join("sessions").join(format!("{}.jsonl", parsed.session_id));
+            let entry = serde_json::json!({"role": "user", "content": parsed.message, "ts": chrono::Utc::now().timestamp()});
+            let _ = tokio::fs::create_dir_all(transcript_path.parent().unwrap_or(&state_dir)).await;
+            if let Ok(mut f) = tokio::fs::OpenOptions::new()
+                .create(true).append(true).open(&transcript_path).await {
+                use tokio::io::AsyncWriteExt;
+                let line = serde_json::to_string(&entry).unwrap_or_default() + "\n";
+                let _ = f.write_all(line.as_bytes()).await;
+            }
+            emit_gateway_event(state, GatewayEvent {
+                method: "sessions.message".to_string(),
+                params: serde_json::json!({"sessionId": parsed.session_id, "message": parsed.message}),
+                target_client: Some(client_id.to_string()),
+            }).await;
+            Ok(serde_json::json!({"ok": true, "sessionId": parsed.session_id, "appended": true}))
         }
         "sessions.spawn" => {
             #[derive(Deserialize)]
@@ -2985,7 +3017,7 @@ async fn dispatch_ws_method(
                     "description": nacfg.description.as_deref().unwrap_or(""),
                 }));
             }
-            Ok(serde_json::json!({ "agents": agents_list }))
+            Ok(serde_json::json!({ "agents": agents_list, "count": agents_list.len() }))
         }
         "agents.get" => {
             #[derive(Deserialize)]
@@ -2996,9 +3028,18 @@ async fn dispatch_ws_method(
             let p: Params = serde_json::from_value(params)
                 .map_err(|e| RpcError::InvalidParams(e.to_string()))?;
             let cfg = state.config.lock().await;
-            let model = &cfg.config().agents.defaults.model;
+            let default_model = &cfg.config().agents.defaults.model;
+            let status = if state.agent_engines.contains_key(&p.name) { "active" } else { "configured" };
+            let (model, description) = if let Some(nacfg) = cfg.config().agents.named.get(&p.name) {
+                (
+                    nacfg.model.as_ref().or(default_model.as_ref()),
+                    nacfg.description.as_deref().unwrap_or(""),
+                )
+            } else {
+                (default_model.as_ref(), if p.name == "merlin" { "Default agent" } else { "" })
+            };
             Ok(serde_json::json!({
-                "agent": {"name": p.name, "model": model, "status": "active"},
+                "agent": {"name": p.name, "model": model, "status": status, "description": description},
             }))
         }
         "agents.add" => {
@@ -4225,10 +4266,12 @@ async fn dispatch_ws_method(
                 "uptime": state.started_at.elapsed().as_secs(),
                 "pid": std::process::id(),
                 "model": model,
-                "agents": ["merlin"],
+                "agents": state.agent_engines.keys().collect::<Vec<_>>(),
                 "sessions": session_count,
                 "scheduler": scheduler_state,
                 "presence": presence,
+                "port": state.port,
+                "channels": state.channel_registry.registered_platforms(),
             }))
         }
         "gateway.restart" => {
@@ -6152,6 +6195,41 @@ async fn query_log_file(
     results
 }
 
+/// Build a ChannelRegistry from the current config, registering any channels
+/// that have valid tokens/configs.
+fn build_channel_registry(config: &magicmerlin_config::Config) -> ChannelRegistry {
+    use magicmerlin_channels::telegram::{TelegramChannel, TelegramConfig};
+
+    let mut registry = ChannelRegistry::new();
+
+    // Register Telegram if configured
+    let channels_json = serde_json::to_value(&config.channels).unwrap_or_default();
+    if let Ok(tg_config) = TelegramConfig::from_channels_json(&serde_json::json!({
+        "telegram": channels_json.get("telegram").cloned().unwrap_or(Value::Null)
+    })) {
+        if !tg_config.accounts.is_empty() {
+            registry.register(Box::new(TelegramChannel::new(tg_config)));
+        }
+    }
+
+    registry
+}
+
+/// Parse a channel name string into a ChannelPlatform enum variant.
+fn parse_channel_platform(name: &str) -> Option<ChannelPlatform> {
+    match name.to_lowercase().as_str() {
+        "telegram" => Some(ChannelPlatform::Telegram),
+        "discord" => Some(ChannelPlatform::Discord),
+        "slack" => Some(ChannelPlatform::Slack),
+        "whatsapp" => Some(ChannelPlatform::WhatsApp),
+        "signal" => Some(ChannelPlatform::Signal),
+        "imessage" => Some(ChannelPlatform::IMessage),
+        "line" => Some(ChannelPlatform::Line),
+        "web" => Some(ChannelPlatform::Web),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -6230,6 +6308,7 @@ mod tests {
             tool_registry,
             session_manager,
             process_manager: ProcessManager::new(),
+            channel_registry: Arc::new(ChannelRegistry::new()),
             workspace_dir,
             port: 0,
         }
