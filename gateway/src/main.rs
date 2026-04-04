@@ -38,6 +38,7 @@ use tokio::sync::{broadcast, Mutex};
 use tracing::info;
 
 mod approvals;
+mod channel_loop;
 mod plugins;
 mod scheduler;
 mod service;
@@ -1056,20 +1057,20 @@ async fn main() -> Result<()> {
 }
 
 #[derive(Clone)]
-struct AppState {
-    providers: SnapshotBackedProviders,
-    info: CompatInfo,
-    scheduler: Arc<Scheduler>,
-    db_path: PathBuf,
-    config: Arc<Mutex<ConfigManager>>,
-    auth: Arc<GatewayAuth>,
-    events: broadcast::Sender<GatewayEvent>,
-    event_history: Arc<Mutex<Vec<GatewayEvent>>>,
-    run_queue: Arc<RunQueue>,
-    ws_state: Arc<WsServerState>,
-    started_at: Instant,
-    presence: Arc<Mutex<SystemPresence>>,
-    acp: Arc<AcpRuntime>,
+pub(crate) struct AppState {
+    pub(crate) providers: SnapshotBackedProviders,
+    pub(crate) info: CompatInfo,
+    pub(crate) scheduler: Arc<Scheduler>,
+    pub(crate) db_path: PathBuf,
+    pub(crate) config: Arc<Mutex<ConfigManager>>,
+    pub(crate) auth: Arc<GatewayAuth>,
+    pub(crate) events: broadcast::Sender<GatewayEvent>,
+    pub(crate) event_history: Arc<Mutex<Vec<GatewayEvent>>>,
+    pub(crate) run_queue: Arc<RunQueue>,
+    pub(crate) ws_state: Arc<WsServerState>,
+    pub(crate) started_at: Instant,
+    pub(crate) presence: Arc<Mutex<SystemPresence>>,
+    pub(crate) acp: Arc<AcpRuntime>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1149,6 +1150,9 @@ async fn serve_http(
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
+    // Start Telegram channel loop (if configured)
+    channel_loop::spawn_telegram_loop(state.clone()).await;
+
     let app = build_router(state);
 
     let addr = SocketAddr::from((bind, port));
@@ -1214,6 +1218,9 @@ async fn serve_http_with_daemon(
         acp,
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
+
+    // Start Telegram channel loop (if configured)
+    channel_loop::spawn_telegram_loop(state.clone()).await;
 
     let app = build_router(state);
 
@@ -1455,7 +1462,7 @@ struct JsonRpcAuth {
 }
 
 #[derive(Debug, Error)]
-enum RpcError {
+pub(crate) enum RpcError {
     #[error("unauthorized")]
     Unauthorized,
     #[error("invalid params: {0}")]
@@ -4086,7 +4093,7 @@ async fn dispatch_ws_method(
     }
 }
 
-async fn run_agent_turn(
+pub(crate) async fn run_agent_turn(
     state: &AppState,
     client_id: &str,
     params: Value,

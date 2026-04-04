@@ -1351,6 +1351,7 @@ dependencies = [
  "cron",
  "magicmerlin-acp",
  "magicmerlin-auto-reply",
+ "magicmerlin-channels",
  "magicmerlin-compat",
  "magicmerlin-config",
  "magicmerlin-logging",
