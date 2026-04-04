@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 /// Path (relative to repo root) where OpenClaw compatibility snapshots live.
-pub const SNAPSHOT_DIR: &str = "magicmerlin/compat/snapshots";
+pub const SNAPSHOT_DIR: &str = "compat/snapshots";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,17 +67,17 @@ pub struct SnapshotHashes {
     pub fingerprint: String,
 }
 
-/// Find repo root by walking up from CWD looking for `magicmerlin/Cargo.toml`.
+/// Find repo root by walking up from CWD looking for workspace `Cargo.toml` + `compat/snapshots/`.
 pub fn find_repo_root() -> Result<PathBuf> {
     let cwd = std::env::current_dir().context("current_dir")?;
     for dir in cwd.ancestors() {
-        if dir.join("magicmerlin").join("Cargo.toml").is_file() {
+        if dir.join("Cargo.toml").is_file() && dir.join(SNAPSHOT_DIR).is_dir() {
             return Ok(dir.to_path_buf());
         }
     }
     Err(anyhow!(
-    "Could not find repo root (expected to find magicmerlin/Cargo.toml in an ancestor of {cwd:?})"
-  ))
+        "Could not find repo root (expected Cargo.toml + {SNAPSHOT_DIR}/ in an ancestor of {cwd:?})"
+    ))
 }
 
 pub fn load_manifest(repo_root: &Path) -> Result<SnapshotManifest> {

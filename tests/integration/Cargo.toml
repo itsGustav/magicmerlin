@@ -8,11 +8,13 @@ publish = false
 
 [dependencies]
 magicmerlin-agent = { path = "../../agent" }
+magicmerlin-config = { path = "../../config" }
 magicmerlin-providers = { path = "../../providers" }
 magicmerlin-sessions = { path = "../../sessions" }
 magicmerlin-storage = { path = "../../storage" }
 
 async-trait = "0.1"
+chrono = "0.4"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde_json = "1"
 tempfile = "3"
