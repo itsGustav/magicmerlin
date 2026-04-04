@@ -4,3 +4,7 @@
 
 # Local scheduler DB
 magicmerlin.db*
+
+# fastembed model cache (large binary files — download on first run)
+**/.fastembed_cache/
+*.fastembed_cache/
