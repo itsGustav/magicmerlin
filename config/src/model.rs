@@ -78,7 +78,27 @@ pub struct Section {
 pub struct AgentsConfig {
     /// Default agent settings.
     pub defaults: AgentDefaults,
+    /// Named agent configurations (merlin, henry, paylobster, lobsterprime, …).
+    #[serde(default)]
+    pub named: std::collections::HashMap<String, NamedAgentConfig>,
     /// Additional fields not currently typed.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Configuration for a named agent.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct NamedAgentConfig {
+    /// Model identifier override.
+    pub model: Option<String>,
+    /// Human-readable description.
+    pub description: Option<String>,
+    /// Workspace directory override.
+    pub workspace: Option<String>,
+    /// Agent directory override.
+    pub agent_dir: Option<String>,
+    /// Additional fields.
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
 }

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs,
     io::Read as _,
     net::{IpAddr, SocketAddr},
@@ -1078,6 +1079,7 @@ struct AppState {
     presence: Arc<Mutex<SystemPresence>>,
     acp: Arc<AcpRuntime>,
     agent_engine: Arc<AgentEngine>,
+    agent_engines: HashMap<String, Arc<AgentEngine>>,
     tool_registry: Arc<ToolRegistry>,
     session_manager: Arc<SessionManager>,
     process_manager: ProcessManager,
@@ -1178,7 +1180,7 @@ async fn serve_http(
     ));
 
     let engine_config = AgentEngineConfig {
-        model: agent_model,
+        model: agent_model.clone(),
         workspace_dir: workspace_dir.clone(),
         agent_dir,
         agent_name: "merlin".to_string(),
@@ -1193,10 +1195,34 @@ async fn serve_http(
     };
 
     let agent_engine = Arc::new(AgentEngine::new(
-        provider_router,
+        provider_router.clone(),
         (*session_manager).clone(),
         engine_config,
     ));
+
+    // Build named agent engines from config
+    let mut agent_engines: HashMap<String, Arc<AgentEngine>> = HashMap::new();
+    agent_engines.insert("merlin".to_string(), agent_engine.clone());
+    for (name, nacfg) in &loaded_config.agents.named {
+        let named_model = nacfg.model.clone().unwrap_or_else(|| agent_model.clone());
+        let named_workspace = nacfg.workspace.as_ref().map(PathBuf::from).unwrap_or_else(|| workspace_dir.clone());
+        let named_agent_dir = nacfg.agent_dir.as_ref().map(PathBuf::from).unwrap_or_else(|| state_dir.join("agents").join(name));
+        let _ = std::fs::create_dir_all(&named_agent_dir);
+        let named_config = AgentEngineConfig {
+            model: named_model,
+            workspace_dir: named_workspace,
+            agent_dir: named_agent_dir,
+            agent_name: name.clone(),
+            channel: "gateway".to_string(),
+            timezone: "UTC".to_string(),
+            max_turns: 20, max_tool_rounds: 10, context_window: 120_000,
+            token_budget: 100_000, compact_threshold_pct: 75,
+            ..AgentEngineConfig::default()
+        };
+        agent_engines.insert(name.clone(), Arc::new(AgentEngine::new(
+            provider_router.clone(), (*session_manager).clone(), named_config,
+        )));
+    }
 
     let mut tool_registry = ToolRegistry::new();
     register_default_tools(&mut tool_registry);
@@ -1222,6 +1248,7 @@ async fn serve_http(
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
         agent_engine,
+        agent_engines,
         tool_registry,
         session_manager,
         process_manager,
@@ -1315,7 +1342,7 @@ async fn serve_http_with_daemon(
     ));
 
     let engine_config = AgentEngineConfig {
-        model: daemon_agent_model,
+        model: daemon_agent_model.clone(),
         workspace_dir: workspace_dir.clone(),
         agent_dir,
         agent_name: "merlin".to_string(),
@@ -1330,10 +1357,34 @@ async fn serve_http_with_daemon(
     };
 
     let agent_engine = Arc::new(AgentEngine::new(
-        provider_router,
+        provider_router.clone(),
         (*session_manager).clone(),
         engine_config,
     ));
+
+    // Build named agent engines from config (daemon)
+    let mut agent_engines: HashMap<String, Arc<AgentEngine>> = HashMap::new();
+    agent_engines.insert("merlin".to_string(), agent_engine.clone());
+    for (name, nacfg) in &daemon_loaded_config.agents.named {
+        let named_model = nacfg.model.clone().unwrap_or_else(|| daemon_agent_model.clone());
+        let named_workspace = nacfg.workspace.as_ref().map(PathBuf::from).unwrap_or_else(|| workspace_dir.clone());
+        let named_agent_dir = nacfg.agent_dir.as_ref().map(PathBuf::from).unwrap_or_else(|| state_dir.join("agents").join(name));
+        let _ = std::fs::create_dir_all(&named_agent_dir);
+        let named_config = AgentEngineConfig {
+            model: named_model,
+            workspace_dir: named_workspace,
+            agent_dir: named_agent_dir,
+            agent_name: name.clone(),
+            channel: "gateway".to_string(),
+            timezone: "UTC".to_string(),
+            max_turns: 20, max_tool_rounds: 10, context_window: 120_000,
+            token_budget: 100_000, compact_threshold_pct: 75,
+            ..AgentEngineConfig::default()
+        };
+        agent_engines.insert(name.clone(), Arc::new(AgentEngine::new(
+            provider_router.clone(), (*session_manager).clone(), named_config,
+        )));
+    }
 
     let mut tool_registry = ToolRegistry::new();
     register_default_tools(&mut tool_registry);
@@ -1359,6 +1410,7 @@ async fn serve_http_with_daemon(
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
         agent_engine,
+        agent_engines,
         tool_registry,
         session_manager,
         process_manager,
@@ -2921,11 +2973,19 @@ async fn dispatch_ws_method(
         "agents.list" => {
             let cfg = state.config.lock().await;
             let default_model = &cfg.config().agents.defaults.model;
-            Ok(serde_json::json!({
-                "agents": [
-                    {"name":"merlin","model":default_model,"status":"active","description":"Default agent"},
-                ],
-            }))
+            let mut agents_list = vec![
+                serde_json::json!({"name":"merlin","model":default_model,"status":"active","description":"Default agent"}),
+            ];
+            for (name, nacfg) in &cfg.config().agents.named {
+                if name == "merlin" { continue; }
+                agents_list.push(serde_json::json!({
+                    "name": name,
+                    "model": nacfg.model.as_deref().unwrap_or("(default)"),
+                    "status": if state.agent_engines.contains_key(name) { "active" } else { "configured" },
+                    "description": nacfg.description.as_deref().unwrap_or(""),
+                }));
+            }
+            Ok(serde_json::json!({ "agents": agents_list }))
         }
         "agents.get" => {
             #[derive(Deserialize)]
@@ -4282,12 +4342,14 @@ async fn run_agent_turn(
         session_id: String,
         message: String,
         timeout_seconds: Option<u64>,
+        agent: Option<String>,
     }
 
     let parsed: Params =
         serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
     let session_id = parsed.session_id.clone();
     let message = parsed.message.clone();
+    let agent_name = parsed.agent.clone().unwrap_or_else(|| "merlin".to_string());
 
     // Handle slash commands locally (unchanged)
     if let Some(command) = parse_slash_command(&message) {
@@ -4341,7 +4403,12 @@ async fn run_agent_turn(
     // --- Real agent loop ---
     let session_id_for_run = session_id.clone();
     let message_for_run = message.clone();
-    let engine = state.agent_engine.clone();
+    let engine = state
+        .agent_engines
+        .get(&agent_name)
+        .cloned()
+        .unwrap_or_else(|| state.agent_engine.clone());
+    let agent_name_for_ctx = agent_name.clone();
     let sm = state.session_manager.clone();
     let registry = state.tool_registry.clone();
 
@@ -4351,7 +4418,7 @@ async fn run_agent_turn(
         let cfg = guard.config().clone();
         let sp = guard.state_paths().clone();
         ToolContext {
-            agent_name: "merlin".to_string(),
+            agent_name: agent_name_for_ctx,
             workspace_dir: state.workspace_dir.clone(),
             state_paths: sp,
             config: cfg,
@@ -4412,9 +4479,9 @@ async fn run_agent_turn(
         .map_err(|e| RpcError::Internal(e.to_string()))?;
 
         // Load or create agent session
-        let session_key = SessionKey::agent_main("merlin");
+        let session_key = SessionKey::agent_main(&agent_name);
         let mut session = sm
-            .load_or_create(session_key, "merlin")
+            .load_or_create(session_key, &agent_name)
             .map_err(|e| RpcError::Internal(format!("session load: {e}")))?;
 
         let inbound = InboundContext::default();
@@ -6138,6 +6205,8 @@ mod tests {
             (*session_manager).clone(),
             engine_config,
         ));
+        let mut agent_engines: HashMap<String, Arc<AgentEngine>> = HashMap::new();
+        agent_engines.insert("merlin".to_string(), agent_engine.clone());
         let mut tool_registry = ToolRegistry::new();
         register_default_tools(&mut tool_registry);
         let tool_registry = Arc::new(tool_registry);
@@ -6157,6 +6226,7 @@ mod tests {
             presence: Arc::new(Mutex::new(SystemPresence::default())),
             acp,
             agent_engine,
+            agent_engines,
             tool_registry,
             session_manager,
             process_manager: ProcessManager::new(),
