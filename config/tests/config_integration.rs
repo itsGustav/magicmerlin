@@ -59,8 +59,9 @@ fn rejects_unknown_top_level_keys() {
 
     std::env::set_var("OPENCLAW_CONFIG_PATH", &cfg);
     std::env::set_var("OPENCLAW_STATE_DIR", temp.path().join("state"));
+    // Unknown top-level keys are now silently ignored for openclaw.json compatibility.
     let result = ConfigManager::load(ConfigOptions::default());
-    assert!(result.is_err());
+    assert!(result.is_ok(), "unknown keys should be ignored for openclaw.json compat: {:?}", result.err());
     std::env::remove_var("OPENCLAW_CONFIG_PATH");
     std::env::remove_var("OPENCLAW_STATE_DIR");
 }

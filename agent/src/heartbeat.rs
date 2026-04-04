@@ -150,7 +150,7 @@ fn parse_heartbeat_tasks(agent_dir: &Path) -> Result<Vec<HeartbeatTask>> {
     let tasks = content
         .lines()
         .map(str::trim)
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .filter(|line| !line.is_empty() && !line.starts_with('#') && !line.starts_with("<!--"))
         .map(|line| {
             let text = line
                 .trim_start_matches("- [ ]")
