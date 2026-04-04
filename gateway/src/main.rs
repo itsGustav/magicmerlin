@@ -18,6 +18,11 @@ use axum::{
 };
 use clap::{Parser, Subcommand};
 use magicmerlin_acp::{AcpRuntime, AcpxRequest, AgentHarnessConfig, AgentId};
+use magicmerlin_agent::{
+    AbortSignal, AgentEngine, AgentEngineConfig, InboundContext, SessionKey, SessionManager,
+    ToolExecutionResult, ToolExecutor, ToolSchemaDescriptor,
+};
+use magicmerlin_agent_tools::{ProcessManager, ToolContext, ToolRegistry, register_default_tools};
 use magicmerlin_auto_reply::{format_reply, parse_slash_command, Platform, SlashCommand};
 use magicmerlin_compat::{
     providers::{SnapshotBackedProviders, StatusProvider, ToolRegistryProvider},
@@ -31,6 +36,7 @@ use magicmerlin_gateway::{
     ws::{WsServerConfig, WsServerState},
 };
 use magicmerlin_logging::{init_with as init_logging, LogLevel};
+use magicmerlin_providers::{AuthProfiles, ModelRegistry, ProviderRouter};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
@@ -1070,6 +1076,12 @@ struct AppState {
     started_at: Instant,
     presence: Arc<Mutex<SystemPresence>>,
     acp: Arc<AcpRuntime>,
+    agent_engine: Arc<AgentEngine>,
+    tool_registry: Arc<ToolRegistry>,
+    session_manager: Arc<SessionManager>,
+    process_manager: ProcessManager,
+    workspace_dir: PathBuf,
+    port: u16,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1113,11 +1125,20 @@ async fn serve_http(
     config: Arc<Mutex<ConfigManager>>,
     auth: Arc<GatewayAuth>,
 ) -> Result<()> {
-    let (state_dir, acp_config) = {
+    let (state_dir, acp_config, agent_model, loaded_config) = {
         let guard = config.lock().await;
+        let cfg = guard.config().clone();
+        let model = cfg
+            .agents
+            .defaults
+            .model
+            .clone()
+            .unwrap_or_else(|| "openai/gpt-4o".to_string());
         (
             guard.state_paths().state_dir.clone(),
-            resolve_acp_harness_config(guard.config()),
+            resolve_acp_harness_config(&cfg),
+            model,
+            cfg,
         )
     };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
@@ -1129,6 +1150,59 @@ async fn serve_http(
     let ws_state = Arc::new(WsServerState::new(WsServerConfig {
         auth_bearer_token: auth.token.clone(),
     }));
+
+    // --- Agent engine infrastructure ---
+    let workspace_dir = state_dir.join("workspace");
+    let _ = std::fs::create_dir_all(&workspace_dir);
+    let agent_dir = state_dir.join("agents").join("merlin");
+    let _ = std::fs::create_dir_all(&agent_dir);
+    let sessions_dir = state_dir.join("sessions");
+    let _ = std::fs::create_dir_all(&sessions_dir);
+    let memory_dir = state_dir.join("memory");
+    let _ = std::fs::create_dir_all(&memory_dir);
+
+    let agent_db_path = state_dir.join("agent.sqlite");
+    let storage = magicmerlin_storage::Storage::new(&agent_db_path)
+        .map_err(|e| anyhow::anyhow!("storage init: {e}"))?;
+    let session_manager = Arc::new(SessionManager::new(storage, &sessions_dir, &memory_dir)?);
+
+    let model_registry = ModelRegistry::from_config(&loaded_config)
+        .unwrap_or_else(|_| ModelRegistry::default());
+    let auth_profiles = AuthProfiles::load_from_state_dir(&state_dir)
+        .unwrap_or_default();
+    let provider_router = Arc::new(ProviderRouter::with_defaults(
+        model_registry,
+        auth_profiles,
+        None,
+    ));
+
+    let engine_config = AgentEngineConfig {
+        model: agent_model,
+        workspace_dir: workspace_dir.clone(),
+        agent_dir,
+        agent_name: "merlin".to_string(),
+        channel: "gateway".to_string(),
+        timezone: "UTC".to_string(),
+        max_turns: 20,
+        max_tool_rounds: 10,
+        context_window: 120_000,
+        token_budget: 100_000,
+        compact_threshold_pct: 75,
+        ..AgentEngineConfig::default()
+    };
+
+    let agent_engine = Arc::new(AgentEngine::new(
+        provider_router,
+        (*session_manager).clone(),
+        engine_config,
+    ));
+
+    let mut tool_registry = ToolRegistry::new();
+    register_default_tools(&mut tool_registry);
+    let tool_registry = Arc::new(tool_registry);
+
+    let process_manager = ProcessManager::new();
+
     let state = AppState {
         providers,
         info,
@@ -1146,6 +1220,12 @@ async fn serve_http(
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
+        agent_engine,
+        tool_registry,
+        session_manager,
+        process_manager,
+        workspace_dir,
+        port,
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
@@ -1177,11 +1257,20 @@ async fn serve_http_with_daemon(
     config: Arc<Mutex<ConfigManager>>,
     auth: Arc<GatewayAuth>,
 ) -> Result<()> {
-    let (state_dir, acp_config) = {
+    let (state_dir, acp_config, daemon_agent_model, daemon_loaded_config) = {
         let guard = config.lock().await;
+        let cfg = guard.config().clone();
+        let model = cfg
+            .agents
+            .defaults
+            .model
+            .clone()
+            .unwrap_or_else(|| "openai/gpt-4o".to_string());
         (
             guard.state_paths().state_dir.clone(),
-            resolve_acp_harness_config(guard.config()),
+            resolve_acp_harness_config(&cfg),
+            model,
+            cfg,
         )
     };
     let scheduler = Arc::new(Scheduler::new(db_path.clone()).await?);
@@ -1195,6 +1284,59 @@ async fn serve_http_with_daemon(
     let ws_state = Arc::new(WsServerState::new(WsServerConfig {
         auth_bearer_token: auth.token.clone(),
     }));
+
+    // --- Agent engine infrastructure (daemon) ---
+    let workspace_dir = state_dir.join("workspace");
+    let _ = std::fs::create_dir_all(&workspace_dir);
+    let agent_dir = state_dir.join("agents").join("merlin");
+    let _ = std::fs::create_dir_all(&agent_dir);
+    let sessions_dir = state_dir.join("sessions");
+    let _ = std::fs::create_dir_all(&sessions_dir);
+    let memory_dir = state_dir.join("memory");
+    let _ = std::fs::create_dir_all(&memory_dir);
+
+    let agent_db_path = state_dir.join("agent.sqlite");
+    let storage = magicmerlin_storage::Storage::new(&agent_db_path)
+        .map_err(|e| anyhow::anyhow!("storage init: {e}"))?;
+    let session_manager = Arc::new(SessionManager::new(storage, &sessions_dir, &memory_dir)?);
+
+    let model_registry = ModelRegistry::from_config(&daemon_loaded_config)
+        .unwrap_or_else(|_| ModelRegistry::default());
+    let auth_profiles = AuthProfiles::load_from_state_dir(&state_dir)
+        .unwrap_or_default();
+    let provider_router = Arc::new(ProviderRouter::with_defaults(
+        model_registry,
+        auth_profiles,
+        None,
+    ));
+
+    let engine_config = AgentEngineConfig {
+        model: daemon_agent_model,
+        workspace_dir: workspace_dir.clone(),
+        agent_dir,
+        agent_name: "merlin".to_string(),
+        channel: "gateway".to_string(),
+        timezone: "UTC".to_string(),
+        max_turns: 20,
+        max_tool_rounds: 10,
+        context_window: 120_000,
+        token_budget: 100_000,
+        compact_threshold_pct: 75,
+        ..AgentEngineConfig::default()
+    };
+
+    let agent_engine = Arc::new(AgentEngine::new(
+        provider_router,
+        (*session_manager).clone(),
+        engine_config,
+    ));
+
+    let mut tool_registry = ToolRegistry::new();
+    register_default_tools(&mut tool_registry);
+    let tool_registry = Arc::new(tool_registry);
+
+    let process_manager = ProcessManager::new();
+
     let state = AppState {
         providers,
         info,
@@ -1212,6 +1354,12 @@ async fn serve_http_with_daemon(
         started_at: Instant::now(),
         presence: Arc::new(Mutex::new(SystemPresence::default())),
         acp,
+        agent_engine,
+        tool_registry,
+        session_manager,
+        process_manager,
+        workspace_dir,
+        port,
     };
     let _ws_keepalive = state.ws_state.clone().spawn_keepalive();
 
@@ -4086,6 +4234,36 @@ async fn dispatch_ws_method(
     }
 }
 
+/// Bridge that adapts `ToolRegistry` + `ToolContext` into the `ToolExecutor` trait
+/// expected by `AgentEngine::run_turn_with_options`.
+struct RegistryToolExecutor {
+    registry: Arc<ToolRegistry>,
+    ctx: ToolContext,
+}
+
+#[async_trait::async_trait]
+impl ToolExecutor for RegistryToolExecutor {
+    async fn execute_tool(
+        &self,
+        tool_call: &magicmerlin_providers::types::ToolCall,
+    ) -> std::result::Result<ToolExecutionResult, magicmerlin_agent::AgentError> {
+        match self.registry.execute(&tool_call.name, tool_call.arguments.clone(), &self.ctx).await {
+            Ok(result) => {
+                let content = serde_json::to_string(&result.value).unwrap_or_default();
+                if result.ok {
+                    Ok(ToolExecutionResult::ok(tool_call.id.clone(), content))
+                } else {
+                    Ok(ToolExecutionResult::err(tool_call.id.clone(), content))
+                }
+            }
+            Err(e) => Ok(ToolExecutionResult::err(
+                tool_call.id.clone(),
+                e.to_string(),
+            )),
+        }
+    }
+}
+
 async fn run_agent_turn(
     state: &AppState,
     client_id: &str,
@@ -4103,6 +4281,8 @@ async fn run_agent_turn(
         serde_json::from_value(params).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
     let session_id = parsed.session_id.clone();
     let message = parsed.message.clone();
+
+    // Handle slash commands locally (unchanged)
     if let Some(command) = parse_slash_command(&message) {
         let reply = match command {
             SlashCommand::Status => "session is active".to_string(),
@@ -4121,6 +4301,8 @@ async fn run_agent_turn(
             serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id, "kind":"command"}),
         );
     }
+
+    // Queue management (unchanged)
     let timeout = Duration::from_secs(parsed.timeout_seconds.unwrap_or(60));
     let queue_timeout = Duration::from_secs(30);
     let run_id = format!("run:{}:{}", session_id, uuid::Uuid::new_v4());
@@ -4149,8 +4331,57 @@ async fn run_agent_turn(
     )
     .await;
 
+    // --- Real agent loop ---
     let session_id_for_run = session_id.clone();
     let message_for_run = message.clone();
+    let engine = state.agent_engine.clone();
+    let sm = state.session_manager.clone();
+    let registry = state.tool_registry.clone();
+
+    // Build ToolContext for this turn
+    let tool_ctx = {
+        let guard = state.config.lock().await;
+        let cfg = guard.config().clone();
+        let sp = guard.state_paths().clone();
+        ToolContext {
+            agent_name: "merlin".to_string(),
+            workspace_dir: state.workspace_dir.clone(),
+            state_paths: sp,
+            config: cfg,
+            delivery: None,
+            process_manager: state.process_manager.clone(),
+            node_configs: vec![],
+            browser_manager: None,
+            canvas_server: None,
+            tts_client: None,
+            understanding_client: None,
+        }
+    };
+
+    // Build tool schemas from registry
+    let tool_schemas: Vec<ToolSchemaDescriptor> = registry
+        .schemas()
+        .into_iter()
+        .filter_map(|s| {
+            let name = s.get("name")?.as_str()?.to_string();
+            let description = s.get("description")?.as_str()?.to_string();
+            let parameters = s.get("parameters").cloned().unwrap_or(serde_json::json!({}));
+            Some(ToolSchemaDescriptor {
+                name,
+                description,
+                parameters,
+            })
+        })
+        .collect();
+
+    let tool_executor = RegistryToolExecutor {
+        registry,
+        ctx: tool_ctx,
+    };
+
+    // Build abort signal wired to run_queue abort channel
+    let abort_signal = AbortSignal::new();
+
     let run_fut = async {
         emit_gateway_event(
             state,
@@ -4161,7 +4392,8 @@ async fn run_agent_turn(
             },
         )
         .await;
-        tokio::time::sleep(Duration::from_millis(120)).await;
+
+        // Upsert gateway session record
         sessions::upsert_session(
             &state.db_path,
             &session_id_for_run,
@@ -4171,12 +4403,37 @@ async fn run_agent_turn(
         )
         .await
         .map_err(|e| RpcError::Internal(e.to_string()))?;
-        Ok::<String, RpcError>(format!("Auto reply: {}", message_for_run))
+
+        // Load or create agent session
+        let session_key = SessionKey::agent_main("merlin");
+        let mut session = sm
+            .load_or_create(session_key, "merlin")
+            .map_err(|e| RpcError::Internal(format!("session load: {e}")))?;
+
+        let inbound = InboundContext::default();
+
+        // Run the real agent turn
+        let reply = engine
+            .run_turn_with_options(
+                &mut session,
+                &message_for_run,
+                &tool_executor,
+                &inbound,
+                &tool_schemas,
+                Some(&abort_signal),
+            )
+            .await
+            .map_err(|e| RpcError::Internal(format!("agent turn: {e}")))?;
+
+        Ok::<String, RpcError>(reply.text)
     };
 
+    // Race against abort signal and timeout
+    let abort_signal_cancel = abort_signal.clone();
     let result = tokio::select! {
         changed = abort_rx.changed() => {
             if changed.is_ok() && *abort_rx.borrow() {
+                abort_signal_cancel.cancel();
                 Err(RpcError::Internal("aborted".to_string()))
             } else {
                 Err(RpcError::Internal("abort channel closed".to_string()))
@@ -4185,7 +4442,10 @@ async fn run_agent_turn(
         timed = tokio::time::timeout(timeout, run_fut) => {
             match timed {
                 Ok(reply) => reply,
-                Err(_) => Err(RpcError::Internal("run timed out".to_string())),
+                Err(_) => {
+                    abort_signal_cancel.cancel();
+                    Err(RpcError::Internal("run timed out".to_string()))
+                }
             }
         }
     };
@@ -4201,10 +4461,10 @@ async fn run_agent_turn(
             emit_gateway_event(
                 state,
                 GatewayEvent {
-                method: "agent.partial".to_string(),
-                params: serde_json::json!({"sessionId": session_id, "status":"completed", "text": reply, "chunks": formatted}),
-                target_client: Some(client_id.to_string()),
-            },
+                    method: "agent.partial".to_string(),
+                    params: serde_json::json!({"sessionId": session_id, "status":"completed", "text": reply, "chunks": formatted}),
+                    target_client: Some(client_id.to_string()),
+                },
             )
             .await;
             Ok(serde_json::json!({"ok": true, "reply": reply, "sessionId": session_id}))
@@ -4224,10 +4484,10 @@ async fn run_agent_turn(
             emit_gateway_event(
                 state,
                 GatewayEvent {
-                method: "agent.partial".to_string(),
-                params: serde_json::json!({"sessionId": session_id, "status":"failed", "error": err.to_string()}),
-                target_client: Some(client_id.to_string()),
-            },
+                    method: "agent.partial".to_string(),
+                    params: serde_json::json!({"sessionId": session_id, "status":"failed", "error": err.to_string()}),
+                    target_client: Some(client_id.to_string()),
+                },
             )
             .await;
             Err(err)
@@ -5842,6 +6102,39 @@ mod tests {
             AcpRuntime::new(&state_root.join("acp"), AgentHarnessConfig::default()).expect("acp"),
         );
         let ws_state = Arc::new(WsServerState::new(WsServerConfig::default()));
+
+        let workspace_dir = state_root.join("workspace");
+        let _ = std::fs::create_dir_all(&workspace_dir);
+        let sessions_dir = state_root.join("sessions");
+        let _ = std::fs::create_dir_all(&sessions_dir);
+        let memory_dir = state_root.join("memory");
+        let _ = std::fs::create_dir_all(&memory_dir);
+        let agent_dir = state_root.join("agents").join("merlin");
+        let _ = std::fs::create_dir_all(&agent_dir);
+
+        let agent_db_path = state_root.join("agent.sqlite");
+        let storage =
+            magicmerlin_storage::Storage::new(&agent_db_path).expect("storage");
+        let session_manager =
+            Arc::new(SessionManager::new(storage, &sessions_dir, &memory_dir).expect("sm"));
+
+        let provider_router = Arc::new(ProviderRouter::new(ModelRegistry::default()));
+        let engine_config = AgentEngineConfig {
+            workspace_dir: workspace_dir.clone(),
+            agent_dir,
+            agent_name: "merlin".to_string(),
+            channel: "test".to_string(),
+            ..AgentEngineConfig::default()
+        };
+        let agent_engine = Arc::new(AgentEngine::new(
+            provider_router,
+            (*session_manager).clone(),
+            engine_config,
+        ));
+        let mut tool_registry = ToolRegistry::new();
+        register_default_tools(&mut tool_registry);
+        let tool_registry = Arc::new(tool_registry);
+
         AppState {
             providers,
             info,
@@ -5856,6 +6149,12 @@ mod tests {
             started_at: Instant::now(),
             presence: Arc::new(Mutex::new(SystemPresence::default())),
             acp,
+            agent_engine,
+            tool_registry,
+            session_manager,
+            process_manager: ProcessManager::new(),
+            workspace_dir,
+            port: 0,
         }
     }
 
