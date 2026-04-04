@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 
+use tokio::io::AsyncBufReadExt;
 use tokio::process::Command;
 
 use crate::framework::{ChannelError, InboundMessage, Result};
@@ -202,6 +203,172 @@ impl SignalCliWrapper {
             recipient.to_string(),
         ]);
         args
+    }
+}
+
+/// Handle to a long-running `signal-cli jsonRpc` subprocess that accepts
+/// send/receive commands over stdin/stdout JSON-RPC.
+pub struct SignalJsonRpc {
+    child: tokio::process::Child,
+    stdin: tokio::io::BufWriter<tokio::process::ChildStdin>,
+    stdout: tokio::io::Lines<tokio::io::BufReader<tokio::process::ChildStdout>>,
+    request_id: std::sync::atomic::AtomicU64,
+}
+
+impl std::fmt::Debug for SignalJsonRpc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SignalJsonRpc")
+            .field("request_id", &self.request_id)
+            .finish_non_exhaustive()
+    }
+}
+
+impl SignalJsonRpc {
+    /// Sends a JSON-RPC request and returns the raw response line.
+    pub async fn call(
+        &mut self,
+        method: &str,
+        params: serde_json::Value,
+    ) -> crate::framework::Result<serde_json::Value> {
+        use tokio::io::AsyncWriteExt;
+        use tokio::io::AsyncBufReadExt;
+
+        let id = self
+            .request_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let request = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": method,
+            "params": params,
+        });
+        let mut line = serde_json::to_string(&request).map_err(|e| {
+            ChannelError::PlatformRequest(format!("signal jsonrpc serialize: {e}"))
+        })?;
+        line.push('\n');
+        self.stdin.write_all(line.as_bytes()).await.map_err(|e| {
+            ChannelError::PlatformRequest(format!("signal jsonrpc write: {e}"))
+        })?;
+        self.stdin.flush().await.map_err(|e| {
+            ChannelError::PlatformRequest(format!("signal jsonrpc flush: {e}"))
+        })?;
+
+        // Read response line.
+        let resp_line = self.stdout.next_line().await.map_err(|e| {
+            ChannelError::PlatformRequest(format!("signal jsonrpc read: {e}"))
+        })?;
+        let resp_line = resp_line.ok_or_else(|| {
+            ChannelError::PlatformRequest("signal jsonrpc: subprocess closed".to_string())
+        })?;
+
+        let resp: serde_json::Value = serde_json::from_str(&resp_line).map_err(|e| {
+            ChannelError::PlatformRequest(format!("signal jsonrpc parse: {e}"))
+        })?;
+
+        if let Some(err) = resp.get("error") {
+            return Err(ChannelError::PlatformRequest(format!(
+                "signal jsonrpc error: {err}"
+            )));
+        }
+
+        Ok(resp.get("result").cloned().unwrap_or(serde_json::Value::Null))
+    }
+
+    /// Sends a text message via JSON-RPC.
+    pub async fn send_message(
+        &mut self,
+        recipient: &str,
+        text: &str,
+    ) -> crate::framework::Result<()> {
+        self.call(
+            "send",
+            serde_json::json!({
+                "recipient": [recipient],
+                "message": text,
+            }),
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Sends a group message via JSON-RPC.
+    pub async fn send_group_message(
+        &mut self,
+        group_id: &str,
+        text: &str,
+    ) -> crate::framework::Result<()> {
+        self.call(
+            "send",
+            serde_json::json!({
+                "groupId": group_id,
+                "message": text,
+            }),
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Shuts down the JSON-RPC subprocess.
+    pub async fn shutdown(&mut self) {
+        let _ = self.child.kill().await;
+    }
+}
+
+impl SignalCliWrapper {
+    /// Spawns a long-running `signal-cli jsonRpc` subprocess for persistent
+    /// send/receive via JSON-RPC over stdin/stdout.
+    pub async fn start_json_rpc(&self) -> crate::framework::Result<SignalJsonRpc> {
+        use tokio::io::BufReader;
+        let mut child = self
+            .base_command()
+            .arg("jsonRpc")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| {
+                ChannelError::PlatformRequest(format!("signal-cli jsonRpc spawn: {e}"))
+            })?;
+
+        let stdin = child.stdin.take().ok_or_else(|| {
+            ChannelError::PlatformRequest("signal-cli jsonRpc: no stdin".to_string())
+        })?;
+        let stdout = child.stdout.take().ok_or_else(|| {
+            ChannelError::PlatformRequest("signal-cli jsonRpc: no stdout".to_string())
+        })?;
+
+        Ok(SignalJsonRpc {
+            child,
+            stdin: tokio::io::BufWriter::new(stdin),
+            stdout: BufReader::new(stdout).lines(),
+            request_id: std::sync::atomic::AtomicU64::new(1),
+        })
+    }
+
+    /// Links this device as a secondary device. Returns the `tsdevice:` URI
+    /// that should be encoded as a QR code for scanning with the primary device.
+    pub async fn link_device(&self, name: &str) -> crate::framework::Result<String> {
+        let output = self
+            .base_command()
+            .args(["link", "-n", name])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .await
+            .map_err(|e| {
+                ChannelError::PlatformRequest(format!("signal-cli link spawn: {e}"))
+            })?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(ChannelError::PlatformRequest(format!(
+                "signal-cli link failed: {stderr}"
+            )));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok(stdout)
     }
 }
 

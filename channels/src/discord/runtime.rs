@@ -17,9 +17,10 @@ use super::guild::GuildManager;
 use super::scheduled_events::ScheduledEventManager;
 use super::types::{
     session_scope, DiscordApiError, DiscordAttachment, DiscordConfig, DiscordEmbed,
-    DiscordGatewayState, DiscordHealth, DiscordHello, DiscordInteraction,
-    DiscordInteractionResponse, DiscordMessage, DiscordPresence, DiscordProcessedEvent,
-    DiscordResponseKind, DiscordSession, DiscordThread, DurationHolder, DISCORD_MAX_MESSAGE_LEN,
+    DiscordGatewayState, DiscordGuildChannel, DiscordGuildMember, DiscordHealth, DiscordHello,
+    DiscordInteraction, DiscordInteractionResponse, DiscordMessage, DiscordPresence,
+    DiscordProcessedEvent, DiscordResponseKind, DiscordSession, DiscordThread, DurationHolder,
+    DISCORD_MAX_MESSAGE_LEN,
 };
 use super::voice::VoiceStateTracker;
 use super::webhook::WebhookManager;
@@ -111,6 +112,9 @@ pub struct DiscordChannel {
     audit_log: AuditLogStore,
     channel_manager: ChannelManager,
     event_manager: ScheduledEventManager,
+    guild_channels: RwLock<HashMap<String, Vec<DiscordGuildChannel>>>,
+    guild_members: RwLock<HashMap<String, Vec<DiscordGuildMember>>>,
+    dm_channels: RwLock<HashMap<String, String>>,
     next_id: AtomicU64,
 }
 
@@ -161,6 +165,9 @@ impl DiscordChannel {
             audit_log: AuditLogStore::new(),
             channel_manager: ChannelManager::new(),
             event_manager: ScheduledEventManager::new(),
+            guild_channels: RwLock::new(HashMap::new()),
+            guild_members: RwLock::new(HashMap::new()),
+            dm_channels: RwLock::new(HashMap::new()),
             next_id: AtomicU64::new(1),
         }
     }
@@ -777,6 +784,245 @@ impl DiscordChannel {
     /// Access the scheduled event manager.
     pub fn events(&self) -> &ScheduledEventManager {
         &self.event_manager
+    }
+
+    // -- Guild channel / member caches --------------------------------------
+
+    /// Caches the list of channels for a guild (for `#channel-name` → ID lookups).
+    pub async fn cache_guild_channels(
+        &self,
+        guild_id: &str,
+        channels: Vec<DiscordGuildChannel>,
+    ) {
+        self.guild_channels
+            .write()
+            .await
+            .insert(guild_id.to_string(), channels);
+    }
+
+    /// Caches the list of members for a guild (for `@username` → ID lookups).
+    pub async fn cache_guild_members(
+        &self,
+        guild_id: &str,
+        members: Vec<DiscordGuildMember>,
+    ) {
+        self.guild_members
+            .write()
+            .await
+            .insert(guild_id.to_string(), members);
+    }
+
+    /// Resolves a `#channel-name` to a channel ID within a guild.
+    pub async fn resolve_channel_by_name(
+        &self,
+        guild_id: &str,
+        name: &str,
+    ) -> Option<String> {
+        let name = name.strip_prefix('#').unwrap_or(name);
+        let channels = self.guild_channels.read().await;
+        channels.get(guild_id).and_then(|list| {
+            list.iter()
+                .find(|c| c.name.eq_ignore_ascii_case(name))
+                .map(|c| c.id.clone())
+        })
+    }
+
+    /// Resolves an `@username` to a user ID within a guild.
+    pub async fn resolve_user_by_name(
+        &self,
+        guild_id: &str,
+        username: &str,
+    ) -> Option<String> {
+        let username = username.strip_prefix('@').unwrap_or(username);
+        let members = self.guild_members.read().await;
+        members.get(guild_id).and_then(|list| {
+            list.iter()
+                .find(|m| {
+                    m.username.eq_ignore_ascii_case(username)
+                        || m.nickname
+                            .as_deref()
+                            .is_some_and(|n| n.eq_ignore_ascii_case(username))
+                })
+                .map(|m| m.user_id.clone())
+        })
+    }
+
+    /// Opens (or retrieves cached) DM channel with a user.
+    pub async fn open_dm(&self, user_id: &str) -> Result<String> {
+        // Return cached DM channel if we already have one.
+        if let Some(channel_id) = self.dm_channels.read().await.get(user_id) {
+            return Ok(channel_id.clone());
+        }
+        let channel_id = format!(
+            "dm-{user_id}-{}",
+            self.next_id.fetch_add(1, Ordering::Relaxed)
+        );
+        self.dm_channels
+            .write()
+            .await
+            .insert(user_id.to_string(), channel_id.clone());
+        Ok(channel_id)
+    }
+
+    /// Sends a DM to a user (opens DM channel if needed, then sends).
+    pub async fn send_dm(
+        &self,
+        user_id: &str,
+        message: OutboundMessage,
+    ) -> Result<MessageId> {
+        let dm_channel = self.open_dm(user_id).await?;
+        self.send_message(&dm_channel, None, "bot", message, Vec::new(), Vec::new(), None)
+            .await
+    }
+
+    // -- Default slash commands registration --------------------------------
+
+    /// Registers the default set of application slash commands.
+    pub async fn register_default_slash_commands(&self) -> Result<()> {
+        let commands = [
+            ("status", "Show bot connection status and health"),
+            ("help", "Show available commands and usage"),
+            ("model", "Display or switch the current AI model"),
+            ("compact", "Compact the conversation context"),
+            ("sessions", "List active sessions across channels"),
+        ];
+        for (name, description) in commands {
+            self.register_slash_command(
+                name,
+                serde_json::json!({
+                    "name": name,
+                    "description": description,
+                    "type": 1
+                }),
+            )
+            .await?;
+        }
+        Ok(())
+    }
+
+    // -- Gateway event handlers ---------------------------------------------
+
+    /// Handles a `MESSAGE_UPDATE` gateway event (message edit).
+    pub async fn on_message_update(
+        &self,
+        message_id: &str,
+        new_content: &str,
+    ) -> Result<()> {
+        self.edit_message(message_id, new_content).await?;
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "message_update".to_string(),
+                channel_id: String::new(),
+                guild_id: None,
+                thread_id: None,
+                session_scope: format!("discord:message:{message_id}"),
+            });
+        Ok(())
+    }
+
+    /// Handles a `MESSAGE_DELETE` gateway event.
+    pub async fn on_message_delete(
+        &self,
+        message_id: &str,
+        channel_id: &str,
+    ) -> Result<()> {
+        self.delete_message(message_id).await?;
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "message_delete".to_string(),
+                channel_id: channel_id.to_string(),
+                guild_id: None,
+                thread_id: None,
+                session_scope: format!("discord:message:{message_id}"),
+            });
+        Ok(())
+    }
+
+    /// Handles a `GUILD_MEMBER_ADD` gateway event.
+    pub async fn on_guild_member_add(
+        &self,
+        guild_id: &str,
+        member: DiscordGuildMember,
+    ) {
+        let mut members = self.guild_members.write().await;
+        members
+            .entry(guild_id.to_string())
+            .or_default()
+            .push(member.clone());
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "guild_member_add".to_string(),
+                channel_id: String::new(),
+                guild_id: Some(guild_id.to_string()),
+                thread_id: None,
+                session_scope: format!("discord:guild:{guild_id}:member:{}", member.user_id),
+            });
+    }
+
+    /// Handles a `GUILD_MEMBER_REMOVE` gateway event.
+    pub async fn on_guild_member_remove(&self, guild_id: &str, user_id: &str) {
+        let mut members = self.guild_members.write().await;
+        if let Some(list) = members.get_mut(guild_id) {
+            list.retain(|m| m.user_id != user_id);
+        }
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "guild_member_remove".to_string(),
+                channel_id: String::new(),
+                guild_id: Some(guild_id.to_string()),
+                thread_id: None,
+                session_scope: format!("discord:guild:{guild_id}:member:{user_id}"),
+            });
+    }
+
+    /// Handles a `MESSAGE_REACTION_ADD` gateway event.
+    pub async fn on_reaction_add_event(
+        &self,
+        message_id: &str,
+        user_id: &str,
+        emoji: &str,
+        channel_id: &str,
+    ) {
+        self.add_reaction(message_id, emoji).await.ok();
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "reaction_add".to_string(),
+                channel_id: channel_id.to_string(),
+                guild_id: None,
+                thread_id: None,
+                session_scope: format!("discord:reaction:{message_id}:{user_id}:{emoji}"),
+            });
+    }
+
+    /// Handles a `MESSAGE_REACTION_REMOVE` gateway event.
+    pub async fn on_reaction_remove_event(
+        &self,
+        message_id: &str,
+        user_id: &str,
+        emoji: &str,
+        channel_id: &str,
+    ) {
+        self.remove_reaction(message_id, emoji).await.ok();
+        self.processed_events
+            .lock()
+            .await
+            .push(DiscordProcessedEvent {
+                kind: "reaction_remove".to_string(),
+                channel_id: channel_id.to_string(),
+                guild_id: None,
+                thread_id: None,
+                session_scope: format!("discord:reaction:{message_id}:{user_id}:{emoji}"),
+            });
     }
 
     fn next_message_id(&self) -> MessageId {

@@ -14,7 +14,8 @@ pub use runtime::{DiscordChannel, DiscordResult};
 pub use types::{
     session_scope, DiscordApiError, DiscordApiErrorKind, DiscordAttachment, DiscordCommandOption,
     DiscordConfig, DiscordEmbed, DiscordEmbedAuthor, DiscordEmbedBuilder, DiscordEmbedField,
-    DiscordGatewayState, DiscordHealth, DiscordHello, DiscordInteraction,
-    DiscordInteractionResponse, DiscordMessage, DiscordPresence, DiscordProcessedEvent,
-    DiscordResponseKind, DiscordSession, DiscordThread, DISCORD_MAX_MESSAGE_LEN,
+    DiscordGatewayState, DiscordGuildChannel, DiscordGuildMember, DiscordHealth, DiscordHello,
+    DiscordInteraction, DiscordInteractionResponse, DiscordMessage, DiscordPresence,
+    DiscordProcessedEvent, DiscordResponseKind, DiscordSession, DiscordThread,
+    DISCORD_MAX_MESSAGE_LEN,
 };
