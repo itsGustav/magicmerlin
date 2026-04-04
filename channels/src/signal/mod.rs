@@ -16,16 +16,17 @@ mod cli;
 mod monitor;
 mod types;
 
-pub use cli::SignalCliWrapper;
+pub use cli::{SignalCliWrapper, SignalJsonRpc};
 pub use monitor::SignalMonitor;
 pub use types::{DataMessage, GroupInfo, SignalAttachment, SignalEnvelope};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{mpsc, Mutex, RwLock};
 
 use crate::framework::{
     Channel, ChannelError, InboundMessage, MessageId, OutboundMessage, Platform, Result,
@@ -64,8 +65,10 @@ impl SignalConfig {
 
 /// Signal protocol runtime backend.
 pub enum SignalRuntime {
-    /// Subprocess wrapper around the `signal-cli` binary.
+    /// Subprocess wrapper around the `signal-cli` binary (one-shot commands).
     Cli(SignalCliWrapper),
+    /// Long-running `signal-cli jsonRpc` subprocess for persistent send/receive.
+    JsonRpc(Arc<Mutex<SignalJsonRpc>>),
     // Future: Presage(PresageRuntime) for native Rust Signal protocol.
     // Enable by adding presage deps and a `signal-presage` feature.
 }
@@ -126,6 +129,12 @@ impl SignalChannel {
         loop {
             let messages = match &self.runtime {
                 SignalRuntime::Cli(cli) => cli.receive_once().await?,
+                SignalRuntime::JsonRpc(_) => {
+                    // JSON-RPC mode receives messages as unsolicited notifications
+                    // on the stdout stream. For now, fall through to sleep — a
+                    // dedicated reader task should be wired by the caller.
+                    Vec::new()
+                }
             };
 
             for msg in messages {
@@ -151,6 +160,14 @@ impl SignalChannel {
                     cli.send_to_group(target, text).await?;
                 }
             }
+            SignalRuntime::JsonRpc(rpc) => {
+                let mut rpc = rpc.lock().await;
+                if target.starts_with('+') {
+                    rpc.send_message(target, text).await?;
+                } else {
+                    rpc.send_group_message(target, text).await?;
+                }
+            }
         }
         Ok(self.next_message_id())
     }
@@ -166,6 +183,18 @@ impl SignalChannel {
             SignalRuntime::Cli(cli) => {
                 cli.send_with_attachment(target, text, attachment).await?;
             }
+            SignalRuntime::JsonRpc(rpc) => {
+                let mut rpc = rpc.lock().await;
+                rpc.call(
+                    "send",
+                    serde_json::json!({
+                        "recipient": [target],
+                        "message": text,
+                        "attachment": [attachment.display().to_string()],
+                    }),
+                )
+                .await?;
+            }
         }
         Ok(self.next_message_id())
     }
@@ -174,6 +203,18 @@ impl SignalChannel {
     pub fn is_runtime_available(&self) -> bool {
         match &self.runtime {
             SignalRuntime::Cli(cli) => cli.is_available(),
+            SignalRuntime::JsonRpc(_) => true,
+        }
+    }
+
+    /// Links this device as a secondary Signal device.
+    /// Returns the `tsdevice:` URI for QR code scanning.
+    pub async fn link_device(&self, name: &str) -> Result<String> {
+        match &self.runtime {
+            SignalRuntime::Cli(cli) => cli.link_device(name).await,
+            SignalRuntime::JsonRpc(_) => Err(ChannelError::PlatformRequest(
+                "link_device not supported in JSON-RPC mode".to_string(),
+            )),
         }
     }
 

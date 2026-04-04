@@ -208,6 +208,24 @@ pub struct DiscordThread {
     pub name: String,
 }
 
+/// Cached guild text channel for `#channel-name` → ID resolution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiscordGuildChannel {
+    pub id: String,
+    pub name: String,
+    pub guild_id: String,
+    /// Channel type: 0 = text, 2 = voice, 4 = category, 5 = announcement, etc.
+    pub kind: u8,
+}
+
+/// Cached guild member for `@username` → ID resolution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiscordGuildMember {
+    pub user_id: String,
+    pub username: String,
+    pub nickname: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiscordCommandOption {
     pub name: String,

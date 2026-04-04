@@ -11,6 +11,7 @@ use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::sync::{mpsc, Mutex, RwLock};
@@ -93,8 +94,10 @@ impl BridgeMessage {
 pub enum WhatsAppRuntime {
     /// `wacli` binary (wraps whatsmeow).
     WaCli(WaCliRuntime),
-    /// Custom `whatsapp-bridge` binary.
+    /// Custom `whatsapp-bridge` binary with stdin/stdout JSON protocol.
     Bridge(BridgeRuntime),
+    /// WhatsApp Business Cloud API (graph.facebook.com).
+    CloudApi(CloudApiRuntime),
     /// No backend available — channel will log warnings on send.
     Unavailable,
 }
@@ -108,6 +111,15 @@ pub struct WaCliRuntime {
 #[derive(Debug, Clone)]
 pub struct BridgeRuntime {
     pub binary: PathBuf,
+}
+
+/// WhatsApp Business Cloud API credentials (from environment variables).
+#[derive(Debug, Clone)]
+pub struct CloudApiRuntime {
+    /// Phone number ID from the WhatsApp Business platform.
+    pub phone_id: String,
+    /// Bearer token for the Cloud API.
+    pub token: String,
 }
 
 impl WhatsAppRuntime {
@@ -161,13 +173,34 @@ impl WhatsAppRuntime {
             }
         }
 
-        warn!("WhatsApp runtime: no wacli or whatsapp-bridge found — channel unavailable");
+        // 3. Check Cloud API env vars
+        if let (Ok(phone_id), Ok(token)) = (
+            std::env::var("WHATSAPP_PHONE_ID"),
+            std::env::var("WHATSAPP_TOKEN"),
+        ) {
+            if !phone_id.is_empty() && !token.is_empty() {
+                info!("WhatsApp runtime: Cloud API (phone_id={phone_id})");
+                return Self::CloudApi(CloudApiRuntime { phone_id, token });
+            }
+        }
+
+        warn!("WhatsApp runtime: no wacli, whatsapp-bridge, or Cloud API found — channel unavailable");
         Self::Unavailable
     }
 
     /// Returns true if a usable backend was found.
     pub fn is_available(&self) -> bool {
         !matches!(self, Self::Unavailable)
+    }
+
+    /// Returns the runtime variant name for status display.
+    pub fn variant_name(&self) -> &'static str {
+        match self {
+            Self::WaCli(_) => "wacli",
+            Self::Bridge(_) => "bridge",
+            Self::CloudApi(_) => "cloud_api",
+            Self::Unavailable => "unavailable",
+        }
     }
 }
 
@@ -295,6 +328,140 @@ impl WaCliRuntime {
 }
 
 // ---------------------------------------------------------------------------
+// Bridge subprocess JSON protocol
+// ---------------------------------------------------------------------------
+
+impl BridgeRuntime {
+    /// Sends a message via the bridge subprocess using one-shot stdin/stdout JSON.
+    ///
+    /// Protocol:
+    /// ```text
+    /// → {"action":"send","jid":"...@s.whatsapp.net","text":"Hello"}
+    /// ← {"ok":true,"messageId":"xxx"}
+    /// ```
+    pub async fn send(&self, jid: &str, text: &str) -> Result<String> {
+        let request = serde_json::json!({
+            "action": "send",
+            "jid": jid,
+            "text": text,
+        });
+        let input = serde_json::to_string(&request).unwrap_or_default();
+
+        let output = tokio::process::Command::new(&self.binary)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .and_then(|mut child| async move {
+                use tokio::io::AsyncWriteExt;
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(input.as_bytes()).await?;
+                    stdin.shutdown().await?;
+                }
+                child.wait_with_output().await
+            }.boxed())
+            .await
+            .map_err(|e| ChannelError::PlatformRequest(format!("whatsapp-bridge exec: {e}")))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(ChannelError::PlatformRequest(format!(
+                "whatsapp-bridge send failed: {stderr}"
+            )));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let resp: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap_or_default();
+        Ok(resp
+            .get("messageId")
+            .and_then(|v| v.as_str())
+            .unwrap_or("bridge-ack")
+            .to_string())
+    }
+
+    /// Polls for pending inbound messages via the bridge subprocess.
+    pub async fn poll(&self) -> Result<Vec<BridgeMessage>> {
+        let request = serde_json::json!({"action": "poll"});
+        let input = serde_json::to_string(&request).unwrap_or_default();
+
+        let output = tokio::process::Command::new(&self.binary)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .and_then(|mut child| async move {
+                use tokio::io::AsyncWriteExt;
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(input.as_bytes()).await?;
+                    stdin.shutdown().await?;
+                }
+                child.wait_with_output().await
+            }.boxed())
+            .await
+            .map_err(|e| ChannelError::PlatformRequest(format!("whatsapp-bridge poll: {e}")))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let resp: serde_json::Value = serde_json::from_str(stdout.trim()).unwrap_or_default();
+        let messages = resp
+            .get("messages")
+            .and_then(|v| serde_json::from_value::<Vec<BridgeMessage>>(v.clone()).ok())
+            .unwrap_or_default();
+        Ok(messages)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Cloud API (WhatsApp Business)
+// ---------------------------------------------------------------------------
+
+impl CloudApiRuntime {
+    /// Sends a text message via the WhatsApp Business Cloud API.
+    ///
+    /// ```text
+    /// POST https://graph.facebook.com/v18.0/{phone-id}/messages
+    /// Authorization: Bearer {token}
+    /// {"messaging_product":"whatsapp","to":"{number}","type":"text","text":{"body":"..."}}
+    /// ```
+    pub async fn send(&self, to: &str, text: &str) -> Result<String> {
+        let url = format!(
+            "https://graph.facebook.com/v18.0/{}/messages",
+            self.phone_id
+        );
+        let body = serde_json::json!({
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "text",
+            "text": { "body": text },
+        });
+
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&url)
+            .bearer_auth(&self.token)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| ChannelError::PlatformRequest(format!("whatsapp cloud api: {e}")))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body_text = resp.text().await.unwrap_or_default();
+            return Err(ChannelError::PlatformRequest(format!(
+                "whatsapp cloud api {status}: {body_text}"
+            )));
+        }
+
+        let data: serde_json::Value = resp.json().await.unwrap_or_default();
+        let msg_id = data
+            .pointer("/messages/0/id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("cloud-ack")
+            .to_string();
+        Ok(msg_id)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Bridge state
 // ---------------------------------------------------------------------------
 
@@ -406,6 +573,14 @@ impl WhatsAppChannel {
                 bridge.connected = true;
                 bridge.qr_code = Some("WA-PAIR-QR".to_string());
             }
+            WhatsAppRuntime::CloudApi(ref rt) => {
+                info!(
+                    "WhatsApp Cloud API: connected (phone_id={})",
+                    rt.phone_id
+                );
+                bridge.connected = true;
+                bridge.paired = true;
+            }
             WhatsAppRuntime::Unavailable => {
                 warn!("WhatsApp: no runtime available, channel will be non-functional");
                 bridge.connected = false;
@@ -490,15 +665,22 @@ impl Channel for WhatsAppChannel {
         self.spawn_bridge().await?;
 
         // Start receive loop if runtime supports it and we have an inbound sender.
-        if let (WhatsAppRuntime::WaCli(ref rt), Some(ref tx)) = (&self.runtime, &self.inbound_tx) {
-            match rt.start_receive_loop(tx.clone()).await {
-                Ok(handle) => {
-                    *self.receive_handle.lock().await = Some(handle);
-                }
-                Err(e) => {
-                    warn!("WhatsApp receive loop failed to start: {e}");
+        match (&self.runtime, &self.inbound_tx) {
+            (WhatsAppRuntime::WaCli(ref rt), Some(ref tx)) => {
+                match rt.start_receive_loop(tx.clone()).await {
+                    Ok(handle) => {
+                        *self.receive_handle.lock().await = Some(handle);
+                    }
+                    Err(e) => {
+                        warn!("WhatsApp wacli receive loop failed to start: {e}");
+                    }
                 }
             }
+            (WhatsAppRuntime::CloudApi(_), _) => {
+                // Cloud API uses webhooks for inbound — no subprocess to start.
+                info!("WhatsApp Cloud API active (inbound requires webhook configuration)");
+            }
+            _ => {}
         }
 
         Ok(())
@@ -522,8 +704,25 @@ impl Channel for WhatsAppChannel {
                     warn!("WhatsApp wacli send to {target}: {e}");
                 }
             }
-            WhatsAppRuntime::Bridge(_) => {
-                debug!("WhatsApp bridge send to {target} (stub)");
+            WhatsAppRuntime::Bridge(rt) => {
+                match rt.send(target, &message.text).await {
+                    Ok(bridge_id) => {
+                        debug!("WhatsApp bridge send to {target}: {bridge_id}");
+                    }
+                    Err(e) => {
+                        warn!("WhatsApp bridge send to {target}: {e}");
+                    }
+                }
+            }
+            WhatsAppRuntime::CloudApi(rt) => {
+                match rt.send(target, &message.text).await {
+                    Ok(cloud_id) => {
+                        debug!("WhatsApp cloud api send to {target}: {cloud_id}");
+                    }
+                    Err(e) => {
+                        warn!("WhatsApp cloud api send to {target}: {e}");
+                    }
+                }
             }
             WhatsAppRuntime::Unavailable => {
                 warn!("WhatsApp send to {target}: no runtime available");
